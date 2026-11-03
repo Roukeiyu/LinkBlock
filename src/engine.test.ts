@@ -89,8 +89,8 @@ describe('continuous territory rules', () => {
   it('freezes a won result and awards a life bonus', () => {
     const game = fixture(); game.enemies[0].x = 9;
     game.move('right', false, 3.5); game.move('down', true, 10);
-    expect(game.phase).toBe('won'); expect(game.percent).toBe(75);
-    expect(game.score).toBe(3800);
+    expect(game.phase).toBe('won'); expect(game.percent).toBe(100);
+    expect(game.enemies).toHaveLength(0); expect(game.score).toBe(4550);
     const player = { ...game.player }; game.update(1, 'left', true);
     expect(game.player).toEqual(player); expect(game.events).toContain('won');
   });

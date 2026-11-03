@@ -1,11 +1,14 @@
 import { distance, EPS, inside, type Point, type Polygon } from './geometry';
 
 export type EnemyKind = 'straight' | 'orbit' | 'zigzag' | 'boss';
+export interface DefeatedEnemy extends Point { kind: EnemyKind; points: number }
+export const DEFEAT_POINTS: Record<EnemyKind, number> = { straight: 500, orbit: 500, zigzag: 500, boss: 2000 };
 export interface Enemy extends Point {
   kind: EnemyKind;
   vx: number;
   vy: number;
   radius: number;
+  previous: Point;
   turnClock: number;
   turnSign: number;
   traceClock: number;
@@ -22,7 +25,7 @@ export function createEnemy(kind: EnemyKind, position: Point, velocity?: Point):
   const headings = { straight: 0.21, orbit: -Math.PI / 2, zigzag: -0.45, boss: -2.6 };
   const speed = ENEMY_STYLES[kind].speed, angle = headings[kind];
   return { ...position, kind, vx: velocity?.x ?? Math.cos(angle) * speed, vy: velocity?.y ?? Math.sin(angle) * speed,
-    radius: kind === 'boss' ? 1.05 : 0.55, turnClock: 0, turnSign: 1, traceClock: 0, trace: [{ ...position }] };
+    radius: kind === 'boss' ? 1.05 : 0.55, previous: { ...position }, turnClock: 0, turnSign: 1, traceClock: 0, trace: [{ ...position }] };
 }
 export function defaultEnemies(width: number, height: number) {
   return [createEnemy('straight', { x: width * 0.68, y: height * 0.25 }),
@@ -36,6 +39,7 @@ function rotate(enemy: Enemy, angle: number) {
 }
 export type Walls = [Point, Point][];
 export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], walls: Walls[]) {
+  enemy.previous = { x: enemy.x, y: enemy.y };
   const region = regions.findIndex(polygon => inside(enemy, polygon));
   if (region < 0) return;
   if (enemy.kind === 'orbit') rotate(enemy, seconds * 0.85 * enemy.turnSign);

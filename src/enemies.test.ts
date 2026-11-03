@@ -97,6 +97,20 @@ describe('multiple danger components', () => {
   });
 });
 
+describe('continuous collision with the whole live trail', () => {
+  it.each(kinds.flatMap(kind => [false, true].map(retracting => ({ kind, retracting }))))('$kind crosses an older segment while retracting=$retracting', ({ kind, retracting }) => {
+    const game = new Game(100, 100, { enemies: [], boss: null }); game.start();
+    game.move('down', true, 30); game.move('left', true, 20); game.move('down', true, 20);
+    const body = createEnemy(kind, { x: 65, y: 15 }, { x: -250, y: 0 });
+    if (kind === 'boss') game.boss = body; else game.enemies.push(body);
+    if (retracting) game.beginRetraction();
+    game.update(0.1, undefined, !retracting);
+    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
+    expect(game.player).toEqual(game.anchor); expect(game.events.filter(e => e === 'hit')).toHaveLength(1);
+    expect(game.claimed).toBe(0);
+  });
+});
+
 describe('sustained simulation and bounded storage', () => {
   it('runs two simulated minutes with bounded projectiles and wakes', () => {
     const game = new Game(); game.start(); game.protection = 1000;

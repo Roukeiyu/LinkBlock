@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; warningFrame: string; warningShots: number };
+type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; warningFrame: string; warningShots: number; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
@@ -11,16 +11,18 @@ async function firstCut(page: Page) {
   await expect.poll(async () => (await probe(page)).player.y, { timeout: 6000, intervals: [16] }).toBe(48);
   await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
 }
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, info) => {
+  const controlled = info.title.includes('boss damage jump') || info.title.includes('enclosing a normal');
+  if (controlled) await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], warningFrame: '', warningShots: -1 };
+    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], warningFrame: '', warningShots: -1, defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
     (window as unknown as { probe: typeof state }).probe = state;
     const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
     for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect'] as const) {
       const original = CanvasRenderingContext2D.prototype[method];
       CanvasRenderingContext2D.prototype[method] = function(this: CanvasRenderingContext2D, ...args: number[]) {
-        if (method === 'clearRect' && this.canvas.id === 'board') { state.trail = []; state.shots = []; state.enemyColors = []; }
+        if (method === 'clearRect' && this.canvas.id === 'board') { state.trail = []; state.shots = []; state.enemyColors = []; state.jumpScales = []; state.jumpShadows = 0; }
         if (method === 'beginPath') paths.set(this, []);
         if (method === 'moveTo' || method === 'lineTo') paths.get(this)?.push({ x: args[0], y: args[1] });
         if (method === 'stroke' && this.strokeStyle === '#ffcf75') state.trail = [...(paths.get(this) ?? [])];
@@ -28,6 +30,24 @@ test.beforeEach(async ({ page }) => {
       } as never;
     }
     let warningScheduled = false;
+    const scale = CanvasRenderingContext2D.prototype.scale;
+    CanvasRenderingContext2D.prototype.scale = function(x, y) {
+      if (x > 1 && x < 1.4 && x === y) state.jumpScales.push(x);
+      return scale.call(this, x, y);
+    };
+    const ellipse = CanvasRenderingContext2D.prototype.ellipse;
+    CanvasRenderingContext2D.prototype.ellipse = function(...args: Parameters<typeof ellipse>) {
+      if (args[2] === 1.35 && args[3] === 0.48 && this.fillStyle === '#000000') state.jumpShadows++;
+      return ellipse.apply(this, args);
+    };
+    const fillText = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function(...args: Parameters<typeof fillText>) {
+      if (/^\+\d+$/.test(args[0])) {
+        state.awards.push({ text: args[0], color: String(this.fillStyle) });
+        if (!state.defeatFrame && this.globalAlpha < 0.85 && this.globalAlpha > 0.6) queueMicrotask(() => { state.defeatFrame = this.canvas.toDataURL(); });
+      }
+      return fillText.apply(this, args);
+    };
     const arc = CanvasRenderingContext2D.prototype.arc;
     CanvasRenderingContext2D.prototype.arc = function(...args: Parameters<typeof arc>) {
       if (args[2] === 1.8 && args[4] - args[3] >= Math.PI && !warningScheduled) {
@@ -49,7 +69,9 @@ test.beforeEach(async ({ page }) => {
       return Reflect.apply(fill, this, args);
     };
   });
-  await page.goto('/'); await page.getByRole('button', { name: '开始探索' }).click();
+  await page.goto('/');
+  if (controlled) await page.clock.pauseAt(new Date('2026-11-03T00:00:01Z'));
+  await page.getByRole('button', { name: '开始探索' }).click();
 });
 
 test('continuous movement stays on the drawn edge and turns between arbitrary coordinates', async ({ page }) => {
@@ -107,18 +129,70 @@ test('Space release retracts a bent trail, ignores new input until the anchor an
   expect((await probe(page)).player.y).toBeGreaterThan(0); await page.keyboard.up('Space');
 });
 
-test('touch drawing switch off also retracts without a held direction', async ({ page }) => {
+async function touchController(page: Page) {
+  const direction = await page.getByRole('button', { name: '向下' }).boundingBox();
+  const draw = await page.locator('#touch-draw').boundingBox();
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const points = [direction!, draw!].map((box, i) => ({ id: i + 1, x: box.x + box.width / 2, y: box.y + box.height / 2, radiusX: 4, radiusY: 4, force: 1 }));
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points });
+  return session;
+}
+
+test('mobile held draw and direction support simultaneous touches, release and cancellation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: '画线：关' }).click();
-  const down = await page.getByRole('button', { name: '向下' }).boundingBox();
-  await page.mouse.move(down!.x + down!.width / 2, down!.y + down!.height / 2);
-  await page.mouse.down(); await page.waitForTimeout(350); await page.mouse.up();
-  expect((await probe(page)).player.y).toBeGreaterThan(0);
-  await page.getByRole('button', { name: '画线：开' }).click();
+  const session = await touchController(page);
+  await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(350); expect((await probe(page)).player.y).toBeGreaterThan(0);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'false');
   expect((await probe(page)).trail).toHaveLength(0);
-  await expect(page.getByRole('button', { name: '画线：关' })).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#percent')).toHaveText('0.0%');
+  await session.detach();
+  const cancelled = await touchController(page); await page.waitForTimeout(250);
+  await cancelled.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'false'); await cancelled.detach();
+});
+
+test('enclosing a normal enemy removes its body, awards points and plays matching fireworks', async ({ page }) => {
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown'); await page.clock.runFor(2200);
+  await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
+  await page.keyboard.down('ArrowUp'); await page.clock.runFor(944); await page.keyboard.up('ArrowUp');
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight'); await page.clock.runFor(1700);
+  await page.clock.runFor(250);
+  await expect(page.locator('[data-kind="zigzag"]')).toHaveClass(/defeated/, { timeout: 4000 });
+  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
+  await expect(page.locator('#toast')).toContainText('+1000');
+  await expect.poll(async () => (await probe(page)).awards.some(award => award.text === '+500' && award.color === '#72cfff')).toBe(true);
+  expect((await probe(page)).enemyColors).not.toContain('#72cfff');
+  await expect.poll(async () => (await probe(page)).defeatFrame.length).toBeGreaterThan(0);
+  await mkdir('test-results', { recursive: true });
+  await writeFile('test-results/enemy-defeat.png', Buffer.from((await probe(page)).defeatFrame.split(',')[1], 'base64'));
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeGreaterThan(50);
+});
+
+test('boss damage jump shows four health bars, landing shadow and scaling before returning to normal', async ({ page }) => {
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown'); await page.clock.runFor(2200);
+  await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
+  await page.keyboard.down('ArrowUp'); await page.clock.runFor(944); await page.keyboard.up('ArrowUp');
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight'); await page.clock.runFor(1700);
+  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space'); await page.clock.runFor(250);
+  await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '4');
+  await expect(page.locator('#boss-hearts .filled')).toHaveCount(4);
+  await expect(page.locator('#boss-status')).toHaveText('跃迁中');
+  expect((await probe(page)).jumpShadows).toBeGreaterThan(0);
+  expect((await probe(page)).jumpScales.some(scale => scale > 1.1)).toBe(true);
+  await page.locator('#board').screenshot({ path: 'test-results/boss-jump.png' });
+  await page.screenshot({ path: 'test-results/boss-health-desktop.png', fullPage: true });
+  await page.keyboard.press('KeyP'); const paused = await probe(page); await page.clock.runFor(500);
+  expect((await probe(page)).jumpScales).toEqual(paused.jumpScales);
+  await page.getByRole('button', { name: '继续探索' }).click(); await page.clock.runFor(1200);
+  await expect(page.locator('#boss-status')).not.toHaveText('跃迁中');
+  await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '4');
+  expect((await probe(page)).jumpScales).toHaveLength(0);
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
 });
 
 test('closure flashes only the captured region white, dissolves and keeps player centered on its edge', async ({ page }) => {
@@ -210,15 +284,29 @@ test('four independent enemy bodies, boss warning and eight-way shots survive pa
   expect(errors).toEqual([]);
 });
 
-test('touch uses continuous movement and layout fits a narrow viewport', async ({ page }) => {
+test('portrait controller swaps sides, stays within the screen and is hidden on wide layouts', async ({ page }) => {
+  await expect(page.locator('.touch-controls')).toBeHidden();
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('button', { name: '画线：关' }).click();
-  const down = await page.getByRole('button', { name: '向下' }).boundingBox();
-  await page.mouse.move(down!.x + down!.width / 2, down!.y + down!.height / 2); await page.mouse.down();
-  await expect.poll(async () => (await probe(page)).player.y, { timeout: 6000 }).toBe(48); await page.mouse.up();
+  await expect(page.locator('.touch-controls')).toBeVisible();
+  const before = await page.locator('.dpad-side').boundingBox(), drawBefore = await page.locator('.draw-side').boundingBox();
+  expect(before!.x).toBeLessThan(drawBefore!.x);
+  await page.locator('#swap-controls').click(); await expect(page.locator('#swap-controls')).toHaveAttribute('aria-pressed', 'true');
+  const after = await page.locator('.dpad-side').boundingBox(), drawAfter = await page.locator('.draw-side').boundingBox();
+  expect(after!.x).toBeGreaterThan(drawAfter!.x);
+  const session = await touchController(page);
+  await expect.poll(async () => (await probe(page)).player.y, { timeout: 6000 }).toBe(48);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session.detach();
   await expect(page.locator('#percent')).toHaveText('50.0%');
-  await page.screenshot({ path: 'test-results/mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/mobile-controller.png', fullPage: true });
+  for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+    const box = await page.locator('#swap-controls').boundingBox(); expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+  }
+  await page.goto('/'); await expect(page.getByRole('button', { name: '开始探索' })).toBeVisible();
+  await page.getByRole('button', { name: '开始探索' }).click(); await expect(page.locator('#overlay')).toBeHidden();
+  await page.setViewportSize({ width: 844, height: 390 }); await expect(page.locator('.touch-controls')).toBeHidden();
+  await page.setViewportSize({ width: 1000, height: 800 }); await expect(page.locator('.touch-controls')).toBeHidden();
 });
 
 test('reduced motion reveals territory without drifting particles', async ({ page }) => {

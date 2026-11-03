@@ -1,15 +1,24 @@
+import { jumpPose, type BossJump } from './boss';
 import { ENEMY_STYLES, type Enemy } from './enemies';
 
-export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false) {
+export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0) {
   const color = ENEMY_STYLES[enemy.kind].color;
   ctx.save();
-  if (!reducedMotion && enemy.trace.length > 1) {
+  if (!reducedMotion && !jump && enemy.trace.length > 1) {
     ctx.strokeStyle = color; ctx.globalAlpha = 0.22; ctx.lineWidth = 0.12; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); enemy.trace.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
   }
-  ctx.globalAlpha = 1; ctx.translate(enemy.x, enemy.y);
+  const pose = jump ? jumpPose(jump, reducedMotion) : undefined;
+  if (pose) {
+    ctx.globalAlpha = 0.3; ctx.fillStyle = '#000000';
+    ctx.beginPath(); ctx.ellipse(pose.shadow.x, pose.shadow.y + 0.25, 1.35, 0.48, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.5; ctx.strokeStyle = color; ctx.lineWidth = 0.08;
+    ctx.beginPath(); ctx.ellipse(pose.shadow.x, pose.shadow.y + 0.25, 1.55, 0.65, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.translate(pose?.x ?? enemy.x, pose?.y ?? enemy.y);
+  if (pose) ctx.scale(pose.scale, pose.scale);
   ctx.shadowColor = color; ctx.shadowBlur = enemy.kind === 'boss' ? 20 : 10;
-  ctx.strokeStyle = color; ctx.fillStyle = '#14232e'; ctx.lineWidth = 0.1;
+  ctx.strokeStyle = color; ctx.fillStyle = hurt > 0 ? '#ffe8d1' : '#14232e'; ctx.lineWidth = 0.1;
   if (enemy.kind === 'boss') {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {

@@ -1,4 +1,6 @@
 import { EightWayAttack, type BossAttackFactory } from './attacks';
+import type { BossHitVisual } from './boss';
+import { ENEMY_STYLES, type DefeatedEnemy } from './enemies';
 import { area, inside, type Polygon } from './geometry';
 
 export interface CaptureEffect {
@@ -13,6 +15,8 @@ export interface GameTheme {
   boundary: string;
   trail: string;
   createBossAttack?: BossAttackFactory;
+  createBossHitEffect?(hit: BossHitVisual, reducedMotion: boolean): CaptureEffect;
+  createDefeatEffect?(enemy: DefeatedEnemy, reducedMotion: boolean): CaptureEffect;
   createCaptureEffect(region: Polygon, reducedMotion: boolean): CaptureEffect;
 }
 export function polygonPath(ctx: CanvasRenderingContext2D, polygon: Polygon) {
@@ -58,7 +62,59 @@ export function lakeDissolve(region: Polygon, reducedMotion: boolean, random = M
     },
   };
 }
+export function enemyCelebration(enemy: DefeatedEnemy, reducedMotion: boolean, random = Math.random): CaptureEffect {
+  const { x, y, kind, points } = enemy;
+  const color = ENEMY_STYLES[kind].color;
+  const count = reducedMotion ? 0 : kind === 'boss' ? 56 : 32;
+  const sparks = Array.from({ length: count }, (_, i) => {
+    const angle = i / count * Math.PI * 2 + (random() - 0.5) * 0.16;
+    const speed = (2.8 + random() * 3.6) * (kind === 'boss' ? 1.3 : 1);
+    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, size: 0.09 + random() * 0.07 };
+  });
+  let age = 0;
+  const duration = reducedMotion ? 0.45 : 1.05;
+  return {
+    get finished() { return age >= duration; },
+    update(seconds) { age += seconds; },
+    render(ctx) {
+      if (age >= duration) return;
+      const progress = age / duration;
+      ctx.save(); ctx.translate(x, y);
+      ctx.globalAlpha = Math.max(0, 1 - progress);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 10;
+      ctx.lineWidth = 0.1; ctx.beginPath();
+      ctx.arc(0, 0, reducedMotion ? 0.9 : 0.4 + progress * 3.2, 0, Math.PI * 2); ctx.stroke();
+      for (const spark of sparks) {
+        const sx = spark.vx * age, sy = spark.vy * age + age * age * 1.8;
+        ctx.lineWidth = spark.size; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(sx - spark.vx * 0.035, sy - spark.vy * 0.035);
+        ctx.lineTo(sx, sy); ctx.stroke();
+      }
+      ctx.shadowBlur = 0; ctx.font = `${kind === 'boss' ? 1.8 : 1.4}px system-ui, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(`+${points}`, 0, -1.5 - (reducedMotion ? 0 : age * 1.2));
+      ctx.restore();
+    },
+  };
+}
+
+export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): CaptureEffect {
+  let age = 0;
+  return {
+    get finished() { return age >= 0.5; },
+    update(seconds) { age += seconds; },
+    render(ctx) {
+      if (age >= 0.5) return;
+      ctx.save(); ctx.translate(hit.x, hit.y); ctx.globalAlpha = 1 - age / 0.5;
+      ctx.strokeStyle = '#ffa56e'; ctx.lineWidth = 0.14;
+      ctx.beginPath(); ctx.arc(0, 0, reducedMotion ? 1.4 : 1 + age * 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#ffd7b9'; ctx.font = '1.4px system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(`−1 HP · +${hit.points}`, 0, -1.8); ctx.restore();
+    },
+  };
+}
+
 export const lakeTheme: GameTheme = {
   id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
-  createCaptureEffect: lakeDissolve, createBossAttack: () => new EightWayAttack(),
+  createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new EightWayAttack(),
 };

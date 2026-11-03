@@ -1,22 +1,36 @@
-import { area, distance, edges, EPS, inside, onSegment, rayDistance, same, simplify, split, type Point, type Polygon } from './geometry';
-import { advanceEnemy, createEnemy, defaultEnemies, type Enemy } from './enemies';
+import { area, distance, edges, EPS, inside, onSegment, rayDistance, segmentDistance, same, simplify, split, type Point, type Polygon } from './geometry';
+import { advanceEnemy, createEnemy, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
+import { BOSS_HIT_POINTS, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type VictoryConfig } from './boss';
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
-export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack';
-export interface GameOptions { enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory }
+export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
+export interface GameOptions { enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
 const PLAYER_RADIUS = 0.34;
 
 export class Game {
-  readonly target = 75;
+  readonly target: number;
+  readonly bossMaxHealth: number;
+  bossHealth: number;
+  bossJump: BossJump | undefined;
+  bossFlash = 0;
+  bossPhase = '默认';
+  winReason: 'territory' | 'boss' | undefined;
+  private bossDefeated = false;
+  private bossStageIndex = -1;
+  private readonly bossSettings: Required<BossConfig>;
+  private readonly bossVictory: boolean;
+  private readonly territoryVictory: boolean;
+  private readonly random: () => number;
   readonly outline: Polygon;
   territories: Polygon[];
   private cutRegion = -1;
   lastCapture: Polygon[] = [];
+  lastDefeats: DefeatedEnemy[] = [];
   captured: Polygon[] = [];
   player: Point;
   anchor: Point;
@@ -34,6 +48,18 @@ export class Game {
   events: GameEvent[] = [];
 
   constructor(readonly width = 72, readonly height = 48, options: GameOptions = {}) {
+    this.target = options.victory?.territoryPercent ?? 75;
+    this.bossMaxHealth = options.bossConfig?.maxHealth ?? 5; this.bossHealth = this.bossMaxHealth;
+    this.bossSettings = { maxHealth: this.bossMaxHealth, jumpDuration: options.bossConfig?.jumpDuration ?? 0.9, phases: options.bossConfig?.phases ?? [] };
+    this.bossVictory = options.victory?.defeatBoss ?? true; this.territoryVictory = options.victory?.territory ?? true;
+    if (!this.bossVictory && !this.territoryVictory) throw new Error('At least one victory route is required'); this.random = options.random ?? Math.random;
+    if (!Number.isInteger(this.bossMaxHealth) || this.bossMaxHealth < 1 || !Number.isFinite(this.bossSettings.jumpDuration) || this.bossSettings.jumpDuration <= 0
+      || !Number.isFinite(this.target) || this.target <= 0 || this.target > 100) throw new Error('Invalid boss or victory configuration');
+    for (const phase of this.bossSettings.phases) {
+      if (!phase.id || (phase.when.healthAtMost === undefined && phase.when.territoryAtLeast === undefined)
+        || (phase.when.healthAtMost !== undefined && (!Number.isFinite(phase.when.healthAtMost) || phase.when.healthAtMost < 0 || phase.when.healthAtMost > this.bossMaxHealth))
+        || (phase.when.territoryAtLeast !== undefined && (!Number.isFinite(phase.when.territoryAtLeast) || phase.when.territoryAtLeast < 0 || phase.when.territoryAtLeast > 100))) throw new Error('Invalid boss phase');
+    }
     if (width < 6 || height < 6) throw new Error('Board must be at least 6 × 6');
     this.outline = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
     this.territories = [this.outline.map(p => ({ ...p }))];
@@ -41,7 +67,9 @@ export class Game {
     this.anchor = { ...this.player };
     this.enemies = options.enemies ?? defaultEnemies(width, height);
     this.boss = options.boss === null ? undefined : options.boss ?? createEnemy('boss', { x: Math.min(width - 1.2, width * 0.84), y: Math.min(height - 1.2, height * 0.76) });
+    if (!this.boss && !this.territoryVictory) throw new Error('Boss-only victory needs a boss');
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
+    this.advanceBossPhase();
   }
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.claimed / (this.width * this.height) * 100; }
@@ -100,7 +128,8 @@ export class Game {
     const next = { x: p.x + v.x * travel, y: p.y + v.y * travel };
     this.trail = simplify([...this.trail, next]);
     this.player = next;
-    if (this.collidesWithTrail() || this.hazardsHit(p, next)) { this.hit(); return false; }
+    const bodyHit = this.collidesWithTrail(), attackHit = this.hazardsHit(p, next);
+    if (bodyHit || attackHit) { this.hit(); return false; }
     if (wall <= amount + EPS) { this.capture(); return true; }
     return false;
   }
@@ -128,8 +157,19 @@ export class Game {
   private capture() {
     const parts = split(this.territories[this.cutRegion], this.trail);
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    const remaining = parts.filter(part => bodies.some(body => inside(body, part)));
-    this.lastCapture = parts.filter(part => !remaining.includes(part));
+    const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
+    const difference = area(parts[0]) - area(parts[1]);
+    // The smaller newly enclosed side is the pocket the player captures, even
+    // when the outer frame completes its boundary. A populated 50/50 split has
+    // no smaller pocket: retain both until a later cut identifies one.
+    const pocket = Math.abs(difference) <= EPS ? -1 : difference < 0 ? 0 : 1;
+    const bossEnclosed = Boolean(this.boss && pocket >= 0 && inside(this.boss, parts[pocket as 0 | 1]));
+    const keepRoomForLanding = bossEnclosed && (this.bossJump || this.bossHealth > 1);
+    this.lastCapture = parts.filter((_, i) => i === pocket || (!keepRoomForLanding && !occupants[i].length));
+    const remaining = parts.filter(part => !this.lastCapture.includes(part));
+    const defeated = new Set(this.enemies.filter(body => this.lastCapture.some(part => inside(body, part))));
+    this.lastDefeats = [...defeated].map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));
+    this.enemies = this.enemies.filter(enemy => !defeated.has(enemy));
     const length = this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0);
     this.territories.splice(this.cutRegion, 1, ...remaining);
     this.cutRegion = -1;
@@ -137,18 +177,72 @@ export class Game {
     this.trail = [];
     this.anchor = { ...this.player };
     const claimed = this.lastCapture.reduce((sum, region) => sum + area(region), 0);
-    this.score += Math.round(claimed * 10 + length * 5);
+    this.score += Math.round(claimed * 10 + length * 5) + this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0);
     this.events.push(claimed > EPS ? 'capture' : 'partition');
-    if (this.percent >= this.target - EPS) { this.phase = 'won'; this.score += this.lives * 1000; this.events.push('won'); this.hazards = []; }
+    if (bossEnclosed && this.boss) {
+      const from = this.bossJump ? jumpPose(this.bossJump) : { ...this.boss };
+      if (!this.bossJump) {
+        this.bossHealth--; this.score += BOSS_HIT_POINTS; this.bossFlash = 0.3;
+        this.events.push({ type: 'bossHit', hit: { x: this.boss.x, y: this.boss.y, points: BOSS_HIT_POINTS, health: this.bossHealth, maxHealth: this.bossMaxHealth } });
+      }
+      if (this.bossHealth <= 0) {
+        const defeat = { kind: this.boss.kind, x: this.boss.x, y: this.boss.y, points: DEFEAT_POINTS.boss };
+        this.lastDefeats.push(defeat); this.score += defeat.points;
+        this.boss = undefined; this.bossAttack = undefined; this.bossJump = undefined; this.bossDefeated = true;
+      } else this.startBossJump(from);
+    }
+    if (this.lastDefeats.length) this.events.push({ type: 'defeat', enemies: this.lastDefeats });
+    this.advanceBossPhase(); this.checkWin();
   }
-  private collidesWithTrail() {
+  private checkWin() {
+    if (this.phase !== 'playing') return;
+    if (this.bossVictory && this.bossDefeated) this.winReason = 'boss';
+    else if (this.territoryVictory && this.percent >= this.target - EPS) this.winReason = 'territory';
+    if (this.winReason) { this.phase = 'won'; this.score += this.lives * 1000; this.events.push('won'); this.hazards = []; this.bossJump = undefined; }
+  }
+  private advanceBossPhase() {
+    if (!this.boss) return;
+    for (let i = this.bossStageIndex + 1; i < this.bossSettings.phases.length; i++) {
+      const phase = this.bossSettings.phases[i];
+      if ((phase.when.healthAtMost === undefined || this.bossHealth <= phase.when.healthAtMost)
+        && (phase.when.territoryAtLeast === undefined || this.percent >= phase.when.territoryAtLeast)) {
+        this.bossStageIndex = i; this.bossPhase = phase.id;
+        if (phase.createAttack) this.bossAttack = phase.createAttack();
+      }
+    }
+  }
+  private startBossJump(from: Point) {
+    if (!this.boss) return;
+    const to = findLanding(this.territories, this.boss, this.enemies, this.player, [], this.random);
+    const duration = this.bossJump ? Math.max(0.2, this.bossJump.duration - this.bossJump.elapsed) : this.bossSettings.jumpDuration;
+    this.bossJump = { from: { x: from.x, y: from.y }, to, elapsed: 0, duration };
+    if (to) { this.boss.x = to.x; this.boss.y = to.y; this.boss.previous = { ...to }; }
+    this.boss.trace = []; this.boss.traceClock = 0;
+  }
+  private updateBossJump(seconds: number) {
+    const jump = this.bossJump, boss = this.boss;
+    if (!jump || !boss) return;
+    jump.elapsed += seconds;
+    if (jump.elapsed < jump.duration) return;
+    if (!jump.to && jump.retryIn && jump.retryIn > 0) { jump.retryIn -= seconds; return; }
+    if (jump.to && safeLanding(jump.to, this.territories, boss, this.enemies, this.player, this.trail)) {
+      boss.x = jump.to.x; boss.y = jump.to.y; boss.previous = { ...jump.to }; this.bossJump = undefined;
+    } else {
+      const landing = findLanding(this.territories, boss, this.enemies, this.player, this.trail, this.random);
+      if (landing) {
+        const from = jumpPose(jump); this.bossJump = { from, to: landing, elapsed: 0, duration: 0.35 };
+        boss.x = landing.x; boss.y = landing.y; boss.previous = { ...landing };
+      } else { jump.to = null; jump.elapsed = jump.duration; jump.retryIn = 0.25; }
+    }
+  }
+  private collidesWithTrail(swept = false) {
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    return !this.protection && bodies.some(body => this.trail.slice(1).some((p, i) => distance(body, this.trail[i], p) <= body.radius + 0.12));
+    return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= body.radius + 0.12));
   }
   private hit() {
     this.trail = []; this.cutRegion = -1; this.retracting = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
     this.events.push('hit');
-    if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; }
+    if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
   }
   spawnHazard(hazard: AttackHazard) {
     if (this.hazards.length >= MAX_HAZARDS || hazard.expired) return false;
@@ -163,28 +257,33 @@ export class Game {
   update(seconds: number, direction?: Direction, drawing = false) {
     if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
     if (!drawing) this.beginRetraction();
-    const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
+    let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy)));
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
     let gestureEnded = false;
     let walls = this.territories.map(edges);
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
-      this.elapsed += dt; this.protection = Math.max(0, this.protection - dt);
-      for (const body of bodies) advanceEnemy(body, dt, this.territories, walls);
-      if (this.boss && this.bossAttack) this.bossAttack.update(dt, {
+      this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
+      this.updateBossJump(dt);
+      for (const body of bodies) if (body !== this.boss || !this.bossJump) advanceEnemy(body, dt, this.territories, walls);
+      if (this.boss && this.bossAttack && !this.bossJump) this.bossAttack.update(dt, {
         origin: this.boss, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),
       });
       for (const hazard of this.hazards) hazard.update(dt, this);
       const lives = this.lives, playerBefore = { ...this.player };
-      if (this.collidesWithTrail() || this.hazardsHit(playerBefore, playerBefore)) this.hit();
+      const bodyHit = this.collidesWithTrail(true), attackHit = this.hazardsHit(playerBefore, playerBefore);
+      if (bodyHit || attackHit) this.hit();
       if (lives !== this.lives) gestureEnded = true;
       if (!gestureEnded) {
         if (this.retracting) gestureEnded = this.retract(RETRACT_SPEED * dt);
         else if (direction) gestureEnded = this.move(direction, drawing, PLAYER_SPEED * dt);
         if (this.hazardsHit(playerBefore, this.player)) this.hit();
         if (lives !== this.lives) gestureEnded = true;
-        if (gestureEnded) walls = this.territories.map(edges);
+        if (gestureEnded) {
+          walls = this.territories.map(edges);
+          bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
+        }
       }
       this.hazards = this.hazards.filter(hazard => !hazard.expired);
     }

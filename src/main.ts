@@ -2,7 +2,7 @@ import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
 import { ENEMY_STYLES } from './enemies';
 import { renderEnemy } from './render-enemies';
-import { lakeTheme, polygonPath, type CaptureEffect } from './effects';
+import { lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
   const paths: Record<string, string> = {
@@ -37,10 +37,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <div id="toast" class="toast" role="status" aria-live="polite"></div>
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span class="footer-note">保持连接，发现更多</span></div>
-        <div class="touch-controls" aria-label="触屏操作"><div class="dpad"><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><button id="touch-draw" aria-pressed="false">画线：关</button></div>
+        <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
+        <div class="touch-controls" aria-label="手机手柄"><div class="controller-side dpad-side"><div class="dpad"><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side"><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><button id="swap-controls" aria-pressed="false">⇄ 交换左右</button></div>
       </div>
       <aside>
-        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，完成圈地。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div></div>
+        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，收下较小的一侧。<br>圈住普通访客可击败并得分，<br>圈住守卫可削减一格生命。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
         <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="sound" aria-pressed="false">${icon('sound')}<span>音效关闭</span><span class="toggle"></span></button></div>
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
@@ -65,6 +66,9 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let hitFlash = 0;
 let toastUntil = 0;
 const held = new Set<Direction>();
+const keyboardHeld = new Set<Direction>();
+const pointerDirections = new Map<number, Direction>();
+const drawPointers = new Set<number>();
 const image = new Image();
 image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 
@@ -84,9 +88,8 @@ function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorTyp
 }
 
 function clearInput() {
-  held.clear(); drawHeld = false; touchDraw = false;
+  held.clear(); keyboardHeld.clear(); pointerDirections.clear(); drawPointers.clear(); drawHeld = false; touchDraw = false;
   $('#touch-draw').setAttribute('aria-pressed', 'false');
-  $('#touch-draw').textContent = '画线：关';
 }
 function restart() {
   clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack }); game.start(); effects.length = 0; hitFlash = 0;
@@ -106,6 +109,13 @@ $('#primary').addEventListener('click', () => {
 });
 pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
+$('#mobile-pause').addEventListener('click', togglePause);
+$('#mobile-restart').addEventListener('click', restart);
+$('.touch-controls').addEventListener('contextmenu', e => e.preventDefault());
+$('#swap-controls').addEventListener('click', () => {
+  clearInput(); const swapped = $('.touch-controls').classList.toggle('swapped');
+  $('#swap-controls').setAttribute('aria-pressed', String(swapped));
+});
 $('#sound').addEventListener('click', () => {
   soundEnabled = !soundEnabled;
   $('#sound').setAttribute('aria-pressed', String(soundEnabled));
@@ -130,7 +140,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space') drawHeld = true;
   const direction = keyDirections[e.code];
   if (direction && game.phase === 'playing') {
-    held.delete(direction); held.add(direction);
+    keyboardHeld.add(direction); held.delete(direction); held.add(direction);
   }
 });
 window.addEventListener('keyup', e => {
@@ -138,7 +148,8 @@ window.addEventListener('keyup', e => {
     drawHeld = false;
     if (!touchDraw) game.beginRetraction();
   }
-  if (keyDirections[e.code]) held.delete(keyDirections[e.code]);
+  const direction = keyDirections[e.code];
+  if (direction) { keyboardHeld.delete(direction); releaseDirection(direction); }
 });
 function backgroundPause() {
   if (game.phase === 'playing') game.togglePause();
@@ -147,32 +158,53 @@ function backgroundPause() {
 window.addEventListener('blur', backgroundPause);
 document.addEventListener('visibilitychange', () => { if (document.hidden) backgroundPause(); });
 
+function releaseDirection(direction: Direction) {
+  if (!keyboardHeld.has(direction) && ![...pointerDirections.values()].includes(direction)) held.delete(direction);
+}
 document.querySelectorAll<HTMLButtonElement>('[data-dir]').forEach(button => {
   const direction = button.dataset.dir as Direction;
   button.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (game.phase !== 'playing') return;
-    button.setPointerCapture(e.pointerId); held.delete(direction); held.add(direction);
+    button.setPointerCapture(e.pointerId); pointerDirections.set(e.pointerId, direction);
+    held.delete(direction); held.add(direction);
   });
-  const release = () => held.delete(direction);
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointercancel', release);
-  button.addEventListener('lostpointercapture', release);
+  const release = (e: PointerEvent) => {
+    pointerDirections.delete(e.pointerId); releaseDirection(direction);
+  };
+  button.addEventListener('pointerup', release); button.addEventListener('pointercancel', release); button.addEventListener('lostpointercapture', release);
 });
-$('#touch-draw').addEventListener('click', () => {
+const drawButton = $<HTMLButtonElement>('#touch-draw');
+drawButton.addEventListener('pointerdown', e => {
+  e.preventDefault();
   if (game.phase !== 'playing') return;
-  touchDraw = !touchDraw;
-  if (!touchDraw && !drawHeld) game.beginRetraction();
-  $('#touch-draw').setAttribute('aria-pressed', String(touchDraw));
-  $('#touch-draw').textContent = `画线：${touchDraw ? '开' : '关'}`;
+  drawButton.setPointerCapture(e.pointerId); drawPointers.add(e.pointerId); touchDraw = true;
+  drawButton.setAttribute('aria-pressed', 'true');
 });
+function releaseDrawPointer(e: PointerEvent) {
+  if (!drawPointers.delete(e.pointerId)) return;
+  touchDraw = drawPointers.size > 0; drawButton.setAttribute('aria-pressed', String(touchDraw));
+  if (!touchDraw && !drawHeld) game.beginRetraction();
+}
+drawButton.addEventListener('pointerup', releaseDrawPointer); drawButton.addEventListener('pointercancel', releaseDrawPointer); drawButton.addEventListener('lostpointercapture', releaseDrawPointer);
+window.matchMedia('(max-width: 620px) and (orientation: portrait)').addEventListener('change', () => { clearInput(); });
 
 function notify(message: string) {
   $('#toast').textContent = message;
   $('#toast').classList.add('visible'); toastUntil = performance.now() + 2200;
 }
 function handleEvent(event: GameEvent) {
-  if (event === 'capture') {
+  if (typeof event === 'object') {
+    if (event.type === 'bossHit') {
+      effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
+      notify(`守卫受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
+    } else {
+      for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
+      const names = event.enemies.map(enemy => ENEMY_STYLES[enemy.kind].name).join('、');
+      const points = event.enemies.reduce((sum, enemy) => sum + enemy.points, 0);
+      notify(`圈敌成功 · ${names} +${points}`); tone(660); tone(990, 0.2, 0.08);
+    }
+  } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push(theme.createCaptureEffect(region, reducedMotion.matches));
     notify('连接成功 · 新的领地已揭开');
     tone(523); tone(784, 0.18, 0.08);
@@ -198,8 +230,21 @@ function sync() {
   $('#lives').setAttribute('aria-label', `剩余 ${game.lives} 条生命`);
   const seconds = Math.floor(game.elapsed);
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-  $('#boss-status').textContent = game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
-  $('#boss-status').classList.toggle('warning', Boolean(game.bossAttack && game.bossAttack.warning > 0));
+  for (const kind of ['straight', 'orbit', 'zigzag', 'boss'] as const) {
+    const remaining = kind === 'boss' ? Number(Boolean(game.boss)) : game.enemies.filter(enemy => enemy.kind === kind).length;
+    const row = $(`[data-kind="${kind}"]`); row.classList.toggle('defeated', remaining === 0);
+    if (kind !== 'boss') row.querySelector('em')!.textContent = remaining === 0 ? '已击败' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG';
+  }
+  $('#boss-status').textContent = !game.boss ? '已击败' : game.bossJump ? (game.bossJump.to ? '跃迁中' : '寻找落点') : game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
+  $('#boss-status').classList.toggle('warning', Boolean(game.boss && !game.bossJump && game.bossAttack && game.bossAttack.warning > 0));
+  const hp = game.boss ? game.bossHealth : 0;
+  $('#boss-hearts').innerHTML = Array.from({ length: game.bossMaxHealth }, (_, i) => `<i class="${i < hp ? 'filled' : ''}"></i>`).join('');
+  $('#boss-hp-text').textContent = `${hp} / ${game.bossMaxHealth}`;
+  $('#mobile-boss-hp').textContent = `${hp} / ${game.bossMaxHealth}`;
+  $('#mobile-pause').textContent = game.phase === 'paused' ? '继续' : '暂停';
+  ($('#mobile-pause') as HTMLButtonElement).disabled = !['playing', 'paused'].includes(game.phase);
+  $('.boss-health').setAttribute('aria-valuenow', String(hp)); $('.boss-health').setAttribute('aria-valuemax', String(game.bossMaxHealth));
+  $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.bossPhase;
   pauseButton.disabled = !['playing', 'paused'].includes(game.phase);
   overlay.hidden = game.phase === 'playing' || (game.phase === 'won' && effects.length > 0);
   if (lastPhase === game.phase) return;
@@ -219,7 +264,7 @@ function sync() {
     $('#overlay-title').textContent = '这片风景，属于你。';
     $('#overlay-copy').textContent = `已占领 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
     $('#primary').innerHTML = `再探索一次 ${icon('reset')}`;
-    $('#overlay-hint').textContent = '静谧之湖 · 已解锁完整风景';
+    $('#overlay-hint').textContent = game.winReason === 'boss' ? '静谧之湖 · 守卫已击败' : '静谧之湖 · 已解锁完整风景';
   } else if (game.phase === 'lost') {
     $('#overlay-kicker').textContent = 'EVERY TRY IS A NEW BEGINNING';
     $('#overlay-title').textContent = '下一次，再远一点。';
@@ -261,7 +306,7 @@ function render(now: number) {
       ctx.stroke(); ctx.restore();
     }
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
-    if (game.boss) renderEnemy(ctx, game.boss, game.bossAttack?.warning ?? 0, reducedMotion.matches);
+    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash);
     for (const hazard of game.hazards) hazard.render(ctx);
     if (!game.protection || Math.floor(now / 100) % 2) {
       ctx.save();

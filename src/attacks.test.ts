@@ -68,6 +68,22 @@ describe('projectiles and collision', () => {
     game.spawnHazard(new Projectile({ ...game.player }, { x: 0, y: 0 })); game.update(0.1);
     expect(game.lives).toBe(2);
   });
+  it('consumes simultaneous projectile hits even when an enemy hits the line at the same instant', () => {
+    const game = fixture(); game.move('down', true, 5);
+    game.enemies.push(createEnemy('straight', { x: 10, y: 2 }, { x: 0, y: 0 }));
+    for (let i = 0; i < 8; i++) game.spawnHazard(new Projectile({ x: 10, y: 2 }, { x: 0, y: 0 }));
+    game.update(0.1, undefined, true);
+    expect(game.lives).toBe(2); expect(game.hazards).toHaveLength(0);
+    expect(game.events.filter(event => event === 'hit')).toHaveLength(1);
+  });
+  it.each([0, 1, 2, 3, 4, 5, 6, 7])('detects a shot from direction %s crossing an old segment during retraction', direction => {
+    const game = new Game(100, 100, { enemies: [], boss: null }); game.start();
+    game.move('down', true, 30); game.move('left', true, 20); game.move('down', true, 20);
+    const angle = direction * Math.PI / 4, dx = Math.cos(angle), dy = Math.sin(angle);
+    game.spawnHazard(new Projectile({ x: 50 - dx * 5, y: 15 - dy * 5 }, { x: dx * 1000, y: dy * 1000 }));
+    game.beginRetraction(); game.update(0.02);
+    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.player).toEqual(game.anchor);
+  });
   it('clears hazards on victory and freezes the result', () => {
     const game = fixture(); game.move('right', false, 5);
     game.spawnHazard(new Projectile({ x: 18, y: 1 }, { x: 1, y: 0 }));
