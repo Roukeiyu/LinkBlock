@@ -1,3 +1,4 @@
+import { EightWayAttack, type BossAttackFactory } from './attacks';
 import { area, inside, type Polygon } from './geometry';
 
 export interface CaptureEffect {
@@ -11,6 +12,7 @@ export interface GameTheme {
   danger: string;
   boundary: string;
   trail: string;
+  createBossAttack?: BossAttackFactory;
   createCaptureEffect(region: Polygon, reducedMotion: boolean): CaptureEffect;
 }
 export function polygonPath(ctx: CanvasRenderingContext2D, polygon: Polygon) {
@@ -58,5 +60,5 @@ export function lakeDissolve(region: Polygon, reducedMotion: boolean, random = M
 }
 export const lakeTheme: GameTheme = {
   id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
-  createCaptureEffect: lakeDissolve,
+  createCaptureEffect: lakeDissolve, createBossAttack: () => new EightWayAttack(),
 };

@@ -66,3 +66,11 @@ export function rayDistance(p: Point, v: Point, a: Point, b: Point) {
   const d = sign * (a[axis] - p[axis]);
   return d > EPS ? d : Infinity;
 }
+
+export function segmentDistance(a: Point, b: Point, c: Point, d: Point) {
+  const cross = (p: Point, q: Point, r: Point) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const boxesOverlap = Math.max(a.x, b.x) + EPS >= Math.min(c.x, d.x) && Math.max(c.x, d.x) + EPS >= Math.min(a.x, b.x)
+    && Math.max(a.y, b.y) + EPS >= Math.min(c.y, d.y) && Math.max(c.y, d.y) + EPS >= Math.min(a.y, b.y);
+  if (boxesOverlap && cross(a, b, c) * cross(a, b, d) <= 0 && cross(c, d, a) * cross(c, d, b) <= 0) return 0;
+  return Math.min(distance(a, c, d), distance(b, c, d), distance(c, a, b), distance(d, a, b));
+}

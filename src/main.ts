@@ -1,5 +1,7 @@
 import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
+import { ENEMY_STYLES } from './enemies';
+import { renderEnemy } from './render-enemies';
 import { lakeTheme, polygonPath, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
@@ -38,7 +40,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="touch-controls" aria-label="触屏操作"><div class="dpad"><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><button id="touch-draw" aria-pressed="false">画线：关</button></div>
       </div>
       <aside>
-        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，完成圈地。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>小心红色访客</h3><p>敌人碰到未闭合的线会扣除生命。<br>避开它，让每次出发都有回响。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div></div>
+        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，完成圈地。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div></div>
         <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="sound" aria-pressed="false">${icon('sound')}<span>音效关闭</span><span class="toggle"></span></button></div>
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
@@ -51,13 +53,13 @@ const canvas = $<HTMLCanvasElement>('#board');
 const ctx = canvas.getContext('2d')!;
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
-let game = new Game();
+const theme = lakeTheme;
+let game = new Game(72, 48, { createBossAttack: theme.createBossAttack });
 let lastPhase = '';
 let soundEnabled = false;
 let audio: AudioContext | undefined;
 let touchDraw = false;
 let drawHeld = false;
-const theme = lakeTheme;
 const effects: CaptureEffect[] = [];
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let hitFlash = 0;
@@ -87,7 +89,7 @@ function clearInput() {
   $('#touch-draw').textContent = '画线：关';
 }
 function restart() {
-  clearInput(); game = new Game(); game.start(); effects.length = 0; hitFlash = 0;
+  clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack }); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
   sync(); canvas.focus({ preventScroll: true });
 }
@@ -171,10 +173,15 @@ function notify(message: string) {
 }
 function handleEvent(event: GameEvent) {
   if (event === 'capture') {
-    effects.push(theme.createCaptureEffect(game.captured.at(-1)!, reducedMotion.matches)); notify('连接成功 · 新的领地已揭开');
+    for (const region of game.lastCapture) effects.push(theme.createCaptureEffect(region, reducedMotion.matches));
+    notify('连接成功 · 新的领地已揭开');
     tone(523); tone(784, 0.18, 0.08);
+  } else if (event === 'partition') {
+    notify('连接完成 · 两侧仍有访客，继续圈出空白区域'); tone(440);
+  } else if (event === 'bossAttack') {
+    tone(180, 0.15, 0, 'triangle');
   } else if (event === 'hit') {
-    hitFlash = 0.5; notify(`轨迹被击中 · 剩余 ${game.lives} 条生命`);
+    hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`);
     tone(120, 0.25, 0, 'triangle');
   } else if (event === 'won') {
     tone(523); tone(659, 0.2, 0.15); tone(1046, 0.4, 0.3);
@@ -191,6 +198,8 @@ function sync() {
   $('#lives').setAttribute('aria-label', `剩余 ${game.lives} 条生命`);
   const seconds = Math.floor(game.elapsed);
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  $('#boss-status').textContent = game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
+  $('#boss-status').classList.toggle('warning', Boolean(game.bossAttack && game.bossAttack.warning > 0));
   pauseButton.disabled = !['playing', 'paused'].includes(game.phase);
   overlay.hidden = game.phase === 'playing' || (game.phase === 'won' && effects.length > 0);
   if (lastPhase === game.phase) return;
@@ -233,14 +242,15 @@ function render(now: number) {
   ctx.scale(scale, scale);
   if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
   if (game.phase !== 'won') {
-    ctx.fillStyle = theme.danger; polygonPath(ctx, game.territory); ctx.fill();
+    ctx.fillStyle = theme.danger;
+    for (const region of game.territories) { polygonPath(ctx, region); ctx.fill(); }
   }
   for (const effect of effects) effect.render(ctx);
   ctx.save();
   ctx.lineWidth = 1.4 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = theme.boundary; ctx.shadowColor = theme.boundary; ctx.shadowBlur = 5;
   polygonPath(ctx, game.outline); ctx.stroke();
-  if (game.phase !== 'won') { polygonPath(ctx, game.territory); ctx.stroke(); }
+  if (game.phase !== 'won') for (const region of game.territories) { polygonPath(ctx, region); ctx.stroke(); }
   ctx.restore();
   if (game.phase !== 'won') {
     if (game.trail.length) {
@@ -250,14 +260,9 @@ function render(now: number) {
       game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
       ctx.stroke(); ctx.restore();
     }
-    ctx.save();
-    ctx.translate(game.enemy.x, game.enemy.y); ctx.rotate(now / 550);
-    ctx.strokeStyle = 'rgba(255,111,119,.5)'; ctx.lineWidth = 1 / scale;
-    ctx.strokeRect(-0.8, -0.8, 1.6, 1.6);
-    ctx.shadowBlur = 24; ctx.shadowColor = '#ff6f77'; ctx.fillStyle = '#ff6f77';
-    ctx.fillRect(-0.4, -0.4, 0.8, 0.8);
-    ctx.fillStyle = '#ffe6e1'; ctx.fillRect(-0.16, -0.16, 0.32, 0.32);
-    ctx.restore();
+    for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
+    if (game.boss) renderEnemy(ctx, game.boss, game.bossAttack?.warning ?? 0, reducedMotion.matches);
+    for (const hazard of game.hazards) hazard.render(ctx);
     if (!game.protection || Math.floor(now / 100) % 2) {
       ctx.save();
       const { x, y } = game.player;

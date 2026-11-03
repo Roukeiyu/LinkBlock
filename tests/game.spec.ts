@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[] };
+type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; warningFrame: string; warningShots: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
@@ -14,26 +14,33 @@ async function firstCut(page: Page) {
 test.beforeEach(async ({ page }) => {
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[] };
+    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], warningFrame: '', warningShots: -1 };
     (window as unknown as { probe: typeof state }).probe = state;
     const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
     for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect'] as const) {
       const original = CanvasRenderingContext2D.prototype[method];
       CanvasRenderingContext2D.prototype[method] = function(this: CanvasRenderingContext2D, ...args: number[]) {
-        if (method === 'clearRect' && this.canvas.id === 'board') state.trail = [];
+        if (method === 'clearRect' && this.canvas.id === 'board') { state.trail = []; state.shots = []; state.enemyColors = []; }
         if (method === 'beginPath') paths.set(this, []);
         if (method === 'moveTo' || method === 'lineTo') paths.get(this)?.push({ x: args[0], y: args[1] });
         if (method === 'stroke' && this.strokeStyle === '#ffcf75') state.trail = [...(paths.get(this) ?? [])];
         return Reflect.apply(original, this, args);
       } as never;
     }
+    let warningScheduled = false;
     const arc = CanvasRenderingContext2D.prototype.arc;
     CanvasRenderingContext2D.prototype.arc = function(...args: Parameters<typeof arc>) {
+      if (args[2] === 1.8 && args[4] - args[3] >= Math.PI && !warningScheduled) {
+        warningScheduled = true;
+        queueMicrotask(() => { state.warningFrame = this.canvas.toDataURL(); state.warningShots = state.shots.length; });
+      }
+      if (args[2] === 0.22) state.shots.push({ x: args[0], y: args[1] });
       if (args[2] === 0.14) { state.player = { x: args[0], y: args[1] }; state.positions.push({ ...state.player, time: performance.now() }); }
       return arc.apply(this, args);
     };
     const fill = CanvasRenderingContext2D.prototype.fill;
     CanvasRenderingContext2D.prototype.fill = function(...args: unknown[]) {
+      if (['#ff727d', '#bda4ff', '#72cfff', '#ffa56e'].includes(String(this.fillStyle))) state.enemyColors.push(String(this.fillStyle));
       if (this.fillStyle === '#ffffff') {
         state.white++;
         if (state.white === 1) queueMicrotask(() => { state.flash = this.canvas.toDataURL(); });
@@ -172,15 +179,35 @@ test('pause, sound, restart and background pause', async ({ page }) => {
   await expect(page.locator('#state-label')).toHaveText('已暂停');
 });
 
-test('victory completes the effect before showing results and can restart', async ({ page }) => {
+test('four independent enemy bodies, boss warning and eight-way shots survive pause and reset on restart', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await expect(page.locator('.enemy-entry')).toHaveCount(4);
+  await expect.poll(async () => new Set((await probe(page)).enemyColors).size).toBe(4);
   await firstCut(page);
-  await hold(page, 'ArrowUp', 1000);
-  await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight');
-  await expect(page.getByRole('heading', { name: '这片风景，属于你。' })).toBeVisible({ timeout: 6000 });
-  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
-  await expect(page.locator('#overlay-hint')).toHaveText('静谧之湖 · 已解锁完整风景');
-  await page.getByRole('button', { name: '再探索一次' }).click();
-  await expect(page.locator('#percent')).toHaveText('0.0%'); await expect(page.locator('#overlay')).toBeHidden();
+  await expect.poll(async () => page.locator('#boss-status').textContent(), { timeout: 6000, intervals: [50] }).toBe('即将释放');
+  await expect.poll(async () => (await probe(page)).warningFrame.length, { timeout: 2000, intervals: [50] }).toBeGreaterThan(0);
+  const warned = await probe(page); expect(warned.warningShots).toBe(0);
+  await mkdir('test-results', { recursive: true });
+  await writeFile('test-results/boss-warning.png', Buffer.from(warned.warningFrame.split(',')[1], 'base64'));
+  await expect.poll(async () => (await probe(page)).shots.length, { intervals: [16], timeout: 2000 }).toBe(8);
+  const shots = (await probe(page)).shots;
+  const center = shots.reduce((sum, p) => ({ x: sum.x + p.x / 8, y: sum.y + p.y / 8 }), { x: 0, y: 0 });
+  const headings = shots.map(p => Math.atan2(p.y - center.y, p.x - center.x));
+  for (let i = 1; i < headings.length; i++) {
+    const delta = (headings[i] - headings[i - 1] + Math.PI * 2) % (Math.PI * 2);
+    expect(delta).toBeCloseTo(Math.PI / 4, 4);
+  }
+  await page.locator('#board').screenshot({ path: 'test-results/eight-way-shots.png' });
+  await page.screenshot({ path: 'test-results/enemies-desktop.png', fullPage: true });
+  await page.keyboard.press('KeyP'); await expect(page.locator('#state-label')).toHaveText('已暂停');
+  const paused = (await probe(page)).shots; await page.waitForTimeout(200);
+  expect((await probe(page)).shots).toEqual(paused);
+  await page.getByRole('button', { name: '继续探索' }).click();
+  await expect.poll(async () => (await probe(page)).shots).not.toEqual(paused);
+  await page.keyboard.press('KeyR'); await expect(page.locator('#percent')).toHaveText('0.0%');
+  await expect.poll(async () => (await probe(page)).shots.length).toBe(0);
+  await expect.poll(async () => new Set((await probe(page)).enemyColors).size).toBe(4);
+  expect(errors).toEqual([]);
 });
 
 test('touch uses continuous movement and layout fits a narrow viewport', async ({ page }) => {

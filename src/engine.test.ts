@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
+import { createEnemy } from './enemies';
 import { area, distance, edges, inside, split } from './geometry';
 
 function fixture() {
-  const game = new Game(10, 10);
+  const game = new Game(10, 10, { enemies: [createEnemy('straight', { x: 7.5, y: 6.5 }, { x: 0, y: 0 })], boss: null });
   game.player = { x: 4, y: 0 }; game.anchor = { ...game.player };
-  game.enemy = { x: 7.5, y: 6.5, vx: 0, vy: 0 }; game.start();
+  game.enemies[0] = createEnemy('straight', { x: 7.5, y: 6.5 }, { x: 0, y: 0 }); game.start();
   return game;
 }
 describe('continuous territory rules', () => {
@@ -43,7 +44,7 @@ describe('continuous territory rules', () => {
     expect(game.player).toEqual({ x: 4.125, y: 10 });
     expect(game.percent).toBeCloseTo(41.25);
     expect(area(game.captured[0])).toBeCloseTo(41.25);
-    expect(inside(game.enemy, game.territory)).toBe(true);
+    expect(inside(game.enemies[0], game.territories[0])).toBe(true);
     expect(game.trail).toHaveLength(0);
     expect(game.score).toBeGreaterThan(0);
   });
@@ -55,7 +56,7 @@ describe('continuous territory rules', () => {
     const other = fixture();
     other.move('down', true, 2); other.move('left', true, 2); other.move('up', true, 2);
     expect(other.claimed).toBeCloseTo(4);
-    expect(inside(other.enemy, other.territory)).toBe(true);
+    expect(inside(other.enemies[0], other.territories[0])).toBe(true);
   });
   it('follows the exact cut, blocks filled interior and rounds capture corners', () => {
     const game = fixture(); game.move('down', true, 10);
@@ -86,7 +87,7 @@ describe('continuous territory rules', () => {
     expect(game.percent).toBeCloseTo(60);
   });
   it('freezes a won result and awards a life bonus', () => {
-    const game = fixture(); game.enemy.x = 9;
+    const game = fixture(); game.enemies[0].x = 9;
     game.move('right', false, 3.5); game.move('down', true, 10);
     expect(game.phase).toBe('won'); expect(game.percent).toBe(75);
     expect(game.score).toBe(3800);
@@ -136,7 +137,7 @@ describe('automatic trail retraction', () => {
   });
   it('keeps remaining line vulnerable and cancels retraction on a hit', () => {
     const game = bentTrail(); game.beginRetraction();
-    game.enemy = { x: 5, y: 1.5, vx: -10, vy: 0 };
+    game.enemies[0] = createEnemy('straight', { x: 5, y: 1.5 }, { x: -10, y: 0 });
     expect(game.update(0.04, 'down', true)).toBe(true);
     expect(game.lives).toBe(2); expect(game.player).toEqual(game.anchor);
     expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
@@ -144,7 +145,7 @@ describe('automatic trail retraction', () => {
   });
   it('no longer collides with a segment already retracted', () => {
     const game = bentTrail(); game.update(2 / RETRACT_SPEED);
-    game.enemy = { x: 2.25, y: 4.5, vx: 0, vy: 0 };
+    game.enemies[0] = createEnemy('straight', { x: 2.25, y: 4.5 }, { x: 0, y: 0 });
     game.update(0.02);
     expect(game.lives).toBe(3); expect(game.retracting).toBe(true);
   });
@@ -168,7 +169,7 @@ describe('automatic trail retraction', () => {
 describe('enemy and lifecycle', () => {
   it('detects a moving enemy grazing a segment, clears and respawns', () => {
     const game = fixture(); game.move('down', true, 5);
-    game.enemy = { x: 5.5, y: 3.5, vx: -10, vy: 0 }; game.update(0.1, undefined, true);
+    game.enemies[0] = createEnemy('straight', { x: 5.5, y: 3.5 }, { x: -10, y: 0 }); game.update(0.1, undefined, true);
     expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0);
     expect(game.player).toEqual(game.anchor);
     game.move('down', true, 1); expect(game.trail).toHaveLength(0);
@@ -176,28 +177,28 @@ describe('enemy and lifecycle', () => {
   it('detects collision on the moving tip before capture and loses after three hits', () => {
     const game = fixture();
     for (let i = 0; i < 3; i++) {
-      game.protection = 0; game.enemy = { x: 4, y: 1, vx: 0, vy: 0 };
+      game.protection = 0; game.enemies[0] = createEnemy('straight', { x: 4, y: 1 }, { x: 0, y: 0 });
       game.update(0.1, 'down', true);
     }
     expect(game.lives).toBe(0); expect(game.phase).toBe('lost'); expect(game.claimed).toBe(0);
   });
   it('pauses player, enemy and elapsed time', () => {
-    const game = fixture(); game.enemy.vx = 5; game.togglePause();
-    const enemy = { ...game.enemy };
+    const game = fixture(); game.enemies[0].vx = 5; game.togglePause();
+    const enemy = { ...game.enemies[0] };
     game.update(1, 'down', true);
-    expect(game.elapsed).toBe(0); expect(game.enemy).toEqual(enemy); expect(game.trail).toHaveLength(0);
+    expect(game.elapsed).toBe(0); expect(game.enemies[0]).toEqual(enemy); expect(game.trail).toHaveLength(0);
     game.togglePause(); game.update(0.1); expect(game.elapsed).toBeCloseTo(0.1);
-    expect(game.enemy.x).not.toBe(enemy.x);
+    expect(game.enemies[0].x).not.toBe(enemy.x);
   });
   it('keeps the enemy radius inside a concave region through a long simulation', () => {
     const game = fixture(); game.move('down', true, 3); game.move('left', true, 4);
-    game.enemy.vx = 7.4; game.enemy.vy = 5.2;
+    game.enemies[0].vx = 7.4; game.enemies[0].vy = 5.2;
     let bouncedX = false, bouncedY = false;
     for (let i = 0; i < 3000; i++) {
       game.update(1 / 60);
-      expect(inside(game.enemy, game.territory)).toBe(true);
-      expect(Math.min(...edges(game.territory).map(([a, b]) => distance(game.enemy, a, b)))).toBeGreaterThanOrEqual(0.55 - 1e-7);
-      bouncedX ||= game.enemy.vx < 0; bouncedY ||= game.enemy.vy < 0;
+      expect(inside(game.enemies[0], game.territories[0])).toBe(true);
+      expect(Math.min(...edges(game.territories[0]).map(([a, b]) => distance(game.enemies[0], a, b)))).toBeGreaterThanOrEqual(0.55 - 1e-7);
+      bouncedX ||= game.enemies[0].vx < 0; bouncedY ||= game.enemies[0].vy < 0;
     }
     expect(bouncedX && bouncedY).toBe(true);
   });
