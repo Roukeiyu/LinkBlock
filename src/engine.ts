@@ -45,6 +45,18 @@ export class Game {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return SAFE;
     return this.cells[this.index(x, y)];
   }
+  isBoundary(x: number, y: number) {
+    if (x < 0 || y < 0 || x >= this.width || y >= this.height || this.cell(x, y) !== SAFE) return false;
+    if (x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1) return true;
+    // Include diagonal contact so four-direction movement can round corners
+    // where two boundary segments meet. Filled interior cells stay blocked.
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (this.cell(x + dx, y + dy) === EMPTY) return true;
+      }
+    }
+    return false;
+  }
   get claimed() {
     let safe = 0;
     for (let y = 1; y < this.height - 1; y++) {
@@ -71,6 +83,7 @@ export class Game {
     if (next.x < 0 || next.y < 0 || next.x >= this.width || next.y >= this.height) return;
     const cell = this.cell(next.x, next.y);
     if (cell === TRAIL) return;
+    if (cell === SAFE && !this.trail.length && !this.isBoundary(next.x, next.y)) return;
     // Releasing the draw key holds position in the danger zone; enemies keep moving.
     if (this.trail.length && !drawing) return;
     if (cell === EMPTY) {
@@ -85,7 +98,10 @@ export class Game {
     this.player = next;
     // Check before capture: a line cannot safely close through the enemy.
     if (this.collidesWithTrail()) { this.hit(); return; }
-    if (cell === SAFE && this.trail.length) this.capture();
+    if (cell === SAFE && this.trail.length) {
+      this.capture();
+      return true;
+    }
   }
 
   private capture() {

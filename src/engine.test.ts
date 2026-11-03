@@ -50,6 +50,53 @@ describe('territory rules', () => {
     expect(game.claimed).toBe(12);
   });
 
+  it('stays at the cut endpoint and follows the new edge without crossing filled territory', () => {
+    const game = fixture();
+    moves(game, 'down', 8);
+    expect(game.move('down', true)).toBe(true);
+    expect(game.player).toEqual({ x: 4, y: 9 });
+    moves(game, 'up', 4, false);
+    expect(game.player).toEqual({ x: 4, y: 5 });
+    expect(game.isBoundary(4, 5)).toBe(true);
+    expect(game.isBoundary(3, 5)).toBe(false);
+    game.move('left', false);
+    expect(game.player).toEqual({ x: 4, y: 5 });
+    game.move('left', true);
+    expect(game.player).toEqual({ x: 4, y: 5 });
+    expect(game.trail).toHaveLength(0);
+    game.move('up', false);
+    expect(game.player).toEqual({ x: 4, y: 4 });
+  });
+
+  it('can round a concave boundary corner after consecutive captures', () => {
+    const game = fixture();
+    moves(game, 'down', 9);
+    moves(game, 'up', 6, false);
+    moves(game, 'right', 5);
+    expect(game.phase).toBe('playing');
+    expect(game.percent).toBe(68.75);
+    moves(game, 'left', 5, false);
+    expect(game.player).toEqual({ x: 4, y: 3 });
+    expect(game.isBoundary(4, 3)).toBe(true);
+    game.move('up', false);
+    expect(game.player).toEqual({ x: 4, y: 3 });
+    game.move('down', false);
+    expect(game.player).toEqual({ x: 4, y: 4 });
+  });
+
+  it('keeps the outside outline traversable while interior cells remain blocked', () => {
+    const game = fixture();
+    moves(game, 'down', 9);
+    moves(game, 'left', 4, false);
+    moves(game, 'up', 4, false);
+    expect(game.player).toEqual({ x: 0, y: 5 });
+    game.move('right', false);
+    expect(game.player).toEqual({ x: 0, y: 5 });
+    moves(game, 'up', 5, false);
+    moves(game, 'right', 4, false);
+    expect(game.player).toEqual({ x: 4, y: 0 });
+  });
+
   it('wins at 75%, adds the life bonus and freezes the result', () => {
     const game = fixture();
     moves(game, 'down', 9);

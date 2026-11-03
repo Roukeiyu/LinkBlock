@@ -1,5 +1,36 @@
 import { expect, test } from '@playwright/test';
 
+test('after closing a cut, the player follows its edge and cannot enter the filled interior', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '开始探索' }).click();
+  const playerPosition = () => page.locator('#board').evaluate((element: HTMLCanvasElement) => {
+    const context = element.getContext('2d')!;
+    const { data } = context.getImageData(0, 0, element.width, element.height);
+    for (let y = 0; y < 48; y++) {
+      for (let x = 0; x < 72; x++) {
+        const i = ((y * 12 + 6) * element.width + x * 12 + 6) * 4;
+        if (data[i] === 240 && data[i + 1] === 255 && data[i + 2] === 249) return { x, y };
+      }
+    }
+    return null;
+  });
+  await page.keyboard.down('Space');
+  await page.keyboard.down('ArrowDown');
+  await expect.poll(playerPosition, { timeout: 7000 }).toEqual({ x: 36, y: 47 });
+  await page.keyboard.up('ArrowDown');
+  await page.keyboard.up('Space');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowUp');
+  await expect.poll(playerPosition).toEqual({ x: 36, y: 42 });
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(playerPosition).toEqual({ x: 36, y: 42 });
+  await page.keyboard.down('Space');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.up('Space');
+  await expect.poll(playerPosition).toEqual({ x: 36, y: 42 });
+  await page.keyboard.press('ArrowUp');
+  await expect.poll(playerPosition).toEqual({ x: 36, y: 41 });
+});
+
 test('keyboard game: start, draw a complete cut, pause, sound and restart', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

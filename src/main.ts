@@ -38,7 +38,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="touch-controls" aria-label="触屏操作"><div class="dpad"><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><button id="touch-draw" aria-pressed="false">画线：关</button></div>
       </div>
       <aside>
-        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿安全区域自由移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，完成圈地。</p></div></li><li><span class="step-number">03</span><div><h3>小心红色访客</h3><p>敌人碰到未闭合的线会扣除生命。<br>避开它，让每次出发都有回响。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div></div>
+        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，完成圈地。</p></div></li><li><span class="step-number">03</span><div><h3>小心红色访客</h3><p>敌人碰到未闭合的线会扣除生命。<br>避开它，让每次出发都有回响。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div></div>
         <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="sound" aria-pressed="false">${icon('sound')}<span>音效关闭</span><span class="toggle"></span></button></div>
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
@@ -58,6 +58,7 @@ let audio: AudioContext | undefined;
 let touchDraw = false;
 let drawHeld = false;
 let movementClock = 0;
+const PLAYER_STEP_SECONDS = 0.045;
 let captureFlash = 0;
 let hitFlash = 0;
 let toastUntil = 0;
@@ -84,6 +85,14 @@ function clearInput() {
   held.clear(); drawHeld = false; touchDraw = false; movementClock = 0;
   $('#touch-draw').setAttribute('aria-pressed', 'false');
   $('#touch-draw').textContent = '画线：关';
+}
+function movePlayer(direction: Direction) {
+  if (game.move(direction, drawHeld || touchDraw)) {
+    // A closed cut ends this movement gesture, even when a direction remains
+    // physically held. The next press starts movement along the new outline.
+    held.clear();
+    movementClock = 0;
+  }
 }
 function restart() {
   clearInput(); game = new Game(); game.start(); captureFlash = 0; hitFlash = 0;
@@ -127,7 +136,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space') drawHeld = true;
   const direction = keyDirections[e.code];
   if (direction && game.phase === 'playing') {
-    held.add(direction); game.move(direction, drawHeld || touchDraw); movementClock = 0;
+    held.add(direction); movePlayer(direction); movementClock = 0;
   }
 });
 window.addEventListener('keyup', e => {
@@ -147,7 +156,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-dir]').forEach(button => {
     e.preventDefault();
     if (game.phase !== 'playing') return;
     button.setPointerCapture(e.pointerId); held.add(direction);
-    game.move(direction, drawHeld || touchDraw); movementClock = 0;
+    movePlayer(direction); movementClock = 0;
   });
   const release = () => held.delete(direction);
   button.addEventListener('pointerup', release);
@@ -290,10 +299,10 @@ function frame(now: number) {
   game.update(dt);
   if (game.phase === 'playing' && held.size) {
     movementClock += dt;
-    while (movementClock >= 0.065) {
-      game.move([...held].at(-1)!, drawHeld || touchDraw);
-      movementClock -= 0.065;
-      if (game.phase !== 'playing') break;
+    while (movementClock >= PLAYER_STEP_SECONDS) {
+      movementClock -= PLAYER_STEP_SECONDS;
+      movePlayer([...held].at(-1)!);
+      if (!held.size || game.phase !== 'playing') break;
     }
   } else movementClock = 0;
   for (const event of game.events.splice(0)) handleEvent(event);
