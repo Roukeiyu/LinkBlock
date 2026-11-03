@@ -35,3 +35,7 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
 @media(max-width:620px) and (orientation:portrait) and (max-height:700px){.site-header{height:40px;min-height:40px}.intro{padding:7px 2px}.intro h1{font-size:16px}.hud{padding:10px 12px}.board-footer{height:22px}.touch-controls{min-height:170px;padding-top:4px;padding-bottom:5px}.dpad{grid-template-columns:repeat(3,37px);grid-template-rows:repeat(3,37px)}.touch-controls .dpad button{width:37px;height:37px;border-radius:8px}.touch-controls #touch-draw{height:76px;width:76px}.controller-side{gap:6px}.mobile-game-status{min-height:28px}}
 
 @media(max-width:620px) and (orientation:portrait){.site-header{width:100%;margin:0}.game-layout{align-items:stretch}}
+
+.touch-controls .dpad button.is-held{background:#365b50;border-color:#79edc9;color:#d9fff1;box-shadow:0 1px 0 #09151d,inset 0 0 12px #79edc914}
+
+.game-main,.game-main *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}

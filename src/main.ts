@@ -68,6 +68,7 @@ let toastUntil = 0;
 const held = new Set<Direction>();
 const keyboardHeld = new Set<Direction>();
 const pointerDirections = new Map<number, Direction>();
+const directionPointers = new Set<number>();
 const drawPointers = new Set<number>();
 const image = new Image();
 image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
@@ -88,8 +89,9 @@ function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorTyp
 }
 
 function clearInput() {
-  held.clear(); keyboardHeld.clear(); pointerDirections.clear(); drawPointers.clear(); drawHeld = false; touchDraw = false;
+  held.clear(); keyboardHeld.clear(); pointerDirections.clear(); directionPointers.clear(); drawPointers.clear(); drawHeld = false; touchDraw = false;
   $('#touch-draw').setAttribute('aria-pressed', 'false');
+  syncDirectionButtons();
 }
 function restart() {
   clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack }); game.start(); effects.length = 0; hitFlash = 0;
@@ -111,7 +113,9 @@ pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
 $('#mobile-pause').addEventListener('click', togglePause);
 $('#mobile-restart').addEventListener('click', restart);
-$('.touch-controls').addEventListener('contextmenu', e => e.preventDefault());
+const interactionArea = $('.game-main');
+interactionArea.addEventListener('contextmenu', e => e.preventDefault());
+interactionArea.addEventListener('selectstart', e => e.preventDefault());
 $('#swap-controls').addEventListener('click', () => {
   clearInput(); const swapped = $('.touch-controls').classList.toggle('swapped');
   $('#swap-controls').setAttribute('aria-pressed', String(swapped));
@@ -161,19 +165,44 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) backg
 function releaseDirection(direction: Direction) {
   if (!keyboardHeld.has(direction) && ![...pointerDirections.values()].includes(direction)) held.delete(direction);
 }
-document.querySelectorAll<HTMLButtonElement>('[data-dir]').forEach(button => {
-  const direction = button.dataset.dir as Direction;
-  button.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    if (game.phase !== 'playing') return;
-    button.setPointerCapture(e.pointerId); pointerDirections.set(e.pointerId, direction);
-    held.delete(direction); held.add(direction);
-  });
-  const release = (e: PointerEvent) => {
-    pointerDirections.delete(e.pointerId); releaseDirection(direction);
-  };
-  button.addEventListener('pointerup', release); button.addEventListener('pointercancel', release); button.addEventListener('lostpointercapture', release);
+const dpad = $('.dpad');
+const directionButtons = [...dpad.querySelectorAll<HTMLButtonElement>('[data-dir]')];
+function syncDirectionButtons() {
+  for (const button of directionButtons) button.classList.toggle('is-held', [...pointerDirections.values()].includes(button.dataset.dir as Direction));
+}
+function updatePointerDirection(e: PointerEvent) {
+  if (!directionPointers.has(e.pointerId)) return;
+  // Pointer capture keeps the gesture alive outside the pad. Hit-test the real
+  // screen position instead of e.target, which stays retargeted to the pad.
+  const button = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLButtonElement>('[data-dir]');
+  const direction = button && dpad.contains(button) ? button.dataset.dir as Direction : undefined;
+  const previous = pointerDirections.get(e.pointerId);
+  if (direction === previous) return;
+  pointerDirections.delete(e.pointerId);
+  if (previous) releaseDirection(previous);
+  if (direction) {
+    pointerDirections.set(e.pointerId, direction); held.delete(direction); held.add(direction);
+  }
+  syncDirectionButtons();
+}
+dpad.addEventListener('pointerdown', e => {
+  const button = (e.target as Element).closest<HTMLButtonElement>('[data-dir]');
+  if (!button || !dpad.contains(button) || game.phase !== 'playing') return;
+  e.preventDefault(); directionPointers.add(e.pointerId); dpad.setPointerCapture(e.pointerId);
+  updatePointerDirection(e);
 });
+dpad.addEventListener('pointermove', e => {
+  if (!directionPointers.has(e.pointerId)) return;
+  e.preventDefault(); updatePointerDirection(e);
+});
+function releaseDirectionPointer(e: PointerEvent) {
+  if (e.type === 'lostpointercapture' && e.target !== dpad) return;
+  directionPointers.delete(e.pointerId);
+  const previous = pointerDirections.get(e.pointerId); pointerDirections.delete(e.pointerId);
+  if (previous) releaseDirection(previous);
+  syncDirectionButtons();
+}
+dpad.addEventListener('pointerup', releaseDirectionPointer); dpad.addEventListener('pointercancel', releaseDirectionPointer); dpad.addEventListener('lostpointercapture', releaseDirectionPointer);
 const drawButton = $<HTMLButtonElement>('#touch-draw');
 drawButton.addEventListener('pointerdown', e => {
   e.preventDefault();

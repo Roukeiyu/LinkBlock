@@ -139,6 +139,74 @@ async function touchController(page: Page) {
   return session;
 }
 
+for (const swapped of [false, true]) {
+  test(`a held mobile direction slides through all buttons and stops outside, swapped=${swapped}`, async ({ page }) => {
+    const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+    if (swapped) await page.locator('#swap-controls').click();
+    const center = async (selector: string) => {
+      const box = await page.locator(selector).boundingBox();
+      return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
+    };
+    const draw = await center('#touch-draw');
+    const session = await touchController(page);
+    const moveTo = async (position: { x: number; y: number }) => session.send('Input.dispatchTouchEvent', {
+      type: 'touchMove', touchPoints: [{ id: 1, ...position, radiusX: 4, radiusY: 4, force: 1 }, { id: 2, ...draw, radiusX: 4, radiusY: 4, force: 1 }],
+    });
+    await page.waitForTimeout(300); const down = (await probe(page)).player;
+    expect(down.y).toBeGreaterThan(0);
+    for (const direction of ['right', 'up', 'left'] as const) {
+      await moveTo(await center(`[data-dir="${direction}"]`));
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const before = (await probe(page)).player; await page.waitForTimeout(100);
+      await expect(page.locator(`[data-dir="${direction}"]`)).toHaveClass(/is-held/);
+      await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+      const after = (await probe(page)).player;
+      if (direction === 'right') { expect(after.x).toBeGreaterThan(before.x); expect(after.y).toBeCloseTo(before.y, 7); }
+      if (direction === 'up') { expect(after.y).toBeLessThan(before.y); expect(after.x).toBeCloseTo(before.x, 7); }
+      if (direction === 'left') { expect(after.x).toBeLessThan(before.x); expect(after.y).toBeCloseTo(before.y, 7); }
+    }
+    // Pointer capture remains on the pad, but coordinates over the board stop it.
+    await moveTo(await center('#board')); await page.waitForTimeout(40);
+    const stopped = (await probe(page)).player; await page.waitForTimeout(100);
+    expect((await probe(page)).player).toEqual(stopped);
+    await expect(page.locator('.dpad .is-held')).toHaveCount(0);
+    await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+    await moveTo(await center('[data-dir="down"]')); await page.waitForTimeout(60);
+    expect((await probe(page)).player.y).toBeGreaterThan(stopped.y);
+    await page.screenshot({ path: `test-results/dpad-slide${swapped ? '-swapped' : ''}.png`, fullPage: true });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+    await expect(page.locator('.dpad .is-held')).toHaveCount(0);
+    await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'false');
+    await session.detach(); expect(errors).toEqual([]);
+  });
+}
+
+test('long press cannot select game text or open menus, while controls remain focusable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const box = await page.locator('#percent').boundingBox();
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: box!.x + box!.width / 2, y: box!.y + box!.height / 2, radiusX: 4, radiusY: 4, force: 1 }] });
+  await page.waitForTimeout(700); await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  expect(await page.evaluate(() => getSelection()?.toString())).toBe('');
+  const behavior = await page.evaluate(() => {
+    const cancelled = (selector: string, type: string) => !document.querySelector(selector)!.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }));
+    return {
+      menu: ['#board', '[data-dir="down"]', '#touch-draw'].map(selector => cancelled(selector, 'contextmenu')),
+      selection: cancelled('#percent', 'selectstart'),
+      outsideMenu: cancelled('h1', 'contextmenu'), outsideSelection: cancelled('h1', 'selectstart'),
+      userSelect: ['#board', '#percent', '[data-dir="down"]', '#touch-draw'].map(selector => getComputedStyle(document.querySelector(selector)!).userSelect),
+    };
+  });
+  expect(behavior.menu).toEqual([true, true, true]); expect(behavior.selection).toBe(true);
+  expect(behavior.outsideMenu).toBe(false); expect(behavior.outsideSelection).toBe(false);
+  expect(behavior.userSelect).toEqual(['none', 'none', 'none', 'none']);
+  await page.getByRole('button', { name: '向下' }).focus(); await expect(page.getByRole('button', { name: '向下' })).toBeFocused();
+  await session.detach();
+});
+
 test('mobile held draw and direction support simultaneous touches, release and cancellation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const session = await touchController(page);
