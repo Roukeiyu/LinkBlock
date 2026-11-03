@@ -6,6 +6,7 @@ export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost';
 export interface Enemy extends Point { vx: number; vy: number }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
+export const RETRACT_SPEED = PLAYER_SPEED * 3;
 const ENEMY_RADIUS = 0.55;
 
 export class Game {
@@ -17,6 +18,7 @@ export class Game {
   anchor: Point;
   enemy: Enemy;
   trail: Polygon = [];
+  retracting = false;
   phase: Phase = 'ready';
   lives = 3;
   score = 0;
@@ -44,7 +46,7 @@ export class Game {
   }
   // Distance is continuous world-space distance, never a cell count.
   move(direction: Direction, drawing: boolean, amount: number) {
-    if (this.phase !== 'playing' || !Number.isFinite(amount) || amount <= EPS) return false;
+    if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
     const v = vectors[direction], p = this.player;
     if (this.trail.length && !drawing) return false;
     if (!this.trail.length) {
@@ -91,6 +93,27 @@ export class Game {
     if (wall <= amount + EPS) { this.capture(); return true; }
     return false;
   }
+  beginRetraction() {
+    if (this.phase === 'playing' && this.trail.length > 1) this.retracting = true;
+  }
+  private retract(amount: number) {
+    // Consume distance from the tip backwards, preserving every original corner.
+    while (this.trail.length > 1 && amount > EPS) {
+      const tip = this.trail.at(-1)!, previous = this.trail.at(-2)!;
+      const length = Math.hypot(tip.x - previous.x, tip.y - previous.y);
+      if (amount >= length - EPS) {
+        amount = Math.max(0, amount - length);
+        this.trail.pop(); this.player = { ...previous };
+      } else {
+        this.player = { x: tip.x + (previous.x - tip.x) * amount / length, y: tip.y + (previous.y - tip.y) * amount / length };
+        this.trail[this.trail.length - 1] = { ...this.player };
+        amount = 0;
+      }
+    }
+    if (this.trail.length > 1) return false;
+    this.trail = []; this.retracting = false; this.player = { ...this.anchor };
+    return true;
+  }
   private capture() {
     const parts = split(this.territory, this.trail);
     const keep = inside(this.enemy, parts[0]) ? 0 : 1;
@@ -108,15 +131,16 @@ export class Game {
     return !this.protection && this.trail.slice(1).some((p, i) => distance(this.enemy, this.trail[i], p) <= ENEMY_RADIUS + 0.12);
   }
   private hit() {
-    this.trail = []; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
+    this.trail = []; this.retracting = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); }
   }
   update(seconds: number, direction?: Direction, drawing = false) {
     if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
-    const steps = Math.max(1, Math.ceil(seconds * Math.max(PLAYER_SPEED, Math.abs(this.enemy.vx), Math.abs(this.enemy.vy)) / 0.12));
+    if (!drawing) this.beginRetraction();
+    const steps = Math.max(1, Math.ceil(seconds * Math.max(RETRACT_SPEED, Math.abs(this.enemy.vx), Math.abs(this.enemy.vy)) / 0.12));
     const dt = seconds / steps;
-    let captured = false;
+    let gestureEnded = false;
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt);
       const blocked = (p: Point) => !inside(p, this.territory) || edges(this.territory).some(([a, b]) => distance(p, a, b) < ENEMY_RADIUS);
@@ -127,8 +151,13 @@ export class Game {
       if (blocked(ny)) enemy.vy *= -1; else enemy.y = ny.y;
       const lives = this.lives;
       if (this.collidesWithTrail()) this.hit();
-      if (direction && !captured && lives === this.lives) captured = this.move(direction, drawing, PLAYER_SPEED * dt);
+      if (lives !== this.lives) gestureEnded = true;
+      if (!gestureEnded) {
+        if (this.retracting) gestureEnded = this.retract(RETRACT_SPEED * dt);
+        else if (direction) gestureEnded = this.move(direction, drawing, PLAYER_SPEED * dt);
+        if (lives !== this.lives) gestureEnded = true;
+      }
     }
-    return captured;
+    return gestureEnded;
   }
 }

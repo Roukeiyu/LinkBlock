@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game, PLAYER_SPEED } from './engine';
+import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
 import { area, distance, edges, inside, split } from './geometry';
 
 function fixture() {
@@ -26,7 +26,7 @@ describe('continuous territory rules', () => {
     for (let i = 0; i < 36; i++) b.update(1 / 120, 'down', true);
     expect(a.player.y).toBeCloseTo(b.player.y, 8);
   });
-  it('requires drawing, holds on release and blocks retracing and intersections', () => {
+  it('requires drawing and blocks retracing and intersections', () => {
     const game = fixture();
     game.move('down', false, 3); expect(game.player.y).toBe(0);
     game.move('down', true, 3.2);
@@ -94,10 +94,81 @@ describe('continuous territory rules', () => {
     expect(game.player).toEqual(player); expect(game.events).toContain('won');
   });
 });
+describe('automatic trail retraction', () => {
+  function bentTrail() {
+    const game = fixture();
+    game.move('down', true, 3.25); game.move('left', true, 1.75); game.move('down', true, 1.5);
+    return game;
+  }
+  it('retraces fractional bends at triple speed, shrinking only the trailing tip', () => {
+    const game = bentTrail();
+    expect(game.update(1 / RETRACT_SPEED)).toBe(false);
+    expect(game.player.x).toBeCloseTo(2.25); expect(game.player.y).toBeCloseTo(3.75);
+    expect(game.trail.at(-1)).toEqual(game.player);
+    expect(game.trail).toHaveLength(4);
+    game.update(1 / RETRACT_SPEED);
+    expect(game.player.x).toBeCloseTo(2.75); expect(game.player.y).toBeCloseTo(3.25);
+    expect(game.trail).toHaveLength(3);
+    expect(game.retracting).toBe(true);
+    expect(game.update(1)).toBe(true);
+    expect(game.player).toEqual({ x: 4, y: 0 });
+    expect(game.trail).toEqual([]); expect(game.retracting).toBe(false);
+    expect(game.claimed).toBe(0); expect(game.score).toBe(0); expect(game.lives).toBe(3);
+    expect(game.events).not.toContain('capture');
+  });
+  it('is independent of frame rate and needs no held direction', () => {
+    const a = bentTrail(), b = bentTrail();
+    a.update(0.06);
+    for (let i = 0; i < 12; i++) b.update(0.005);
+    expect(a.player.x).toBeCloseTo(b.player.x, 8); expect(a.player.y).toBeCloseTo(b.player.y, 8);
+    expect(a.retracting && b.retracting).toBe(true);
+  });
+  it('latches a release even if drawing is pressed again, and stops at the anchor', () => {
+    const game = bentTrail(); game.beginRetraction();
+    const tip = { ...game.player };
+    game.move('left', true, 1); expect(game.player).toEqual(tip);
+    game.update(0.01, 'right', true);
+    expect(game.player.y).toBeLessThan(tip.y); expect(game.player.x).toBe(tip.x);
+    expect(game.update(1, 'down', true)).toBe(true);
+    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+    game.move('down', true, 0.125); expect(game.player.y).toBe(0.125);
+    expect(game.retracting).toBe(false);
+  });
+  it('keeps remaining line vulnerable and cancels retraction on a hit', () => {
+    const game = bentTrail(); game.beginRetraction();
+    game.enemy = { x: 5, y: 1.5, vx: -10, vy: 0 };
+    expect(game.update(0.04, 'down', true)).toBe(true);
+    expect(game.lives).toBe(2); expect(game.player).toEqual(game.anchor);
+    expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
+    expect(game.claimed).toBe(0); expect(game.events).toContain('hit');
+  });
+  it('no longer collides with a segment already retracted', () => {
+    const game = bentTrail(); game.update(2 / RETRACT_SPEED);
+    game.enemy = { x: 2.25, y: 4.5, vx: 0, vy: 0 };
+    game.update(0.02);
+    expect(game.lives).toBe(3); expect(game.retracting).toBe(true);
+  });
+  it('freezes retraction while paused and resumes exactly where it stopped', () => {
+    const game = bentTrail(); game.update(0.01); game.togglePause();
+    const player = { ...game.player }, trail = structuredClone(game.trail), elapsed = game.elapsed;
+    game.update(0.5, 'right', true);
+    expect(game.player).toEqual(player); expect(game.trail).toEqual(trail); expect(game.elapsed).toBe(elapsed);
+    game.togglePause(); game.update(1);
+    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+  });
+  it('returns to the departure point on a newly captured edge and never retracts a closed cut', () => {
+    const game = fixture(); game.move('down', true, 10); game.beginRetraction();
+    expect(game.retracting).toBe(false); game.move('up', false, 5.75);
+    game.move('right', true, 1.25); const claimed = game.claimed, score = game.score;
+    game.update(1);
+    expect(game.player).toEqual({ x: 4, y: 4.25 });
+    expect(game.claimed).toBe(claimed); expect(game.score).toBe(score);
+  });
+});
 describe('enemy and lifecycle', () => {
   it('detects a moving enemy grazing a segment, clears and respawns', () => {
     const game = fixture(); game.move('down', true, 5);
-    game.enemy = { x: 5.5, y: 3.5, vx: -10, vy: 0 }; game.update(0.1);
+    game.enemy = { x: 5.5, y: 3.5, vx: -10, vy: 0 }; game.update(0.1, undefined, true);
     expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0);
     expect(game.player).toEqual(game.anchor);
     game.move('down', true, 1); expect(game.trail).toHaveLength(0);

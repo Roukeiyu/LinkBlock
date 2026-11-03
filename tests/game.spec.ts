@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string };
+type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[] };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
@@ -14,8 +14,19 @@ async function firstCut(page: Page) {
 test.beforeEach(async ({ page }) => {
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '' };
+    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[] };
     (window as unknown as { probe: typeof state }).probe = state;
+    const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
+    for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect'] as const) {
+      const original = CanvasRenderingContext2D.prototype[method];
+      CanvasRenderingContext2D.prototype[method] = function(this: CanvasRenderingContext2D, ...args: number[]) {
+        if (method === 'clearRect' && this.canvas.id === 'board') state.trail = [];
+        if (method === 'beginPath') paths.set(this, []);
+        if (method === 'moveTo' || method === 'lineTo') paths.get(this)?.push({ x: args[0], y: args[1] });
+        if (method === 'stroke' && this.strokeStyle === '#ffcf75') state.trail = [...(paths.get(this) ?? [])];
+        return Reflect.apply(original, this, args);
+      } as never;
+    }
     const arc = CanvasRenderingContext2D.prototype.arc;
     CanvasRenderingContext2D.prototype.arc = function(...args: Parameters<typeof arc>) {
       if (args[2] === 0.14) { state.player = { x: args[0], y: args[1] }; state.positions.push({ ...state.player, time: performance.now() }); }
@@ -42,14 +53,65 @@ test('continuous movement stays on the drawn edge and turns between arbitrary co
   await page.keyboard.down('Space'); await hold(page, 'ArrowDown', 173);
   const turn = (await probe(page)).player;
   expect(turn.x).toBeCloseTo(start.x, 7); expect(turn.y).toBeGreaterThan(0);
-  await hold(page, 'ArrowLeft', 143); await page.keyboard.up('Space');
+  await hold(page, 'ArrowLeft', 143);
   const end = (await probe(page)).player;
   expect(end.x).toBeLessThan(turn.x); expect(end.y).toBeCloseTo(turn.y, 7);
   const samples = (await probe(page)).positions.filter(p => p.y > 0 && p.x === start.x);
   expect(new Set(samples.map(p => p.y)).size).toBeGreaterThan(5);
   expect(samples.some(p => Math.abs(p.y - Math.round(p.y)) > 0.05)).toBe(true);
   await page.waitForTimeout(100); expect((await probe(page)).player).toEqual(end);
+  await page.keyboard.up('Space');
+  await expect.poll(async () => (await probe(page)).player).toEqual(start);
+  expect((await probe(page)).trail).toHaveLength(0);
   expect(errors).toEqual([]);
+});
+
+test('Space release retracts a bent trail, ignores new input until the anchor and allows a fresh cut', async ({ page }) => {
+  await page.keyboard.down('Space');
+  await hold(page, 'ArrowDown', 450); await hold(page, 'ArrowLeft', 350); await hold(page, 'ArrowDown', 350);
+  const before = await probe(page), start = before.trail[0];
+  expect(before.trail).toHaveLength(4);
+  const releasedAt = await page.evaluate(() => performance.now());
+  await page.keyboard.up('Space'); await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(60);
+  const during = await probe(page);
+  expect(during.player.x).toBeCloseTo(before.player.x, 7);
+  expect(during.player.y).toBeLessThan(before.player.y);
+  expect(during.trail.at(-1)).toEqual(during.player);
+  await page.locator('#board').screenshot({ path: 'test-results/retracting-trail.png' });
+  await expect.poll(async () => (await probe(page)).player, { intervals: [16] }).toEqual(start);
+  const returned = await probe(page);
+  expect(returned.trail).toHaveLength(0);
+  // Every sampled point lies on the original polyline; the tip never takes a shortcut.
+  const samples = returned.positions.filter(p => p.time > releasedAt);
+  expect(samples.some(p => Math.abs(p.x - before.player.x) < 1e-7 && p.y < before.player.y - 0.2)).toBe(true);
+  expect(samples.some(p => p.x > before.player.x + 0.2 && p.x < start.x - 0.2)).toBe(true);
+  for (const p of samples) {
+    const onFirst = Math.abs(p.x - start.x) < 1e-7 && p.y >= 0 && p.y <= before.trail[1].y;
+    const onSecond = Math.abs(p.y - before.trail[1].y) < 1e-7 && p.x >= before.player.x && p.x <= start.x;
+    const onThird = Math.abs(p.x - before.player.x) < 1e-7 && p.y >= before.trail[1].y && p.y <= before.player.y;
+    expect(onFirst || onSecond || onThird).toBe(true);
+  }
+  await page.waitForTimeout(100); expect((await probe(page)).player).toEqual(start);
+  await expect(page.locator('#percent')).toHaveText('0.0%'); await expect(page.locator('#score')).toHaveText('000000');
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
+  await page.keyboard.down('Space'); await hold(page, 'ArrowDown', 100);
+  expect((await probe(page)).player.y).toBeGreaterThan(0); await page.keyboard.up('Space');
+});
+
+test('touch drawing switch off also retracts without a held direction', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: '画线：关' }).click();
+  const down = await page.getByRole('button', { name: '向下' }).boundingBox();
+  await page.mouse.move(down!.x + down!.width / 2, down!.y + down!.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(350); await page.mouse.up();
+  expect((await probe(page)).player.y).toBeGreaterThan(0);
+  await page.getByRole('button', { name: '画线：开' }).click();
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  expect((await probe(page)).trail).toHaveLength(0);
+  await expect(page.getByRole('button', { name: '画线：关' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#percent')).toHaveText('0.0%');
 });
 
 test('closure flashes only the captured region white, dissolves and keeps player centered on its edge', async ({ page }) => {
