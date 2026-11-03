@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 864 576">
+ <defs>
+  <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#102d46"/><stop offset=".6" stop-color="#627d94"/><stop offset="1" stop-color="#e4a994"/></linearGradient>
+  <linearGradient id="water" x2="0" y2="1"><stop stop-color="#708e9c"/><stop offset="1" stop-color="#14394c"/></linearGradient>
+  <linearGradient id="peak" x2=".8" y2="1"><stop stop-color="#bac9ca"/><stop offset="1" stop-color="#4e7187"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#ffe2bc" stop-opacity=".45"/><stop offset="1" stop-color="#ffe2bc" stop-opacity="0"/></radialGradient>
+ </defs>
+ <path fill="url(#sky)" d="M0 0h864v576H0z"/>
+ <circle cx="627" cy="137" r="142" fill="url(#glow)"/>
+ <circle cx="627" cy="137" r="42" fill="#ffe3bd"/>
+ <g fill="#e5ece5" opacity=".65"><circle cx="118" cy="56" r="1.3"/><circle cx="279" cy="88" r="1"/><circle cx="417" cy="42" r="1.4"/><circle cx="745" cy="65" r="1"/><circle cx="528" cy="93" r="1.1"/><circle cx="192" cy="124" r="1"/><circle cx="790" cy="155" r="1.3"/></g>
+ <path d="M0 307 101 215 160 257 292 117 407 259 488 184 620 297 726 231 864 300V420H0Z" fill="#5a7b91"/>
+ <path d="m115 316 177-199 115 142 47 77Z" fill="url(#peak)"/>
+ <path d="m292 117-59 102 42-21 17 24 20-31 47 10Z" fill="#e2e3d5"/>
+ <path d="m292 117 13 108 102 34Z" fill="#425e79" opacity=".6"/>
+ <path d="M0 362 117 274 207 342 381 270 537 355 678 276 864 351V437H0Z" fill="#32576e"/>
+ <path d="M0 385h864v191H0Z" fill="url(#water)"/>
+ <g fill="none" stroke="#d4c7b0" opacity=".35"><path d="M558 404h139m-127 8h104m-87 12h91m-126 17h151m-100 19h92m-120 24h161"/><path d="M98 424h116m-51 33h148m-233 45h172m368 29h168"/></g>
+ <path d="M0 352 24 375 68 365 114 403 187 424 255 453 159 476 0 494Z" fill="#173e50"/>
+ <path d="M864 331 800 375 771 368 734 410 683 436 750 471 694 492 864 520Z" fill="#173e50"/>
+ <g fill="#102e3b"><path d="m45 273-29 99h58Zm-3 45-38 76h80ZM113 331l-22 78h44ZM811 281l-33 110h66Zm0 46-44 88h88ZM760 351l-23 76h46Z"/><path d="M0 516 120 495 201 521 283 511 380 550 507 541 623 561 734 522 864 534V576H0Z"/></g>
+ <g stroke="#294a51" stroke-width="2"><path d="m81 576-7-37m0 15-15-12m15 5 12-17m655 46 8-40m-6 18 16-9m-17 1-10-14"/></g>
+ <path d="m401 470 35 5 29-5-9 10h-44Z" fill="#0a2d3e"/><path d="M434 459v16" stroke="#e9c2a0" stroke-width="2"/>
+</svg>
