@@ -1,23 +1,22 @@
+import { area, distance, edges, EPS, inside, onSegment, rayDistance, same, simplify, split, type Point, type Polygon } from './geometry';
+export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost';
-export interface Point { x: number; y: number }
 export interface Enemy extends Point { vx: number; vy: number }
-export const EMPTY = 0, SAFE = 1, TRAIL = 2;
-const vectors: Record<Direction, Point> = {
-  up: { x: 0, y: -1 }, down: { x: 0, y: 1 },
-  left: { x: -1, y: 0 }, right: { x: 1, y: 0 },
-};
+const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+export const PLAYER_SPEED = 22.222222;
+const ENEMY_RADIUS = 0.55;
 
 export class Game {
-  readonly width: number;
-  readonly height: number;
   readonly target = 75;
-  cells: Uint8Array;
+  readonly outline: Polygon;
+  territory: Polygon;
+  captured: Polygon[] = [];
   player: Point;
   anchor: Point;
   enemy: Enemy;
-  trail: number[] = [];
+  trail: Polygon = [];
   phase: Phase = 'ready';
   lives = 3;
   score = 0;
@@ -25,161 +24,111 @@ export class Game {
   protection = 0;
   events: GameEvent[] = [];
 
-  constructor(width = 72, height = 48) {
+  constructor(readonly width = 72, readonly height = 48) {
     if (width < 6 || height < 6) throw new Error('Board must be at least 6 × 6');
-    this.width = width;
-    this.height = height;
-    this.cells = new Uint8Array(width * height);
-    this.player = { x: Math.floor(width / 2), y: 0 };
+    this.outline = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
+    this.territory = this.outline.map(p => ({ ...p }));
+    this.player = { x: width / 2, y: 0 };
     this.anchor = { ...this.player };
-    this.enemy = { x: width * 0.68 + 0.5, y: height * 0.57 + 0.5, vx: 7.4, vy: 5.2 };
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) this.cells[this.index(x, y)] = SAFE;
-      }
-    }
+    this.enemy = { x: width * 0.68, y: height * 0.57, vx: 7.4, vy: 5.2 };
   }
-
-  index(x: number, y: number) { return y * this.width + x; }
-  cell(x: number, y: number) {
-    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return SAFE;
-    return this.cells[this.index(x, y)];
-  }
+  get claimed() { return this.width * this.height - area(this.territory); }
+  get percent() { return this.claimed / (this.width * this.height) * 100; }
   isBoundary(x: number, y: number) {
-    if (x < 0 || y < 0 || x >= this.width || y >= this.height || this.cell(x, y) !== SAFE) return false;
-    if (x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1) return true;
-    // Include diagonal contact so four-direction movement can round corners
-    // where two boundary segments meet. Filled interior cells stay blocked.
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        if (this.cell(x + dx, y + dy) === EMPTY) return true;
-      }
-    }
-    return false;
+    return [...edges(this.outline), ...edges(this.territory)].some(([a, b]) => onSegment({ x, y }, a, b));
   }
-  get claimed() {
-    let safe = 0;
-    for (let y = 1; y < this.height - 1; y++) {
-      for (let x = 1; x < this.width - 1; x++) if (this.cell(x, y) === SAFE) safe++;
-    }
-    return safe;
-  }
-  get percent() { return this.claimed / ((this.width - 2) * (this.height - 2)) * 100; }
-
-  start() {
-    if (this.phase !== 'ready') return;
-    this.phase = 'playing';
-    this.events.push('start');
-  }
+  start() { if (this.phase === 'ready') { this.phase = 'playing'; this.events.push('start'); } }
   togglePause() {
     if (this.phase === 'playing') this.phase = 'paused';
     else if (this.phase === 'paused') this.phase = 'playing';
   }
-
-  move(direction: Direction, drawing: boolean) {
-    if (this.phase !== 'playing') return;
-    const delta = vectors[direction];
-    const next = { x: this.player.x + delta.x, y: this.player.y + delta.y };
-    if (next.x < 0 || next.y < 0 || next.x >= this.width || next.y >= this.height) return;
-    const cell = this.cell(next.x, next.y);
-    if (cell === TRAIL) return;
-    if (cell === SAFE && !this.trail.length && !this.isBoundary(next.x, next.y)) return;
-    // Releasing the draw key holds position in the danger zone; enemies keep moving.
-    if (this.trail.length && !drawing) return;
-    if (cell === EMPTY) {
-      if (!drawing) return;
-      // Respawn grace is spent on safe ground; it must not allow an immune
-      // trail to close through the enemy and leave it trapped inside a wall.
-      if (this.protection > 0) return;
-      if (!this.trail.length) this.anchor = { ...this.player };
-      this.cells[this.index(next.x, next.y)] = TRAIL;
-      this.trail.push(this.index(next.x, next.y));
-    }
-    this.player = next;
-    // Check before capture: a line cannot safely close through the enemy.
-    if (this.collidesWithTrail()) { this.hit(); return; }
-    if (cell === SAFE && this.trail.length) {
-      this.capture();
-      return true;
-    }
-  }
-
-  private capture() {
-    const before = this.claimed;
-    const lineLength = this.trail.length;
-    for (const cell of this.trail) this.cells[cell] = SAFE;
-    this.trail = [];
-    // Flood from the enemy, preserving its connected component. All other
-    // empty components are enclosed territory, regardless of polygon shape.
-    const reachable = new Uint8Array(this.cells.length);
-    const queue = [this.index(Math.floor(this.enemy.x), Math.floor(this.enemy.y))];
-    reachable[queue[0]] = 1;
-    for (let cursor = 0; cursor < queue.length; cursor++) {
-      const pos = queue[cursor], x = pos % this.width, y = Math.floor(pos / this.width);
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
-        const idx = this.index(nx, ny);
-        if (!reachable[idx] && this.cells[idx] === EMPTY) {
-          reachable[idx] = 1;
-          queue.push(idx);
+  // Distance is continuous world-space distance, never a cell count.
+  move(direction: Direction, drawing: boolean, amount: number) {
+    if (this.phase !== 'playing' || !Number.isFinite(amount) || amount <= EPS) return false;
+    const v = vectors[direction], p = this.player;
+    if (this.trail.length && !drawing) return false;
+    if (!this.trail.length) {
+      // Merge touching collinear edges so a capture junction never causes a hitch.
+      let reach = 0;
+      const segments = [...edges(this.outline), ...edges(this.territory)];
+      for (let pass = 0; pass <= segments.length; pass++) {
+        const before = reach;
+        for (const [a, b] of segments) {
+          const axis = v.x ? 'x' : 'y', cross = v.x ? 'y' : 'x', sign = v.x || v.y;
+          if (Math.abs(a[cross] - p[cross]) > EPS || Math.abs(b[cross] - p[cross]) > EPS) continue;
+          const ds = [sign * (a[axis] - p[axis]), sign * (b[axis] - p[axis])].sort((x, y) => x - y);
+          if (ds[0] <= reach + EPS && ds[1] > reach) reach = ds[1];
         }
+        if (reach === before) break;
       }
+      if (reach > EPS) {
+        const travel = Math.min(amount, reach);
+        this.player = { x: p.x + v.x * travel, y: p.y + v.y * travel };
+        return false;
+      }
+      if (!drawing || this.protection > 0 || !inside({ x: p.x + v.x * 1e-5, y: p.y + v.y * 1e-5 }, this.territory)) return false;
+      this.anchor = { ...p };
+      this.trail = [{ ...p }];
     }
-    for (let i = 0; i < this.cells.length; i++) {
-      if (this.cells[i] === EMPTY && !reachable[i]) this.cells[i] = SAFE;
+    const last = this.trail.at(-1)!;
+    const previous = same(last, p) && this.trail.length > 1 ? this.trail.at(-2)! : last;
+    // Reversing would retrace the live line.
+    if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) return false;
+    let wall = Infinity;
+    for (const [a, b] of edges(this.territory)) wall = Math.min(wall, rayDistance(p, v, a, b));
+    const travel = Math.min(amount, wall);
+    // A live line may neither cross nor touch itself, including at a corner.
+    for (let i = 0; i < this.trail.length - 1; i++) {
+      const a = this.trail[i], b = this.trail[i + 1];
+      if (onSegment(p, a, b)) continue;
+      if (rayDistance(p, v, a, b) <= travel + EPS) return false;
     }
-    this.anchor = { ...this.player };
-    this.score += (this.claimed - before) * 10 + lineLength * 5;
-    this.events.push('capture');
-    if (this.percent >= this.target) {
-      this.phase = 'won';
-      this.score += this.lives * 1000;
-      this.events.push('won');
-    }
-  }
-
-  private collidesWithTrail() {
-    if (!this.trail.length || this.protection > 0) return false;
-    // The enemy occupies a radius, so grazing a live line also counts.
-    for (const pos of this.trail) {
-      const x = pos % this.width + 0.5, y = Math.floor(pos / this.width) + 0.5;
-      if (Math.abs(this.enemy.x - x) < 0.88 && Math.abs(this.enemy.y - y) < 0.88) return true;
-    }
+    if (travel <= EPS) return false;
+    const next = { x: p.x + v.x * travel, y: p.y + v.y * travel };
+    this.trail = simplify([...this.trail, next]);
+    this.player = next;
+    if (this.collidesWithTrail()) { this.hit(); return false; }
+    if (wall <= amount + EPS) { this.capture(); return true; }
     return false;
   }
-
-  private hit() {
-    for (const pos of this.trail) this.cells[pos] = EMPTY;
+  private capture() {
+    const parts = split(this.territory, this.trail);
+    const keep = inside(this.enemy, parts[0]) ? 0 : 1;
+    const claimed = parts[1 - keep];
+    const length = this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0);
+    this.territory = parts[keep];
+    this.captured.push(claimed);
     this.trail = [];
-    this.player = { ...this.anchor };
-    this.lives--;
-    this.protection = 1.5;
-    this.events.push('hit');
-    if (this.lives <= 0) { this.phase = 'lost'; this.events.push('lost'); }
+    this.anchor = { ...this.player };
+    this.score += Math.round(area(claimed) * 10 + length * 5);
+    this.events.push('capture');
+    if (this.percent >= this.target - EPS) { this.phase = 'won'; this.score += this.lives * 1000; this.events.push('won'); }
   }
-
-  update(seconds: number) {
-    if (this.phase !== 'playing') return;
-    this.elapsed += seconds;
-    this.protection = Math.max(0, this.protection - seconds);
-    // Substeps prevent tunnelling through one-cell walls or live trails.
-    const steps = Math.max(1, Math.ceil(seconds * Math.max(Math.abs(this.enemy.vx), Math.abs(this.enemy.vy)) / 0.15));
+  private collidesWithTrail() {
+    return !this.protection && this.trail.slice(1).some((p, i) => distance(this.enemy, this.trail[i], p) <= ENEMY_RADIUS + 0.12);
+  }
+  private hit() {
+    this.trail = []; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
+    this.events.push('hit');
+    if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); }
+  }
+  update(seconds: number, direction?: Direction, drawing = false) {
+    if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
+    const steps = Math.max(1, Math.ceil(seconds * Math.max(PLAYER_SPEED, Math.abs(this.enemy.vx), Math.abs(this.enemy.vy)) / 0.12));
     const dt = seconds / steps;
+    let captured = false;
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
+      this.elapsed += dt; this.protection = Math.max(0, this.protection - dt);
+      const blocked = (p: Point) => !inside(p, this.territory) || edges(this.territory).some(([a, b]) => distance(p, a, b) < ENEMY_RADIUS);
       const enemy = this.enemy;
-      const blocked = (x: number, y: number) => {
-        const r = 0.28;
-        return [[-r, -r], [r, -r], [-r, r], [r, r]]
-          .some(([dx, dy]) => this.cell(Math.floor(x + dx), Math.floor(y + dy)) === SAFE);
-      };
-      const nx = enemy.x + enemy.vx * dt;
-      if (blocked(nx, enemy.y)) enemy.vx *= -1;
-      else enemy.x = nx;
-      const ny = enemy.y + enemy.vy * dt;
-      if (blocked(enemy.x, ny)) enemy.vy *= -1;
-      else enemy.y = ny;
+      const nx = { x: enemy.x + enemy.vx * dt, y: enemy.y };
+      if (blocked(nx)) enemy.vx *= -1; else enemy.x = nx.x;
+      const ny = { x: enemy.x, y: enemy.y + enemy.vy * dt };
+      if (blocked(ny)) enemy.vy *= -1; else enemy.y = ny.y;
+      const lives = this.lives;
       if (this.collidesWithTrail()) this.hit();
+      if (direction && !captured && lives === this.lives) captured = this.move(direction, drawing, PLAYER_SPEED * dt);
     }
+    return captured;
   }
 }

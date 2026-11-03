@@ -1,5 +1,6 @@
 import './style.css';
-import { Game, SAFE, type Direction, type GameEvent } from './engine';
+import { Game, type Direction, type GameEvent } from './engine';
+import { lakeTheme, polygonPath, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
   const paths: Record<string, string> = {
@@ -27,7 +28,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </div>
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。方向键或 WASD 移动，按住空格画线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
-          <div class="board-grain" aria-hidden="true"></div>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
             <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">从边界出发，画线围住未知区域。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
@@ -57,14 +57,14 @@ let soundEnabled = false;
 let audio: AudioContext | undefined;
 let touchDraw = false;
 let drawHeld = false;
-let movementClock = 0;
-const PLAYER_STEP_SECONDS = 0.045;
-let captureFlash = 0;
+const theme = lakeTheme;
+const effects: CaptureEffect[] = [];
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let hitFlash = 0;
 let toastUntil = 0;
 const held = new Set<Direction>();
 const image = new Image();
-image.src = `${import.meta.env.BASE_URL}landscape.svg`;
+image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 
 function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorType = 'sine') {
   if (!soundEnabled) return;
@@ -82,20 +82,12 @@ function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorTyp
 }
 
 function clearInput() {
-  held.clear(); drawHeld = false; touchDraw = false; movementClock = 0;
+  held.clear(); drawHeld = false; touchDraw = false;
   $('#touch-draw').setAttribute('aria-pressed', 'false');
   $('#touch-draw').textContent = '画线：关';
 }
-function movePlayer(direction: Direction) {
-  if (game.move(direction, drawHeld || touchDraw)) {
-    // A closed cut ends this movement gesture, even when a direction remains
-    // physically held. The next press starts movement along the new outline.
-    held.clear();
-    movementClock = 0;
-  }
-}
 function restart() {
-  clearInput(); game = new Game(); game.start(); captureFlash = 0; hitFlash = 0;
+  clearInput(); game = new Game(); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
   sync(); canvas.focus({ preventScroll: true });
 }
@@ -136,7 +128,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space') drawHeld = true;
   const direction = keyDirections[e.code];
   if (direction && game.phase === 'playing') {
-    held.add(direction); movePlayer(direction); movementClock = 0;
+    held.delete(direction); held.add(direction);
   }
 });
 window.addEventListener('keyup', e => {
@@ -155,8 +147,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-dir]').forEach(button => {
   button.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (game.phase !== 'playing') return;
-    button.setPointerCapture(e.pointerId); held.add(direction);
-    movePlayer(direction); movementClock = 0;
+    button.setPointerCapture(e.pointerId); held.delete(direction); held.add(direction);
   });
   const release = () => held.delete(direction);
   button.addEventListener('pointerup', release);
@@ -176,7 +167,7 @@ function notify(message: string) {
 }
 function handleEvent(event: GameEvent) {
   if (event === 'capture') {
-    captureFlash = 0.5; notify('连接成功 · 新的领地已揭开');
+    effects.push(theme.createCaptureEffect(game.captured.at(-1)!, reducedMotion.matches)); notify('连接成功 · 新的领地已揭开');
     tone(523); tone(784, 0.18, 0.08);
   } else if (event === 'hit') {
     hitFlash = 0.5; notify(`轨迹被击中 · 剩余 ${game.lives} 条生命`);
@@ -197,13 +188,13 @@ function sync() {
   const seconds = Math.floor(game.elapsed);
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   pauseButton.disabled = !['playing', 'paused'].includes(game.phase);
+  overlay.hidden = game.phase === 'playing' || (game.phase === 'won' && effects.length > 0);
   if (lastPhase === game.phase) return;
   lastPhase = game.phase;
   const labels = { ready: '准备就绪', playing: '探索中', paused: '已暂停', won: '探索完成', lost: '本次探索结束' };
   $('#state-label').textContent = labels[game.phase];
   $('#state-dot').classList.toggle('active', game.phase === 'playing');
   $('#pause span').textContent = game.phase === 'paused' ? '继续' : '暂停';
-  overlay.hidden = game.phase === 'playing';
   $('#overlay-hint').textContent = '方向键移动 · 按住空格画线';
   if (game.phase === 'paused') {
     $('#overlay-kicker').textContent = 'TAKE A BREATH';
@@ -229,65 +220,54 @@ function sync() {
 }
 
 function render(now: number) {
-  const cell = 12, width = 864, height = 576;
+  const width = canvas.width, height = canvas.height;
+  const scale = Math.min((width - 24) / game.width, (height - 24) / game.height);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#173547'; ctx.fillRect(0, 0, width, height);
-  if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, width, height);
+  ctx.fillStyle = '#0e202b'; ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.translate((width - game.width * scale) / 2, (height - game.height * scale) / 2);
+  ctx.scale(scale, scale);
+  if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
   if (game.phase !== 'won') {
-    for (let y = 0; y < game.height; y++) {
-      for (let x = 0; x < game.width; x++) {
-        const type = game.cell(x, y);
-        if (type !== SAFE) {
-          ctx.fillStyle = (x + y) % 2 ? '#0e202b' : '#0f212c';
-          ctx.fillRect(x * cell, y * cell, cell, cell);
-          ctx.fillStyle = '#1b303b';
-          ctx.fillRect(x * cell, y * cell, 1, 1);
-        } else {
-          ctx.fillStyle = 'rgba(100,240,200,.06)';
-          ctx.fillRect(x * cell, y * cell, cell, cell);
-          ctx.strokeStyle = 'rgba(118,241,206,.65)'; ctx.lineWidth = 1;
-          ctx.beginPath();
-          if (x > 0 && game.cell(x - 1, y) !== SAFE) { ctx.moveTo(x * cell, y * cell); ctx.lineTo(x * cell, (y + 1) * cell); }
-          if (x < game.width - 1 && game.cell(x + 1, y) !== SAFE) { ctx.moveTo((x + 1) * cell, y * cell); ctx.lineTo((x + 1) * cell, (y + 1) * cell); }
-          if (y > 0 && game.cell(x, y - 1) !== SAFE) { ctx.moveTo(x * cell, y * cell); ctx.lineTo((x + 1) * cell, y * cell); }
-          if (y < game.height - 1 && game.cell(x, y + 1) !== SAFE) { ctx.moveTo(x * cell, (y + 1) * cell); ctx.lineTo((x + 1) * cell, (y + 1) * cell); }
-          ctx.stroke();
-        }
-      }
-    }
-    ctx.save();
-    ctx.shadowColor = '#ffcf75'; ctx.shadowBlur = 10;
-    ctx.strokeStyle = '#ffcf75'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
-    if (game.trail.length) {
-      ctx.beginPath(); ctx.moveTo(game.anchor.x * cell + 6, game.anchor.y * cell + 6);
-      for (const pos of game.trail) ctx.lineTo((pos % game.width) * cell + 6, Math.floor(pos / game.width) * cell + 6);
-      ctx.stroke();
-      ctx.fillStyle = '#ffe5ae';
-      for (const pos of game.trail) ctx.fillRect((pos % game.width) * cell + 4, Math.floor(pos / game.width) * cell + 4, 4, 4);
-    }
-    ctx.restore();
-    ctx.save();
-    const ex = game.enemy.x * cell, ey = game.enemy.y * cell;
-    ctx.translate(ex, ey); ctx.rotate(now / 550);
-    ctx.strokeStyle = 'rgba(255,111,119,.5)'; ctx.lineWidth = 1;
-    ctx.strokeRect(-10, -10, 20, 20);
-    ctx.shadowBlur = 24; ctx.shadowColor = '#ff6f77'; ctx.fillStyle = '#ff6f77';
-    ctx.fillRect(-5, -5, 10, 10);
-    ctx.fillStyle = '#ffe6e1'; ctx.fillRect(-2, -2, 4, 4);
-    ctx.restore();
-    ctx.save();
-    if (!game.protection || Math.floor(now / 100) % 2) {
-      const px = game.player.x * cell + 6, py = game.player.y * cell + 6;
-      ctx.shadowBlur = 18; ctx.shadowColor = '#76f1ce';
-      ctx.strokeStyle = 'rgba(118,241,206,.35)'; ctx.lineWidth = 1;
-      ctx.strokeRect(px - 9, py - 9, 18, 18);
-      ctx.fillStyle = game.trail.length ? '#ffdb91' : '#76f1ce';
-      ctx.fillRect(px - 4, py - 4, 8, 8);
-      ctx.fillStyle = '#f0fff9'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
-    }
-    ctx.restore();
+    ctx.fillStyle = theme.danger; polygonPath(ctx, game.territory); ctx.fill();
   }
-  if (captureFlash > 0) { ctx.fillStyle = `rgba(118,241,206,${captureFlash * 0.15})`; ctx.fillRect(0, 0, width, height); }
+  for (const effect of effects) effect.render(ctx);
+  ctx.save();
+  ctx.lineWidth = 1.4 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = theme.boundary; ctx.shadowColor = theme.boundary; ctx.shadowBlur = 5;
+  polygonPath(ctx, game.outline); ctx.stroke();
+  if (game.phase !== 'won') { polygonPath(ctx, game.territory); ctx.stroke(); }
+  ctx.restore();
+  if (game.phase !== 'won') {
+    if (game.trail.length) {
+      ctx.save(); ctx.shadowColor = theme.trail; ctx.shadowBlur = 10;
+      ctx.strokeStyle = theme.trail; ctx.lineWidth = 2.6 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath();
+      game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.stroke(); ctx.restore();
+    }
+    ctx.save();
+    ctx.translate(game.enemy.x, game.enemy.y); ctx.rotate(now / 550);
+    ctx.strokeStyle = 'rgba(255,111,119,.5)'; ctx.lineWidth = 1 / scale;
+    ctx.strokeRect(-0.8, -0.8, 1.6, 1.6);
+    ctx.shadowBlur = 24; ctx.shadowColor = '#ff6f77'; ctx.fillStyle = '#ff6f77';
+    ctx.fillRect(-0.4, -0.4, 0.8, 0.8);
+    ctx.fillStyle = '#ffe6e1'; ctx.fillRect(-0.16, -0.16, 0.32, 0.32);
+    ctx.restore();
+    if (!game.protection || Math.floor(now / 100) % 2) {
+      ctx.save();
+      const { x, y } = game.player;
+      ctx.shadowBlur = 18; ctx.shadowColor = theme.boundary;
+      ctx.strokeStyle = 'rgba(118,241,206,.4)'; ctx.lineWidth = 1 / scale;
+      ctx.beginPath(); ctx.arc(x, y, 0.75, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = game.trail.length ? theme.trail : theme.boundary;
+      ctx.beginPath(); ctx.arc(x, y, 0.34, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f0fff9';
+      ctx.beginPath(); ctx.arc(x, y, 0.14, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
   if (hitFlash > 0) { ctx.fillStyle = `rgba(255,80,100,${hitFlash * 0.35})`; ctx.fillRect(0, 0, width, height); }
 }
 
@@ -296,17 +276,10 @@ let uiClock = 0;
 function frame(now: number) {
   const dt = Math.min((now - previous) / 1000, 0.05);
   previous = now;
-  game.update(dt);
-  if (game.phase === 'playing' && held.size) {
-    movementClock += dt;
-    while (movementClock >= PLAYER_STEP_SECONDS) {
-      movementClock -= PLAYER_STEP_SECONDS;
-      movePlayer([...held].at(-1)!);
-      if (!held.size || game.phase !== 'playing') break;
-    }
-  } else movementClock = 0;
+  if (game.update(dt, [...held].at(-1), drawHeld || touchDraw)) held.clear();
+  for (const effect of effects) effect.update(game.phase === 'paused' ? 0 : dt);
+  for (let i = effects.length - 1; i >= 0; i--) if (effects[i].finished) effects.splice(i, 1);
   for (const event of game.events.splice(0)) handleEvent(event);
-  captureFlash = Math.max(0, captureFlash - dt);
   hitFlash = Math.max(0, hitFlash - dt);
   if (now > toastUntil) $('#toast').classList.remove('visible');
   uiClock += dt;

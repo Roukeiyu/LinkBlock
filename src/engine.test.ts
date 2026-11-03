@@ -1,190 +1,148 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY, Game, SAFE, TRAIL, type Direction } from './engine';
+import { Game, PLAYER_SPEED } from './engine';
+import { area, distance, edges, inside, split } from './geometry';
 
 function fixture() {
   const game = new Game(10, 10);
-  game.player = { x: 4, y: 0 };
-  game.anchor = { ...game.player };
-  game.enemy = { x: 7.5, y: 6.5, vx: 0, vy: 0 };
-  game.start();
+  game.player = { x: 4, y: 0 }; game.anchor = { ...game.player };
+  game.enemy = { x: 7.5, y: 6.5, vx: 0, vy: 0 }; game.start();
   return game;
 }
-function moves(game: Game, direction: Direction, count: number, drawing = true) {
-  for (let i = 0; i < count; i++) game.move(direction, drawing);
-}
-
-describe('territory rules', () => {
-  it('requires drawing to leave the safe border and prevents self-intersection', () => {
+describe('continuous territory rules', () => {
+  it('moves by elapsed time with fractional coordinates and turns immediately', () => {
     const game = fixture();
-    game.move('down', false);
-    expect(game.player).toEqual({ x: 4, y: 0 });
-    moves(game, 'down', 3);
+    game.update(0.013, 'right');
+    expect(game.player.x).toBeCloseTo(4 + PLAYER_SPEED * 0.013, 8);
+    game.update(0.011, 'down', true);
+    expect(game.player.y).toBeCloseTo(PLAYER_SPEED * 0.011, 8);
+    const x = game.player.x;
+    game.update(0.017, 'left', true);
+    expect(game.player.x).toBeCloseTo(x - PLAYER_SPEED * 0.017, 8);
     expect(game.trail).toHaveLength(3);
-    expect(game.cell(4, 3)).toBe(TRAIL);
-    game.move('up', true);
-    expect(game.player).toEqual({ x: 4, y: 3 });
-    game.move('right', false);
-    expect(game.player).toEqual({ x: 4, y: 3 });
+  });
+  it('is independent of render frame rate', () => {
+    const a = fixture(), b = fixture();
+    a.update(0.3, 'down', true);
+    for (let i = 0; i < 36; i++) b.update(1 / 120, 'down', true);
+    expect(a.player.y).toBeCloseTo(b.player.y, 8);
+  });
+  it('requires drawing, holds on release and blocks retracing and intersections', () => {
+    const game = fixture();
+    game.move('down', false, 3); expect(game.player.y).toBe(0);
+    game.move('down', true, 3.2);
+    game.move('up', true, 1); game.move('left', false, 1);
+    expect(game.player).toEqual({ x: 4, y: 3.2 });
+    game.move('right', true, 2); game.move('up', true, 1);
+    game.move('left', true, 3); // crosses the first segment
+    expect(game.player).toEqual({ x: 6, y: 2.2 });
     expect(game.claimed).toBe(0);
   });
-
-  it('captures the component without the enemy and scores the enclosed area', () => {
-    const game = fixture();
-    moves(game, 'down', 9);
+  it('splits exact fractional areas and preserves the enemy side', () => {
+    const game = fixture(); game.move('right', false, 0.125);
+    expect(game.move('down', true, 100)).toBe(true);
+    expect(game.player).toEqual({ x: 4.125, y: 10 });
+    expect(game.percent).toBeCloseTo(41.25);
+    expect(area(game.captured[0])).toBeCloseTo(41.25);
+    expect(inside(game.enemy, game.territory)).toBe(true);
     expect(game.trail).toHaveLength(0);
-    expect(game.cell(2, 6)).toBe(SAFE);
-    expect(game.cell(7, 6)).toBe(EMPTY);
-    expect(game.claimed).toBe(32);
-    expect(game.percent).toBe(50);
-    expect(game.score).toBe(360);
-    expect(game.phase).toBe('playing');
+    expect(game.score).toBeGreaterThan(0);
   });
-
-  it('does not fill a region still connected to the enemy around a bent line', () => {
+  it('captures a bent cut, and connects two points on the same boundary edge', () => {
     const game = fixture();
-    moves(game, 'down', 3);
-    moves(game, 'left', 4);
-    expect(game.cell(2, 1)).toBe(SAFE);
-    expect(game.cell(2, 5)).toBe(EMPTY);
-    expect(game.cell(6, 1)).toBe(EMPTY);
-    expect(game.claimed).toBe(12);
+    game.move('down', true, 3); game.move('left', true, 4);
+    expect(game.claimed).toBeCloseTo(12);
+    expect(inside({ x: 2, y: 1 }, game.captured[0])).toBe(true);
+    const other = fixture();
+    other.move('down', true, 2); other.move('left', true, 2); other.move('up', true, 2);
+    expect(other.claimed).toBeCloseTo(4);
+    expect(inside(other.enemy, other.territory)).toBe(true);
   });
-
-  it('stays at the cut endpoint and follows the new edge without crossing filled territory', () => {
-    const game = fixture();
-    moves(game, 'down', 8);
-    expect(game.move('down', true)).toBe(true);
-    expect(game.player).toEqual({ x: 4, y: 9 });
-    moves(game, 'up', 4, false);
-    expect(game.player).toEqual({ x: 4, y: 5 });
-    expect(game.isBoundary(4, 5)).toBe(true);
-    expect(game.isBoundary(3, 5)).toBe(false);
-    game.move('left', false);
-    expect(game.player).toEqual({ x: 4, y: 5 });
-    game.move('left', true);
-    expect(game.player).toEqual({ x: 4, y: 5 });
-    expect(game.trail).toHaveLength(0);
-    game.move('up', false);
-    expect(game.player).toEqual({ x: 4, y: 4 });
+  it('follows the exact cut, blocks filled interior and rounds capture corners', () => {
+    const game = fixture(); game.move('down', true, 10);
+    game.move('up', false, 6.25);
+    expect(game.player).toEqual({ x: 4, y: 3.75 });
+    expect(game.isBoundary(4, 3.75)).toBe(true);
+    game.move('left', false, 2); game.move('left', true, 2);
+    expect(game.player).toEqual({ x: 4, y: 3.75 });
+    game.move('right', true, 6);
+    expect(game.percent).toBeCloseTo(62.5);
+    game.move('left', false, 6); game.move('up', false, 1);
+    expect(game.player).toEqual({ x: 4, y: 3.75 });
+    game.move('down', false, 0.35); expect(game.player.y).toBeCloseTo(4.1);
   });
-
-  it('can round a concave boundary corner after consecutive captures', () => {
-    const game = fixture();
-    moves(game, 'down', 9);
-    moves(game, 'up', 6, false);
-    moves(game, 'right', 5);
-    expect(game.phase).toBe('playing');
-    expect(game.percent).toBe(68.75);
-    moves(game, 'left', 5, false);
-    expect(game.player).toEqual({ x: 4, y: 3 });
-    expect(game.isBoundary(4, 3)).toBe(true);
-    game.move('up', false);
-    expect(game.player).toEqual({ x: 4, y: 3 });
-    game.move('down', false);
-    expect(game.player).toEqual({ x: 4, y: 4 });
+  it('keeps the complete outside outline traversable', () => {
+    const game = fixture(); game.move('down', true, 10);
+    game.move('left', false, 4); game.move('up', false, 5.75);
+    expect(game.player).toEqual({ x: 0, y: 4.25 });
+    game.move('right', true, 1); expect(game.player.x).toBe(0);
+    game.move('up', false, 9); game.move('right', false, 7);
+    expect(game.player).toEqual({ x: 7, y: 0 });
   });
-
-  it('keeps the outside outline traversable while interior cells remain blocked', () => {
+  it('stops the current gesture at a closure', () => {
     const game = fixture();
-    moves(game, 'down', 9);
-    moves(game, 'left', 4, false);
-    moves(game, 'up', 4, false);
-    expect(game.player).toEqual({ x: 0, y: 5 });
-    game.move('right', false);
-    expect(game.player).toEqual({ x: 0, y: 5 });
-    moves(game, 'up', 5, false);
-    moves(game, 'right', 4, false);
-    expect(game.player).toEqual({ x: 4, y: 0 });
+    game.move('down', true, 10); game.move('right', false, 2);
+    expect(game.update(1, 'up', true)).toBe(true);
+    expect(game.player).toEqual({ x: 6, y: 0 });
+    expect(game.percent).toBeCloseTo(60);
   });
-
-  it('wins at 75%, adds the life bonus and freezes the result', () => {
-    const game = fixture();
-    moves(game, 'down', 9);
-    moves(game, 'right', 2, false);
-    moves(game, 'up', 9);
-    expect(game.percent).toBe(75);
-    expect(game.phase).toBe('won');
-    expect(game.score).toBe(3560);
-    const player = { ...game.player }, enemy = { ...game.enemy };
-    game.move('left', true); game.update(1);
-    expect(game.player).toEqual(player);
-    expect(game.enemy).toEqual(enemy);
-    expect(game.events).toContain('won');
+  it('freezes a won result and awards a life bonus', () => {
+    const game = fixture(); game.enemy.x = 9;
+    game.move('right', false, 3.5); game.move('down', true, 10);
+    expect(game.phase).toBe('won'); expect(game.percent).toBe(75);
+    expect(game.score).toBe(3800);
+    const player = { ...game.player }; game.update(1, 'left', true);
+    expect(game.player).toEqual(player); expect(game.events).toContain('won');
   });
 });
-
-describe('enemy, damage and lifecycle', () => {
-  it('detects an enemy crossing the live line, clears it and respawns safely', () => {
-    const game = fixture();
-    moves(game, 'down', 5);
-    game.enemy = { x: 5.5, y: 3.5, vx: -10, vy: 0 };
-    game.update(0.1);
-    expect(game.lives).toBe(2);
-    expect(game.player).toEqual({ x: 4, y: 0 });
-    expect(game.trail).toHaveLength(0);
-    expect(game.cell(4, 3)).toBe(EMPTY);
-    expect(game.phase).toBe('playing');
-    expect(game.events).toContain('hit');
-    game.move('down', true);
-    expect(game.trail).toHaveLength(0);
+describe('enemy and lifecycle', () => {
+  it('detects a moving enemy grazing a segment, clears and respawns', () => {
+    const game = fixture(); game.move('down', true, 5);
+    game.enemy = { x: 5.5, y: 3.5, vx: -10, vy: 0 }; game.update(0.1);
+    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0);
+    expect(game.player).toEqual(game.anchor);
+    game.move('down', true, 1); expect(game.trail).toHaveLength(0);
   });
-
-  it('detects a direct player collision before a cut can finish', () => {
-    const game = fixture();
-    game.enemy = { x: 4.5, y: 1.5, vx: 0, vy: 0 };
-    game.move('down', true);
-    expect(game.lives).toBe(2);
-    expect(game.claimed).toBe(0);
-    expect(game.trail).toHaveLength(0);
-  });
-
-  it('ends the run after three hits', () => {
+  it('detects collision on the moving tip before capture and loses after three hits', () => {
     const game = fixture();
     for (let i = 0; i < 3; i++) {
-      game.protection = 0;
-      game.enemy = { x: 4.5, y: 1.5, vx: 0, vy: 0 };
-      game.move('down', true);
+      game.protection = 0; game.enemy = { x: 4, y: 1, vx: 0, vy: 0 };
+      game.update(0.1, 'down', true);
     }
-    expect(game.lives).toBe(0);
-    expect(game.phase).toBe('lost');
-    expect(game.events).toContain('lost');
+    expect(game.lives).toBe(0); expect(game.phase).toBe('lost'); expect(game.claimed).toBe(0);
   });
-
-  it('pauses movement, the enemy and elapsed time, then resumes', () => {
-    const game = fixture();
-    game.enemy.vx = 5;
-    game.togglePause();
+  it('pauses player, enemy and elapsed time', () => {
+    const game = fixture(); game.enemy.vx = 5; game.togglePause();
     const enemy = { ...game.enemy };
-    game.update(1); game.move('down', true);
-    expect(game.elapsed).toBe(0);
-    expect(game.enemy).toEqual(enemy);
-    expect(game.trail).toHaveLength(0);
-    game.togglePause(); game.update(0.1);
-    expect(game.elapsed).toBeCloseTo(0.1);
+    game.update(1, 'down', true);
+    expect(game.elapsed).toBe(0); expect(game.enemy).toEqual(enemy); expect(game.trail).toHaveLength(0);
+    game.togglePause(); game.update(0.1); expect(game.elapsed).toBeCloseTo(0.1);
     expect(game.enemy.x).not.toBe(enemy.x);
   });
-
-  it('keeps the enemy inside danger cells after a capture over a long simulation', () => {
-    const game = fixture();
-    moves(game, 'down', 9);
+  it('keeps the enemy radius inside a concave region through a long simulation', () => {
+    const game = fixture(); game.move('down', true, 3); game.move('left', true, 4);
     game.enemy.vx = 7.4; game.enemy.vy = 5.2;
     let bouncedX = false, bouncedY = false;
     for (let i = 0; i < 3000; i++) {
       game.update(1 / 60);
-      expect(game.cell(Math.floor(game.enemy.x), Math.floor(game.enemy.y))).toBe(EMPTY);
-      bouncedX ||= game.enemy.vx < 0;
-      bouncedY ||= game.enemy.vy < 0;
+      expect(inside(game.enemy, game.territory)).toBe(true);
+      expect(Math.min(...edges(game.territory).map(([a, b]) => distance(game.enemy, a, b)))).toBeGreaterThanOrEqual(0.55 - 1e-7);
+      bouncedX ||= game.enemy.vx < 0; bouncedY ||= game.enemy.vy < 0;
     }
     expect(bouncedX && bouncedY).toBe(true);
   });
-
-  it('constructs a fresh run without retained territory, score or lives', () => {
-    const previous = fixture();
-    moves(previous, 'down', 9);
-    const fresh = new Game();
-    expect(fresh.percent).toBe(0);
-    expect(fresh.score).toBe(0);
-    expect(fresh.lives).toBe(3);
-    expect(fresh.phase).toBe('ready');
+  it('starts fresh without retained state', () => {
+    const game = new Game(); expect(game.percent).toBe(0); expect(game.lives).toBe(3);
+    expect(game.phase).toBe('ready'); expect(game.captured).toHaveLength(0);
+  });
+});
+describe('polygon topology', () => {
+  it('conserves area across a concave multibend cut in either direction', () => {
+    const polygon = fixture().outline;
+    const cut = [{ x: 4.27, y: 0 }, { x: 4.27, y: 2.33 }, { x: 2.61, y: 2.33 }, { x: 2.61, y: 7.19 }, { x: 10, y: 7.19 }];
+    for (const path of [cut, [...cut].reverse()]) {
+      const parts = split(polygon, path);
+      expect(area(parts[0]) + area(parts[1])).toBeCloseTo(100, 8);
+      expect(parts.filter(part => inside({ x: 8, y: 9 }, part))).toHaveLength(1);
+    }
   });
 });
