@@ -12,6 +12,7 @@ export interface GameTheme {
   id: string;
   landscape: string;
   danger: string;
+  arenaBorder: string;
   boundary: string;
   trail: string;
   createBossAttack?: BossAttackFactory;
@@ -116,7 +117,7 @@ export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): Captur
 }
 
 export const lakeTheme: GameTheme = {
-  id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
+  id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new AlternatingCrossAttack(),
   bossConfig: lakeBossConfig,
 };

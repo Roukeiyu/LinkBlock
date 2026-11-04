@@ -147,15 +147,16 @@ describe('expanding the only initial island', () => {
     game.beginRetraction(); game.update(1); expect(game.player).toEqual(start); expect(game.trail).toHaveLength(0);
     expect(game.isBoundary(start.x, start.y)).toBe(true); expect(game.lives).toBe(3);
   });
-  it('can turn along the frame and return to the island, without making the frame walkable', () => {
+  it('can turn along the frame, return to the island and walk its true edge without using bare frame', () => {
     const game = ringGame(); place(game, 8, 8);
     game.move('up', true, 100); expect(game.player).toEqual({ x: 8, y: 0 }); expect(game.claimed).toBe(56);
     game.move('right', true, 4); expect(game.trail.length).toBeGreaterThan(1); expect(game.score).toBe(0);
     game.move('down', true, 100); expect(game.claimed).toBe(88); expect(game.lastCapture.map(area)).toEqual([32]);
-    expect(game.isBoundary(10, 0)).toBe(false); expect(game.isBoundary(12, 4)).toBe(true);
+    expect(game.isBoundary(10, 0)).toBe(true); expect(game.isBoundary(4, 0)).toBe(false); expect(game.isBoundary(12, 4)).toBe(true);
     game.move('up', false, 100); expect(game.player).toEqual({ x: 12, y: 0 });
-    game.move('left', false, 10); game.move('up', true, 10); expect(game.player).toEqual({ x: 12, y: 0 });
-    game.move('down', false, 4); expect(game.player).toEqual({ x: 12, y: 4 });
+    game.move('left', false, 4); expect(game.player).toEqual({ x: 8, y: 0 });
+    game.move('left', false, 10); game.move('up', true, 10); expect(game.player).toEqual({ x: 8, y: 0 });
+    game.move('right', false, 4); game.move('down', false, 4); expect(game.player).toEqual({ x: 12, y: 4 });
   });
   it('allows a loop to return to its exact starting point without treating it as a self-crossing', () => {
     const game = ringGame(); place(game, 12, 8);
@@ -196,7 +197,8 @@ describe('expanding the only initial island', () => {
       if (regions.some(p => wallEdges(p).some(([a, b]) => distance(point, a, b) < 1e-7))) continue;
       expect(regions.filter(p => inside(point, p))).toHaveLength(1);
     }
-    expect(game.isBoundary(20, 0)).toBe(false); expect(game.isBoundary(40, 10)).toBe(false);
+    expect(game.isBoundary(20, 0)).toBe(true); expect(game.isBoundary(40, 10)).toBe(true);
+    expect(game.isBoundary(4, 0)).toBe(false); expect(game.isBoundary(40, 30)).toBe(false);
   });
   it('keeps frame-touching and retracting lines vulnerable to bullets and restores the island anchor on hit', () => {
     const game = ringGame(); place(game, 8, 8); game.move('up', true, 100);
@@ -216,7 +218,8 @@ describe('expanding the only initial island', () => {
     expect(game.claimed).toBe(200); expect(game.score - score).toBe(720);
     expect(game.enemies).toEqual([left]); expect(game.lastDefeats.map(body => body.kind)).toEqual(['orbit']);
     expect(game.territories.find(region => inside(left, region))).toEqual(other);
-    expect(game.isBoundary(10, 0)).toBe(false); expect(game.isBoundary(10, 40)).toBe(false);
+    expect(game.isBoundary(10, 0)).toBe(true); expect(game.isBoundary(10, 40)).toBe(true);
+    expect(game.isBoundary(2, 0)).toBe(false); expect(game.isBoundary(38, 40)).toBe(false);
   });
   it('sustains final-stage motion around the real hole for two minutes with bounded storage', () => {
     const game = new Game(72, 48, { opening: true, random: seeded(), bossConfig: { phases: [{ ...lakeBossConfig.phases![2], id: '压力测试', when: { healthAtMost: 5 } }] } });

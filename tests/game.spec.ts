@@ -646,6 +646,54 @@ for (const phone of [false, true]) test(`island coast is the only shore, frame c
   await page.screenshot({ path: `test-results/island-growth-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
 });
 
+for (const phone of [false, true]) test(`island coast stays visible and walkable at the frame, with a separate arena border on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  await page.keyboard.press('Space'); await page.clock.runFor(32);
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6);
+  await moveClock(page, 'ArrowRight', p => p.x >= 28); const right = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  const areaBefore = Number(await page.locator('.progress-track').getAttribute('aria-valuenow')), scoreBefore = await page.locator('#score').textContent();
+  expect((await probe(page)).boundary.some((p, i, points) => i % 2 === 0 && Math.abs(p.y) < 1e-6 && Math.abs(points[i + 1].y) < 1e-6 && Math.min(p.x, points[i + 1].x) <= 26 && Math.max(p.x, points[i + 1].x) >= 26)).toBe(true);
+  expect((await worldPixel(page, 26, 0))[1]).toBeGreaterThan(180);
+  const gap = 4 / 11.5;
+  for (const [x, y] of [[48, -gap], [-gap, 24], [72 + gap, 24], [48, 48 + gap]]) {
+    expect(await worldPixel(page, x, y)).toEqual([99, 134, 156]);
+  }
+  if (phone) {
+    const session = await page.context().newCDPSession(page);
+    const touch = async (type: string, direction: string) => {
+      const box = (await page.locator(`[data-dir=${direction}]`).boundingBox())!;
+      await session.send('Input.dispatchTouchEvent', { type, touchPoints: [{ id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
+    };
+    await touch('touchStart', 'up'); await page.clock.runFor(1000);
+    expect((await probe(page)).player).toEqual({ x: right, y: 0 });
+    await touch('touchMove', 'left'); await page.clock.runFor(500);
+    expect((await probe(page)).player).toEqual({ x: 24, y: 0 });
+    await page.clock.runFor(300); expect((await probe(page)).player).toEqual({ x: 24, y: 0 });
+    await touch('touchMove', 'down'); await page.clock.runFor(1000);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session.detach();
+  } else {
+    await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6);
+    await moveClock(page, 'ArrowLeft', p => Math.abs(p.x - 24) < 1e-6);
+    await page.keyboard.down('ArrowLeft'); await page.clock.runFor(300); await page.keyboard.up('ArrowLeft');
+    expect((await probe(page)).player).toEqual({ x: 24, y: 0 });
+    await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6);
+  }
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(areaBefore, 7);
+  await expect(page.locator('#score')).toHaveText(scoreBefore!);
+  expect(await worldPixel(page, 50, 0)).toEqual([14, 32, 43]);
+  // A second enlargement preserves the same continuous edge at the arena.
+  await moveClock(page, 'ArrowLeft', p => p.x <= 22); const x = (await probe(page)).player.x;
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 12); const y = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowRight', p => Math.abs(p.x - 24) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(areaBefore + (24 - x) * (18 - y) / (72 * 48) * 100, 7);
+  expect((await worldPixel(page, 26, 0))[1]).toBeGreaterThan(180);
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await page.screenshot({ path: `test-results/continuous-frame-shore-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
 test('pause, sound, restart and background pause', async ({ page }) => {
   await firstCut(page);
   await page.keyboard.press('KeyP'); await expect(page.getByRole('heading', { name: '风景会等你。' })).toBeVisible();

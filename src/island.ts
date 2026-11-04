@@ -23,15 +23,14 @@ export class Island {
   regions: Polygon[] = [];
   coast: [Point, Point][] = [];
 
-  constructor(private readonly outline: Polygon, starting: Polygon) {
+  constructor(outline: Polygon, starting: Polygon) {
     this.arena = geometry(outline); this.land = union(geometry(starting)); this.refresh();
   }
   private refresh(land = this.land) {
     const regions = islandPolygons(difference(this.arena, land));
-    // Only the island shore facing unrevealed space is walkable. The arena
-    // frame remains an enemy/arena limit, never a place for the player to land.
-    const coast = islandPolygons(land).flatMap(wallEdges).filter(([a, b]) =>
-      !edges(this.outline).some(([c, d]) => onSegment(a, c, d) && onSegment(b, c, d)));
+    // Every real island edge is a shore, including a section against the arena
+    // limit. Bare frame sections never enter this land-derived perimeter.
+    const coast = islandPolygons(land).flatMap(wallEdges);
     this.land = land; this.regions = regions; this.coast = coast;
   }
   close(trail: Polygon, water?: Polygon): Polygon[] | undefined {
