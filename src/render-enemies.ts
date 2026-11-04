@@ -1,7 +1,7 @@
 import { jumpPose, type BossJump } from './boss';
 import { ENEMY_STYLES, type Enemy } from './enemies';
 
-export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 8) {
+export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 8, angleOffset = 0) {
   const color = ENEMY_STYLES[enemy.kind].color;
   const r = enemy.visualRadius;
   ctx.save();
@@ -35,7 +35,7 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
       ctx.strokeStyle = '#ffe0c6'; ctx.lineWidth = 0.14;
       ctx.beginPath(); ctx.arc(0, 0, r * 1.53, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * warning); ctx.stroke();
       for (let i = 0; i < directions; i++) {
-        const angle = i * Math.PI * 2 / directions;
+        const angle = angleOffset + i * Math.PI * 2 / directions;
         ctx.beginPath(); ctx.moveTo(Math.cos(angle) * r * 1.78, Math.sin(angle) * r * 1.78);
         ctx.lineTo(Math.cos(angle) * r * 2.37, Math.sin(angle) * r * 2.37); ctx.stroke();
       }

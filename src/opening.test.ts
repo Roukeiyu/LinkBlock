@@ -3,7 +3,7 @@ import { Game } from './engine';
 import { advanceEnemy, createEnemy } from './enemies';
 import { area, distance, inside, partitionRegion, wallEdges, type Polygon } from './geometry';
 import { openingFraction, openingRectangle, OPENING_SECONDS } from './opening';
-import { safeLanding } from './boss';
+import { lakeBossConfig, safeLanding } from './boss';
 import { MAX_HAZARDS } from './attacks';
 
 function seeded(seed = 13) { return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
@@ -151,7 +151,7 @@ describe('continuous territory around the starting hole', () => {
     }
   });
   it('sustains final-stage motion around the real hole for two minutes with bounded storage', () => {
-    const game = new Game(72, 48, { opening: true, random: seeded(), bossConfig: { phases: [{ id: '压力测试', when: { healthAtMost: 5 }, reinforcements: { targetCount: 15, interval: 4, speed: 8 } }] } });
+    const game = new Game(72, 48, { opening: true, random: seeded(), bossConfig: { phases: [{ ...lakeBossConfig.phases![2], id: '压力测试', when: { healthAtMost: 5 } }] } });
     game.start(); game.confirmOpening(); game.protection = 1000; const start = performance.now();
     for (let i = 0; i < 7200; i++) {
       game.update(1 / 60); expect(game.enemies.length).toBeLessThanOrEqual(15); expect(game.hazards.length).toBeLessThanOrEqual(MAX_HAZARDS);

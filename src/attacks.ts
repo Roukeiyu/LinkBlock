@@ -21,6 +21,7 @@ export interface BossAttack {
   readonly name: string;
   readonly warning: number;
   readonly directions?: number;
+  readonly angleOffset?: number;
   update(seconds: number, context: AttackContext): void;
 }
 export type BossAttackFactory = () => BossAttack;
@@ -62,25 +63,36 @@ export class Projectile implements AttackHazard {
 export class RadialAttack implements BossAttack {
   readonly name: string;
   private clock = 0;
-  constructor(readonly directions = 8, readonly interval = 5, readonly warningSeconds = 0.85, readonly speed = 13) {
+  private volley = 0;
+  private readonly offsets: readonly number[];
+  constructor(readonly directions = 8, readonly interval = 5, readonly warningSeconds = 0.85, readonly speed = 13, angleOffsets: readonly number[] = [0]) {
     if (!Number.isInteger(directions) || directions < 1 || directions > MAX_HAZARDS
       || ![interval, warningSeconds, speed].every(Number.isFinite)
+      || !angleOffsets.length || angleOffsets.length > MAX_HAZARDS || !angleOffsets.every(Number.isFinite)
       || interval <= 0 || warningSeconds <= 0 || warningSeconds > interval || speed <= 0) throw new Error('Invalid attack timing, count or speed');
     this.name = directions === 8 ? '八向散射' : directions === 16 ? '十六向散射' : `${directions} 向散射`;
+    this.offsets = [...angleOffsets];
   }
+  // The warning and emitter both read the next volley orientation.
+  get angleOffset() { return this.offsets[this.volley % this.offsets.length]; }
   get warning() { return Math.max(0, (this.clock - (this.interval - this.warningSeconds)) / this.warningSeconds); }
   update(seconds: number, context: AttackContext) {
     this.clock += seconds;
     while (this.clock >= this.interval) {
       this.clock -= this.interval;
       for (let i = 0; i < this.directions; i++) {
-        const angle = i * Math.PI * 2 / this.directions;
+        const angle = this.angleOffset + i * Math.PI * 2 / this.directions;
         context.spawn(new Projectile({ ...context.origin }, { x: Math.cos(angle) * this.speed, y: Math.sin(angle) * this.speed }));
       }
+      this.volley++;
       context.cast();
     }
   }
 }
 export class EightWayAttack extends RadialAttack {
   constructor(interval = 5, warningSeconds = 0.85, speed = 13) { super(8, interval, warningSeconds, speed); }
+}
+export class AlternatingCrossAttack extends RadialAttack {
+  readonly name = '十字 / X 交替';
+  constructor(interval = 5, warningSeconds = 0.85, speed = 13) { super(4, interval, warningSeconds, speed, [0, Math.PI / 4]); }
 }

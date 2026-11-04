@@ -442,7 +442,7 @@ function render(now: number) {
       ctx.stroke(); ctx.restore();
     }
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
-    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions);
+    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions, game.bossAttack?.angleOffset);
     for (const hazard of game.hazards) hazard.render(ctx);
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();

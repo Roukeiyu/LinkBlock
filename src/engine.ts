@@ -25,6 +25,7 @@ export class Game {
   private bossStageIndex = -1;
   private reinforcementRule: ReinforcementRule | undefined;
   private reinforcementClock = 0;
+  private reinforcementSerial = 0;
   private readonly bossSettings: Required<BossConfig>;
   private readonly bossVictory: boolean;
   private readonly territoryVictory: boolean;
@@ -68,7 +69,8 @@ export class Game {
         || (phase.when.territoryAtLeast !== undefined && (!Number.isFinite(phase.when.territoryAtLeast) || phase.when.territoryAtLeast < 0 || phase.when.territoryAtLeast > 100))) throw new Error('Invalid boss phase');
       const rule = phase.reinforcements;
       if (rule && (!Number.isInteger(rule.targetCount) || rule.targetCount < 0 || rule.targetCount > MAX_ENEMIES
-        || !Number.isFinite(rule.interval) || rule.interval <= 0 || !Number.isFinite(rule.speed) || rule.speed <= 0)) throw new Error('Invalid reinforcement rule');
+        || !Number.isFinite(rule.interval) || rule.interval <= 0 || !Number.isFinite(rule.speed) || rule.speed <= 0
+        || (rule.motion !== undefined && !['vertical', 'axes'].includes(rule.motion)))) throw new Error('Invalid reinforcement rule');
     }
     if (width < 6 || height < 6) throw new Error('Board must be at least 6 × 6');
     this.outline = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
@@ -269,13 +271,15 @@ export class Game {
     this.reinforcementClock = Math.max(0, this.reinforcementClock - rule.interval);
     let spawned = false;
     while (this.enemies.length < rule.targetCount) {
-      const enemy = createEnemy('straight', { x: 0, y: 0 }, { x: 0, y: (this.random() < 0.5 ? -1 : 1) * rule.speed });
+      const horizontal = rule.motion === 'axes' && this.reinforcementSerial % 2 === 0;
+      const speed = (this.random() < 0.5 ? -1 : 1) * rule.speed;
+      const enemy = createEnemy('straight', { x: 0, y: 0 }, { x: horizontal ? speed : 0, y: horizontal ? 0 : speed });
       const to = findLanding(this.territories, enemy, [...this.enemies, this.boss], this.player, this.trail, this.random);
       // A crowded/narrow room defers the remaining reinforcements; never force
       // a body onto an active line, the player, another body or claimed land.
       if (!to) break;
       enemy.x = to.x; enemy.y = to.y; enemy.previous = { ...to }; enemy.trace = [{ ...to }];
-      this.enemies.push(enemy); spawned = true;
+      this.enemies.push(enemy); this.reinforcementSerial++; spawned = true;
     }
     return spawned;
   }

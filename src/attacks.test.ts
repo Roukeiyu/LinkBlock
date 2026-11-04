@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EightWayAttack, RadialAttack, MAX_HAZARDS, Projectile, type AttackContext, type AttackHazard, type BossAttackFactory } from './attacks';
+import { AlternatingCrossAttack, EightWayAttack, RadialAttack, MAX_HAZARDS, Projectile, type AttackContext, type AttackHazard, type BossAttackFactory } from './attacks';
 import { Game } from './engine';
 import { createEnemy } from './enemies';
 import { distance, type Point, type Polygon } from './geometry';
@@ -8,6 +8,36 @@ function fixture() {
   const game = new Game(20, 20, { enemies: [createEnemy('straight', { x: 17, y: 16 }, { x: 0, y: 0 })], boss: null });
   game.start(); return game;
 }
+describe('alternating four-shot skill', () => {
+  it('starts with a cross, alternates X/cross for every volley and points the warning at the next volley', () => {
+    const skill = new AlternatingCrossAttack(), shots: Projectile[] = [];
+    const context: AttackContext = { origin: { x: 20, y: 20 }, arena: { width: 72, height: 48 }, spawn(hazard) { shots.push(hazard as Projectile); return true; }, cast() {} };
+    expect(skill.directions).toBe(4); expect(skill.angleOffset).toBe(0);
+    for (let wave = 0; wave < 6; wave++) {
+      skill.update(4.3, context); expect(skill.warning).toBeGreaterThan(0);
+      const offset = wave % 2 * Math.PI / 4; expect(skill.angleOffset).toBe(offset);
+      skill.update(0.71, context); expect(shots).toHaveLength((wave + 1) * 4);
+      shots.slice(wave * 4).forEach((shot, i) => {
+        expect(shot.position).toEqual(context.origin); expect(shot.radius).toBe(0.22);
+        expect(shot.velocity.x).toBeCloseTo(Math.cos(offset + i * Math.PI / 2) * 13);
+        expect(shot.velocity.y).toBeCloseTo(Math.sin(offset + i * Math.PI / 2) * 13);
+      });
+      expect(skill.angleOffset).toBe((wave + 1) % 2 * Math.PI / 4);
+    }
+    expect(new AlternatingCrossAttack().angleOffset).toBe(0);
+  });
+  it('keeps volley order independent of frame size and validates configurable angle sequences', () => {
+    const collect = (steps: number, seconds: number) => {
+      const skill = new AlternatingCrossAttack(), shots: Projectile[] = [];
+      const context: AttackContext = { origin: { x: 20, y: 20 }, arena: { width: 72, height: 48 }, spawn(h) { shots.push(h as Projectile); return true; }, cast() {} };
+      for (let i = 0; i < steps; i++) skill.update(seconds, context);
+      return shots.map(shot => shot.velocity);
+    };
+    expect(collect(1, 15.05)).toEqual(collect(301, 0.05));
+    expect(() => new RadialAttack(4, 5, 0.85, 13, [])).toThrow();
+    expect(() => new RadialAttack(4, 5, 0.85, 13, [NaN])).toThrow();
+  });
+});
 describe('eight-way boss skill', () => {
   it.each([5, 2.5])('emits sixteen evenly spaced shots every %s seconds', interval => {
     const skill = new RadialAttack(16, interval), shots: Projectile[] = [];

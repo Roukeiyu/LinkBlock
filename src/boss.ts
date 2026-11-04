@@ -1,9 +1,9 @@
 import { distance, wallEdges, EPS, inside, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
-import { EightWayAttack, RadialAttack, type BossAttackFactory } from './attacks';
+import { AlternatingCrossAttack, EightWayAttack, type BossAttackFactory } from './attacks';
 
 export const MAX_ENEMIES = 32;
-export interface ReinforcementRule { targetCount: number; interval: number; speed: number }
+export interface ReinforcementRule { targetCount: number; interval: number; speed: number; motion?: 'vertical' | 'axes' }
 
 export interface BossPhase {
   id: string;
@@ -21,9 +21,9 @@ export interface BossJump { from: Point; to: Point | null; elapsed: number; dura
 export interface BossHitVisual extends Point { points: number; health: number; maxHealth: number }
 export const BOSS_HIT_POINTS = 250;
 export const lakeBossConfig: BossConfig = { maxHealth: 5, phases: [
-  { id: '一阶段', when: { healthAtMost: 5 }, createAttack: () => new EightWayAttack() },
-  { id: '二阶段', when: { healthAtMost: 3 }, createAttack: () => new RadialAttack(16, 5), reinforcements: { targetCount: 9, interval: 4, speed: 8 } },
-  { id: '三阶段', when: { healthAtMost: 1 }, createAttack: () => new RadialAttack(16, 2.5), reinforcements: { targetCount: 15, interval: 4, speed: 8 } },
+  { id: '一阶段', when: { healthAtMost: 5 }, createAttack: () => new AlternatingCrossAttack() },
+  { id: '二阶段', when: { healthAtMost: 3 }, createAttack: () => new EightWayAttack(), reinforcements: { targetCount: 9, interval: 4, speed: 8, motion: 'axes' } },
+  { id: '三阶段', when: { healthAtMost: 1 }, createAttack: () => new EightWayAttack(2.5), reinforcements: { targetCount: 15, interval: 4, speed: 8, motion: 'axes' } },
 ] };
 
 export function jumpPose(jump: BossJump, reducedMotion = false) {
