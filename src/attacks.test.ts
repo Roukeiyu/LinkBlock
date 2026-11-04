@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EightWayAttack, MAX_HAZARDS, Projectile, type AttackContext, type AttackHazard, type BossAttackFactory } from './attacks';
+import { EightWayAttack, RadialAttack, MAX_HAZARDS, Projectile, type AttackContext, type AttackHazard, type BossAttackFactory } from './attacks';
 import { Game } from './engine';
 import { createEnemy } from './enemies';
 import { distance, type Point, type Polygon } from './geometry';
@@ -9,6 +9,20 @@ function fixture() {
   game.start(); return game;
 }
 describe('eight-way boss skill', () => {
+  it.each([5, 2.5])('emits sixteen evenly spaced shots every %s seconds', interval => {
+    const skill = new RadialAttack(16, interval), shots: Projectile[] = [];
+    let casts = 0;
+    const context: AttackContext = { origin: { x: 10, y: 10 }, arena: { width: 72, height: 48 }, spawn(hazard) { shots.push(hazard as Projectile); return true; }, cast() { casts++; } };
+    skill.update(interval - 0.4, context); expect(skill.warning).toBeGreaterThan(0); expect(shots).toHaveLength(0);
+    skill.update(0.41, context); expect(shots).toHaveLength(16);
+    shots.forEach((shot, i) => {
+      expect(shot.velocity.x).toBeCloseTo(Math.cos(i * Math.PI / 8) * 13);
+      expect(shot.velocity.y).toBeCloseTo(Math.sin(i * Math.PI / 8) * 13);
+      expect(shot.radius).toBe(0.22);
+    });
+    skill.update(interval * 2, context); expect(casts).toBe(3); expect(shots).toHaveLength(48);
+    expect(() => new RadialAttack(0)).toThrow(); expect(() => new RadialAttack(16, Infinity)).toThrow();
+  });
   it('telegraphs, emits exactly eight evenly spaced shots and repeats independently of frame rate', () => {
     const skill = new EightWayAttack(2, 0.5, 11), shots: Projectile[] = [];
     let casts = 0;
@@ -76,10 +90,10 @@ describe('projectiles and collision', () => {
     expect(game.lives).toBe(2); expect(game.hazards).toHaveLength(0);
     expect(game.events.filter(event => event === 'hit')).toHaveLength(1);
   });
-  it.each([0, 1, 2, 3, 4, 5, 6, 7])('detects a shot from direction %s crossing an old segment during retraction', direction => {
+  it.each(Array.from({ length: 16 }, (_, i) => i))('detects a shot from direction %s crossing an old segment during retraction', direction => {
     const game = new Game(100, 100, { enemies: [], boss: null }); game.start();
     game.move('down', true, 30); game.move('left', true, 20); game.move('down', true, 20);
-    const angle = direction * Math.PI / 4, dx = Math.cos(angle), dy = Math.sin(angle);
+    const angle = direction * Math.PI / 8, dx = Math.cos(angle), dy = Math.sin(angle);
     game.spawnHazard(new Projectile({ x: 50 - dx * 5, y: 15 - dy * 5 }, { x: dx * 1000, y: dy * 1000 }));
     game.beginRetraction(); game.update(0.02);
     expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.player).toEqual(game.anchor);

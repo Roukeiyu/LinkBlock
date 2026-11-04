@@ -15,7 +15,7 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
 
 .enemy-entry.defeated{opacity:.4}.enemy-entry.defeated>span{text-decoration:line-through}.enemy-entry.defeated em{text-decoration:none;color:#79edc9}
 
-.boss-health{display:flex;gap:10px;align-items:center;margin-top:13px;color:#c9a58d;font-size:9px}#boss-hearts{display:flex;gap:4px}#boss-hearts i{display:block;width:18px;height:4px;border:1px solid #705445;background:#24252a}#boss-hearts i.filled{background:#ffa56e;border-color:#ffa56e}#boss-hp-text{font:9px monospace}#boss-phase{margin-left:auto;font-size:9px}
+.boss-health{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:13px;color:#c9a58d;font-size:9px}#boss-hearts{display:flex;gap:4px}#boss-hearts i{display:block;width:18px;height:4px;border:1px solid #705445;background:#24252a}#boss-hearts i.filled{background:#ffa56e;border-color:#ffa56e}#boss-hp-text{font:9px monospace;white-space:nowrap}#boss-phase{flex-basis:100%;font-size:9px}
 
 /* The controller is exclusive to narrow portrait screens. */
 .mobile-game-status{display:none}.touch-controls{display:none}

@@ -55,7 +55,7 @@ const ctx = canvas.getContext('2d')!;
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;
-let game = new Game(72, 48, { createBossAttack: theme.createBossAttack });
+let game = new Game(72, 48, { createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig });
 let lastPhase = '';
 let soundEnabled = false;
 let audio: AudioContext | undefined;
@@ -100,7 +100,7 @@ function clearInput() {
   syncDirectionButtons();
 }
 function restart() {
-  clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack }); game.start(); effects.length = 0; hitFlash = 0;
+  clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
   sync(); canvas.focus({ preventScroll: true });
 }
@@ -328,7 +328,7 @@ function sync() {
   for (const kind of ['straight', 'orbit', 'zigzag', 'boss'] as const) {
     const remaining = kind === 'boss' ? Number(Boolean(game.boss)) : game.enemies.filter(enemy => enemy.kind === kind).length;
     const row = $(`[data-kind="${kind}"]`); row.classList.toggle('defeated', remaining === 0);
-    if (kind !== 'boss') row.querySelector('em')!.textContent = remaining === 0 ? '已击败' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG';
+    if (kind !== 'boss') row.querySelector('em')!.textContent = remaining === 0 ? '已击败' : `${kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'} ×${remaining}`;
   }
   $('#boss-status').textContent = !game.boss ? '已击败' : game.bossJump ? (game.bossJump.to ? '跃迁中' : '寻找落点') : game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
   $('#boss-status').classList.toggle('warning', Boolean(game.boss && !game.bossJump && game.bossAttack && game.bossAttack.warning > 0));
@@ -339,7 +339,7 @@ function sync() {
   $('#mobile-pause').textContent = game.phase === 'paused' ? '继续' : '暂停';
   ($('#mobile-pause') as HTMLButtonElement).disabled = !['playing', 'paused'].includes(game.phase);
   $('.boss-health').setAttribute('aria-valuenow', String(hp)); $('.boss-health').setAttribute('aria-valuemax', String(game.bossMaxHealth));
-  $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.bossPhase;
+  $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.reinforcementTarget === undefined ? game.bossPhase : `${game.bossPhase} · 访客 ${game.enemies.length}/${game.reinforcementTarget}`;
   pauseButton.disabled = !['playing', 'paused'].includes(game.phase);
   overlay.hidden = game.phase === 'playing' || (game.phase === 'won' && effects.length > 0);
   if (lastPhase === game.phase) return;
@@ -401,7 +401,7 @@ function render(now: number) {
       ctx.stroke(); ctx.restore();
     }
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
-    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash);
+    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions);
     for (const hazard of game.hazards) hazard.render(ctx);
     if (!game.protection || Math.floor(now / 100) % 2) {
       ctx.save();

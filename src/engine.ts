@@ -1,7 +1,7 @@
 import { area, distance, edges, EPS, inside, onSegment, rayDistance, segmentDistance, same, simplify, split, type Point, type Polygon } from './geometry';
-import { advanceEnemy, createEnemy, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
+import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
-import { BOSS_HIT_POINTS, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type VictoryConfig } from './boss';
+import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
@@ -22,6 +22,8 @@ export class Game {
   winReason: 'territory' | 'boss' | undefined;
   private bossDefeated = false;
   private bossStageIndex = -1;
+  private reinforcementRule: ReinforcementRule | undefined;
+  private reinforcementClock = 0;
   private readonly bossSettings: Required<BossConfig>;
   private readonly bossVictory: boolean;
   private readonly territoryVictory: boolean;
@@ -59,20 +61,24 @@ export class Game {
       if (!phase.id || (phase.when.healthAtMost === undefined && phase.when.territoryAtLeast === undefined)
         || (phase.when.healthAtMost !== undefined && (!Number.isFinite(phase.when.healthAtMost) || phase.when.healthAtMost < 0 || phase.when.healthAtMost > this.bossMaxHealth))
         || (phase.when.territoryAtLeast !== undefined && (!Number.isFinite(phase.when.territoryAtLeast) || phase.when.territoryAtLeast < 0 || phase.when.territoryAtLeast > 100))) throw new Error('Invalid boss phase');
+      const rule = phase.reinforcements;
+      if (rule && (!Number.isInteger(rule.targetCount) || rule.targetCount < 0 || rule.targetCount > MAX_ENEMIES
+        || !Number.isFinite(rule.interval) || rule.interval <= 0 || !Number.isFinite(rule.speed) || rule.speed <= 0)) throw new Error('Invalid reinforcement rule');
     }
     if (width < 6 || height < 6) throw new Error('Board must be at least 6 × 6');
     this.outline = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
     this.territories = [this.outline.map(p => ({ ...p }))];
     this.player = { x: width / 2, y: 0 };
     this.anchor = { ...this.player };
-    this.enemies = options.enemies ?? defaultEnemies(width, height);
-    this.boss = options.boss === null ? undefined : options.boss ?? createEnemy('boss', { x: Math.min(width - 1.2, width * 0.84), y: Math.min(height - 1.2, height * 0.76) });
+    this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(width, height);
+    this.enemies = options.enemies ?? defaultEnemies(width, height, this.boss);
     if (!this.boss && !this.territoryVictory) throw new Error('Boss-only victory needs a boss');
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();
   }
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.claimed / (this.width * this.height) * 100; }
+  get reinforcementTarget() { return this.reinforcementRule?.targetCount; }
   isBoundary(x: number, y: number) {
     return [...edges(this.outline), ...this.territories.flatMap(edges)].some(([a, b]) => onSegment({ x, y }, a, b));
   }
@@ -208,8 +214,27 @@ export class Game {
         && (phase.when.territoryAtLeast === undefined || this.percent >= phase.when.territoryAtLeast)) {
         this.bossStageIndex = i; this.bossPhase = phase.id;
         if (phase.createAttack) this.bossAttack = phase.createAttack();
+        this.reinforcementRule = phase.reinforcements; this.reinforcementClock = 0;
       }
     }
+  }
+  private updateReinforcements(seconds: number) {
+    const rule = this.reinforcementRule;
+    if (!rule || !this.boss || this.bossJump) return false;
+    this.reinforcementClock += seconds;
+    if (this.reinforcementClock < rule.interval - EPS) return false;
+    this.reinforcementClock = Math.max(0, this.reinforcementClock - rule.interval);
+    let spawned = false;
+    while (this.enemies.length < rule.targetCount) {
+      const enemy = createEnemy('straight', { x: 0, y: 0 }, { x: 0, y: (this.random() < 0.5 ? -1 : 1) * rule.speed });
+      const to = findLanding(this.territories, enemy, [...this.enemies, this.boss], this.player, this.trail, this.random);
+      // A crowded/narrow room defers the remaining reinforcements; never force
+      // a body onto an active line, the player, another body or claimed land.
+      if (!to) break;
+      enemy.x = to.x; enemy.y = to.y; enemy.previous = { ...to }; enemy.trace = [{ ...to }];
+      this.enemies.push(enemy); spawned = true;
+    }
+    return spawned;
   }
   private startBossJump(from: Point) {
     if (!this.boss) return;
@@ -258,7 +283,7 @@ export class Game {
     if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy)));
+    const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy)), ...this.bossSettings.phases.map(phase => phase.reinforcements?.speed ?? 0));
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
     let gestureEnded = false;
@@ -266,6 +291,7 @@ export class Game {
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
       this.updateBossJump(dt);
+      if (this.updateReinforcements(dt)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
       for (const body of bodies) if (body !== this.boss || !this.bossJump) advanceEnemy(body, dt, this.territories, walls);
       if (this.boss && this.bossAttack && !this.bossJump) this.bossAttack.update(dt, {
         origin: this.boss, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),

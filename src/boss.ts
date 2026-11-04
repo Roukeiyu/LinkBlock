@@ -1,11 +1,15 @@
 import { distance, edges, EPS, inside, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
-import type { BossAttackFactory } from './attacks';
+import { EightWayAttack, RadialAttack, type BossAttackFactory } from './attacks';
+
+export const MAX_ENEMIES = 32;
+export interface ReinforcementRule { targetCount: number; interval: number; speed: number }
 
 export interface BossPhase {
   id: string;
   when: { healthAtMost?: number; territoryAtLeast?: number };
   createAttack?: BossAttackFactory;
+  reinforcements?: ReinforcementRule;
 }
 export interface BossConfig {
   maxHealth?: number;
@@ -16,6 +20,11 @@ export interface VictoryConfig { territoryPercent?: number; territory?: boolean;
 export interface BossJump { from: Point; to: Point | null; elapsed: number; duration: number; retryIn?: number }
 export interface BossHitVisual extends Point { points: number; health: number; maxHealth: number }
 export const BOSS_HIT_POINTS = 250;
+export const lakeBossConfig: BossConfig = { maxHealth: 5, phases: [
+  { id: '一阶段', when: { healthAtMost: 5 }, createAttack: () => new EightWayAttack() },
+  { id: '二阶段', when: { healthAtMost: 3 }, createAttack: () => new RadialAttack(16, 5), reinforcements: { targetCount: 9, interval: 4, speed: 8 } },
+  { id: '三阶段', when: { healthAtMost: 1 }, createAttack: () => new RadialAttack(16, 2.5), reinforcements: { targetCount: 15, interval: 4, speed: 8 } },
+] };
 
 export function jumpPose(jump: BossJump, reducedMotion = false) {
   const progress = jump.to ? Math.min(1, jump.elapsed / jump.duration) : 0.5;
@@ -28,11 +37,11 @@ export function jumpPose(jump: BossJump, reducedMotion = false) {
   };
 }
 export function safeLanding(point: Point, regions: Polygon[], boss: Enemy, enemies: Enemy[], player: Point, trail: Polygon) {
-  const clearance = boss.radius + 0.16;
+  const clearance = boss.visualRadius + 0.16;
   const region = regions.find(region => inside(point, region));
   return Boolean(region && edges(region).every(([a, b]) => distance(point, a, b) >= clearance - EPS)
-    && enemies.every(enemy => Math.hypot(point.x - enemy.x, point.y - enemy.y) >= boss.radius + enemy.radius + 0.16)
-    && Math.hypot(point.x - player.x, point.y - player.y) >= boss.radius + 0.5
+    && enemies.every(enemy => Math.hypot(point.x - enemy.x, point.y - enemy.y) >= boss.visualRadius + enemy.visualRadius + 0.16)
+    && Math.hypot(point.x - player.x, point.y - player.y) >= boss.visualRadius + 0.5
     && trail.slice(1).every((p, i) => distance(point, trail[i], p) >= clearance));
 }
 export function findLanding(regions: Polygon[], boss: Enemy, enemies: Enemy[], player: Point, trail: Polygon, random = Math.random): Point | null {
@@ -49,7 +58,7 @@ export function findLanding(regions: Polygon[], boss: Enemy, enemies: Enemy[], p
     // Geometric scan lines provide a deterministic fallback in concave rooms.
     // These candidates choose a landing point; player motion is never quantized.
     const ys = [...new Set(region.map(p => p.y))].sort((a, b) => a - b);
-    const r = boss.radius + 0.16;
+    const r = boss.visualRadius + 0.16;
     const candidates = [(minY + maxY) / 2, ...ys.flatMap(y => [y - r, y + r]), ...ys.slice(1).map((y, i) => (y + ys[i]) / 2)];
     for (const y of candidates) {
       if (y <= minY || y >= maxY) continue;

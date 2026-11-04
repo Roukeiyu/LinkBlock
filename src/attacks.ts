@@ -20,6 +20,7 @@ export interface AttackContext {
 export interface BossAttack {
   readonly name: string;
   readonly warning: number;
+  readonly directions?: number;
   update(seconds: number, context: AttackContext): void;
 }
 export type BossAttackFactory = () => BossAttack;
@@ -58,22 +59,28 @@ export class Projectile implements AttackHazard {
     ctx.restore();
   }
 }
-export class EightWayAttack implements BossAttack {
-  readonly name = '八向散射';
+export class RadialAttack implements BossAttack {
+  readonly name: string;
   private clock = 0;
-  constructor(readonly interval = 5, readonly warningSeconds = 0.85, readonly speed = 13) {
-    if (interval <= 0 || warningSeconds <= 0 || warningSeconds > interval || speed <= 0) throw new Error('Invalid attack timing or speed');
+  constructor(readonly directions = 8, readonly interval = 5, readonly warningSeconds = 0.85, readonly speed = 13) {
+    if (!Number.isInteger(directions) || directions < 1 || directions > MAX_HAZARDS
+      || ![interval, warningSeconds, speed].every(Number.isFinite)
+      || interval <= 0 || warningSeconds <= 0 || warningSeconds > interval || speed <= 0) throw new Error('Invalid attack timing, count or speed');
+    this.name = directions === 8 ? '八向散射' : directions === 16 ? '十六向散射' : `${directions} 向散射`;
   }
   get warning() { return Math.max(0, (this.clock - (this.interval - this.warningSeconds)) / this.warningSeconds); }
   update(seconds: number, context: AttackContext) {
     this.clock += seconds;
     while (this.clock >= this.interval) {
       this.clock -= this.interval;
-      for (let i = 0; i < 8; i++) {
-        const angle = i * Math.PI / 4;
+      for (let i = 0; i < this.directions; i++) {
+        const angle = i * Math.PI * 2 / this.directions;
         context.spawn(new Projectile({ ...context.origin }, { x: Math.cos(angle) * this.speed, y: Math.sin(angle) * this.speed }));
       }
       context.cast();
     }
   }
+}
+export class EightWayAttack extends RadialAttack {
+  constructor(interval = 5, warningSeconds = 0.85, speed = 13) { super(8, interval, warningSeconds, speed); }
 }

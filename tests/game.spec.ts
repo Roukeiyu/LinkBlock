@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; warningFrame: string; warningShots: number; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
+type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; bossRadius: number; warningFrame: string; warningShots: number; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
@@ -11,12 +11,32 @@ async function firstCut(page: Page) {
   await expect.poll(async () => (await probe(page)).player.y, { timeout: 6000, intervals: [16] }).toBe(48);
   await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
 }
+async function encloseRoster(page: Page) {
+  // A slightly off-centre cut claims the populated smaller side, including Boss.
+  await page.keyboard.down('ArrowRight');
+  for (let i = 0; i < 30 && (await probe(page)).player.x < 40; i++) await page.clock.runFor(16);
+  await page.keyboard.up('ArrowRight'); expect((await probe(page)).player.x).toBeGreaterThanOrEqual(40);
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown');
+  for (let i = 0; i < 60 && (await probe(page)).player.y < 48; i++) await page.clock.runFor(100);
+  expect((await probe(page)).player.y).toBe(48);
+  await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space'); await page.clock.runFor(250);
+}
 test.beforeEach(async ({ page }, info) => {
-  const controlled = info.title.includes('boss damage jump') || info.title.includes('enclosing a normal');
+  const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
+  const controlled = info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview);
+  if (phasePreview) {
+    // Exercise the real theme's stage skill/rendering in an isolated fixture.
+    // Health-driven transitions are covered through actual enclosures in stages.test.ts.
+    await page.route('**/src/engine.ts', async route => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
+      await route.fulfill({ response, body });
+    });
+  }
   if (controlled) await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], warningFrame: '', warningShots: -1, defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
+    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], bossRadius: 0, warningFrame: '', warningShots: -1, defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
     (window as unknown as { probe: typeof state }).probe = state;
     const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
     for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect'] as const) {
@@ -26,6 +46,7 @@ test.beforeEach(async ({ page }, info) => {
         if (method === 'beginPath') paths.set(this, []);
         if (method === 'moveTo' || method === 'lineTo') paths.get(this)?.push({ x: args[0], y: args[1] });
         if (method === 'stroke' && this.strokeStyle === '#ffcf75') state.trail = [...(paths.get(this) ?? [])];
+        if (method === 'stroke' && this.strokeStyle === '#ffa56e' && paths.get(this)?.length === 6) state.bossRadius = Math.max(...paths.get(this)!.map(p => Math.hypot(p.x, p.y)));
         return Reflect.apply(original, this, args);
       } as never;
     }
@@ -37,7 +58,7 @@ test.beforeEach(async ({ page }, info) => {
     };
     const ellipse = CanvasRenderingContext2D.prototype.ellipse;
     CanvasRenderingContext2D.prototype.ellipse = function(...args: Parameters<typeof ellipse>) {
-      if (args[2] === 1.35 && args[3] === 0.48 && this.fillStyle === '#000000') state.jumpShadows++;
+      if (args[2] === 2.28 && args[3] === 0.82 && this.fillStyle === '#000000') state.jumpShadows++;
       return ellipse.apply(this, args);
     };
     const fillText = CanvasRenderingContext2D.prototype.fillText;
@@ -50,7 +71,7 @@ test.beforeEach(async ({ page }, info) => {
     };
     const arc = CanvasRenderingContext2D.prototype.arc;
     CanvasRenderingContext2D.prototype.arc = function(...args: Parameters<typeof arc>) {
-      if (args[2] === 1.8 && args[4] - args[3] >= Math.PI && !warningScheduled) {
+      if (args[2] === 3.06 && this.strokeStyle === '#ffe0c6' && args[4] - args[3] >= Math.PI && !warningScheduled) {
         warningScheduled = true;
         queueMicrotask(() => { state.warningFrame = this.canvas.toDataURL(); state.warningShots = state.shots.length; });
       }
@@ -70,7 +91,9 @@ test.beforeEach(async ({ page }, info) => {
     };
   });
   await page.goto('/');
-  if (controlled) await page.clock.pauseAt(new Date('2026-11-03T00:00:01Z'));
+  // Always pause in the future: slow module loading must not rewind the clock
+  // behind the app's initial performance.now() and drop simulated frames.
+  if (controlled) await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.getByRole('button', { name: '开始探索' }).click();
 });
 
@@ -333,29 +356,20 @@ test('mobile held draw and direction support simultaneous touches, release and c
 });
 
 test('enclosing a normal enemy removes its body, awards points and plays matching fireworks', async ({ page }) => {
-  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown'); await page.clock.runFor(2200);
-  await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
-  await page.keyboard.down('ArrowUp'); await page.clock.runFor(944); await page.keyboard.up('ArrowUp');
-  await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight'); await page.clock.runFor(1700);
-  await page.clock.runFor(250);
+  await encloseRoster(page);
   await expect(page.locator('[data-kind="zigzag"]')).toHaveClass(/defeated/, { timeout: 4000 });
-  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
-  await expect(page.locator('#toast')).toContainText('+1000');
+  await expect(page.locator('#toast')).toContainText('+4500');
   await expect.poll(async () => (await probe(page)).awards.some(award => award.text === '+500' && award.color === '#72cfff')).toBe(true);
   expect((await probe(page)).enemyColors).not.toContain('#72cfff');
   await expect.poll(async () => (await probe(page)).defeatFrame.length).toBeGreaterThan(0);
   await mkdir('test-results', { recursive: true });
   await writeFile('test-results/enemy-defeat.png', Buffer.from((await probe(page)).defeatFrame.split(',')[1], 'base64'));
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
-  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeGreaterThan(50);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeGreaterThan(40);
 });
 
 test('boss damage jump shows four health bars, landing shadow and scaling before returning to normal', async ({ page }) => {
-  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown'); await page.clock.runFor(2200);
-  await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
-  await page.keyboard.down('ArrowUp'); await page.clock.runFor(944); await page.keyboard.up('ArrowUp');
-  await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight'); await page.clock.runFor(1700);
-  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space'); await page.clock.runFor(250);
+  await encloseRoster(page);
   await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '4');
   await expect(page.locator('#boss-hearts .filled')).toHaveCount(4);
   await expect(page.locator('#boss-status')).toHaveText('跃迁中');
@@ -430,10 +444,18 @@ test('pause, sound, restart and background pause', async ({ page }) => {
   await expect(page.locator('#state-label')).toHaveText('已暂停');
 });
 
-test('four independent enemy bodies, boss warning and eight-way shots survive pause and reset on restart', async ({ page }) => {
+test('nine ordinary enemies and a larger boss, warning and eight-way shots survive pause and reset on restart', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await expect(page.locator('.enemy-entry')).toHaveCount(4);
   await expect.poll(async () => new Set((await probe(page)).enemyColors).size).toBe(4);
+  const checkRoster = async () => {
+    const colors = (await probe(page)).enemyColors;
+    expect((await probe(page)).bossRadius).toBeCloseTo(2);
+    for (const color of ['#ff727d', '#bda4ff', '#72cfff']) expect(colors.filter(c => c === color)).toHaveLength(3);
+    expect(colors.filter(c => c === '#ffa56e')).toHaveLength(1);
+    for (const kind of ['straight', 'orbit', 'zigzag']) await expect(page.locator(`[data-kind="${kind}"] em`)).toContainText('×3');
+  };
+  await checkRoster();
   await firstCut(page);
   await expect.poll(async () => page.locator('#boss-status').textContent(), { timeout: 6000, intervals: [50] }).toBe('即将释放');
   await expect.poll(async () => (await probe(page)).warningFrame.length, { timeout: 2000, intervals: [50] }).toBeGreaterThan(0);
@@ -458,7 +480,28 @@ test('four independent enemy bodies, boss warning and eight-way shots survive pa
   await page.keyboard.press('KeyR'); await expect(page.locator('#percent')).toHaveText('0.0%');
   await expect.poll(async () => (await probe(page)).shots.length).toBe(0);
   await expect.poll(async () => new Set((await probe(page)).enemyColors).size).toBe(4);
+  await checkRoster();
   expect(errors).toEqual([]);
+});
+
+for (const phase of [2, 3]) test(`configured phase ${phase} renders sixteen shots and the correct reinforcement target`, async ({ page }) => {
+  await expect(page.locator('#boss-phase')).toContainText(phase === 2 ? '二阶段' : '三阶段');
+  await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', phase === 2 ? '3' : '1');
+  for (let i = 0; i < 100 && (await probe(page)).shots.length !== 16; i++) await page.clock.runFor(100);
+  const shots = (await probe(page)).shots;
+  expect(shots).toHaveLength(16);
+  const elapsed = Number((await page.locator('#elapsed').textContent())!.split(':')[1]);
+  if (phase === 2) expect(elapsed).toBeGreaterThanOrEqual(4); else expect(elapsed).toBeLessThanOrEqual(3);
+  const center = shots.reduce((sum, p) => ({ x: sum.x + p.x / 16, y: sum.y + p.y / 16 }), { x: 0, y: 0 });
+  const angles = shots.map(p => Math.atan2(p.y - center.y, p.x - center.x));
+  for (let i = 1; i < angles.length; i++) expect((angles[i] - angles[i - 1] + Math.PI * 2) % (Math.PI * 2)).toBeCloseTo(Math.PI / 8, 4);
+  await page.locator('#board').screenshot({ path: `test-results/phase-${phase}-shots.png` });
+  for (let i = 0; i < 60 && (await probe(page)).enemyColors.length !== (phase === 2 ? 10 : 16); i++) await page.clock.runFor(100);
+  expect((await probe(page)).enemyColors).toHaveLength(phase === 2 ? 10 : 16);
+  await expect(page.locator('#boss-phase')).toContainText(phase === 2 ? '9/9' : '15/15');
+  await page.screenshot({ path: `test-results/phase-${phase}-roster.png`, fullPage: true });
+  await page.keyboard.press('KeyP'); const paused = await probe(page); await page.clock.runFor(1000);
+  expect((await probe(page)).shots).toEqual(paused.shots);
 });
 
 test('portrait controller swaps sides, stays within the screen and is hidden on wide layouts', async ({ page }) => {

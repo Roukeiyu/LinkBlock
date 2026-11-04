@@ -3,7 +3,7 @@ import { Game, type GameOptions } from './engine';
 import { createEnemy } from './enemies';
 import { BOSS_HIT_POINTS, findLanding, jumpPose, safeLanding } from './boss';
 import { Projectile } from './attacks';
-import { inside } from './geometry';
+import { distance, edges, inside } from './geometry';
 
 function fixture(extra: GameOptions = {}) {
   const game = new Game(20, 20, {
@@ -85,6 +85,17 @@ describe('boss health and escape jump', () => {
 });
 
 describe('configurable boss testing and jump geometry', () => {
+  it('reserves the visible body at landing even though its hit circle fits a smaller pocket', () => {
+    const boss = createEnemy('boss', { x: 10, y: 10 });
+    const narrow = [[{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 20 }, { x: 0, y: 20 }]];
+    expect(safeLanding({ x: 2, y: 10 }, narrow, boss, [], { x: 0, y: 0 }, [])).toBe(false);
+    expect(findLanding(narrow, boss, [], { x: 0, y: 0 }, [], () => 0.5)).toBeNull();
+    const game = new Game(), point = findLanding(game.territories, boss, game.enemies, game.player, [], () => 0.5)!;
+    expect(point).not.toBeNull();
+    expect(Math.min(...edges(game.outline).map(([a, b]) => distance(point, a, b)))).toBeGreaterThanOrEqual(boss.visualRadius + 0.16);
+    expect(safeLanding(point, game.territories, boss, game.enemies, game.player, [{ x: point.x - 3, y: point.y + 2 }, { x: point.x + 3, y: point.y + 2 }])).toBe(false);
+    expect(safeLanding(point, game.territories, boss, [createEnemy('orbit', { x: point.x + 2.8, y: point.y })], game.player, [])).toBe(false);
+  });
   it('supports health and map thresholds without inventing stage effects', () => {
     const created: string[] = [];
     const attack = (name: string) => () => { created.push(name); return { name, warning: 0, update() {} }; };

@@ -1,5 +1,5 @@
 import { EightWayAttack, type BossAttackFactory } from './attacks';
-import type { BossHitVisual } from './boss';
+import { lakeBossConfig, type BossConfig, type BossHitVisual } from './boss';
 import { ENEMY_STYLES, type DefeatedEnemy } from './enemies';
 import { area, inside, type Polygon } from './geometry';
 
@@ -15,6 +15,7 @@ export interface GameTheme {
   boundary: string;
   trail: string;
   createBossAttack?: BossAttackFactory;
+  bossConfig?: BossConfig;
   createBossHitEffect?(hit: BossHitVisual, reducedMotion: boolean): CaptureEffect;
   createDefeatEffect?(enemy: DefeatedEnemy, reducedMotion: boolean): CaptureEffect;
   createCaptureEffect(region: Polygon, reducedMotion: boolean): CaptureEffect;
@@ -117,4 +118,5 @@ export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): Captur
 export const lakeTheme: GameTheme = {
   id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new EightWayAttack(),
+  bossConfig: lakeBossConfig,
 };
