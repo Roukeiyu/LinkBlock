@@ -1,8 +1,8 @@
 import { EPS, onSegment, same, type Point } from './geometry';
 
-// At the 864×576 reference canvas, 0.04 world units are 0.46 pixels.
+// At the 864×576 reference canvas, 0.35 world units are about 4 pixels.
 // This is a walking allowance for real connected shore, not a geometry grid.
-export const SHORE_STEP_TOLERANCE = 0.04;
+export const SHORE_STEP_TOLERANCE = 0.35;
 export const SHORE_CONTACT_TOLERANCE = 1e-5;
 type Segment = [Point, Point];
 const length = (a: Point, b: Point) => Math.hypot(b.x - a.x, b.y - a.y);
@@ -42,8 +42,8 @@ function tinyConnection(start: Point, v: Point, segments: Segment[], allowance =
 
 // Return the actual piecewise coast route so projectile collision can sweep
 // every tiny bend. Disconnected edges are never joined by proximity.
-export function walkCoast(start: Point, v: Point, amount: number, segments: Segment[]): Point[] {
-  const path = [{ ...start }]; let remaining = amount;
+export function walkCoast(start: Point, v: Point, amount: number, segments: Segment[], continuingStep = false): Point[] & { stepping?: boolean } {
+  const path: Point[] & { stepping?: boolean } = [{ ...start }]; let remaining = amount;
   const consume = (target: Point) => {
     const point = path.at(-1)!, distance = length(point, target);
     if (distance <= EPS) return;
@@ -57,11 +57,17 @@ export function walkCoast(start: Point, v: Point, amount: number, segments: Segm
     // Both banks must run in the requested axis. This distinguishes a tiny
     // offset from deliberately leaving a short shore toward open water.
     const reverse = { x: -v.x, y: -v.y };
-    const behind = forward(point, reverse, segments) > EPS ? 0 : tinyConnection(point, reverse, segments)?.cost;
+    const alignedBehind = forward(point, reverse, segments) > EPS;
+    // Starting in the middle of a perpendicular shore is a new direction, not
+    // permission to turn toward a nearby corner. Only resume an established
+    // automatic step there, even when the wider allowance reaches both banks.
+    if (!alignedBehind && !continuingStep) break;
+    const behind = alignedBehind ? 0 : tinyConnection(point, reverse, segments)?.cost;
     if (behind === undefined) break;
     const connection = tinyConnection(point, v, segments, SHORE_STEP_TOLERANCE - behind);
     if (!connection) break;
     for (const target of connection.points.slice(1)) { if (remaining <= EPS) break; consume(target); }
+    if (!same(path.at(-1)!, connection.points.at(-1)!)) path.stepping = true;
   }
   return path;
 }

@@ -61,6 +61,7 @@ test.beforeEach(async ({ page }, info) => {
       body += "\nfunction fixtureEnemies(width, height) { return ['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width*x, y: height*[0.25,0.51,0.76][row] }))); }";
       if (info.title.includes('coast keeps the held direction')) body += '\nconst confirmForContinuity = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForContinuity.call(this); if (selected) { this.move("up",true,6); this.move("right",true,6); } return selected; };';
       if (info.title.includes('coast precision')) body += '\nconst confirmForPrecision = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForPrecision.call(this); if (selected) { this.player={x:30,y:22}; this.anchor={...this.player}; this.move("right",true,4); this.move("down",true,4); this.move("left",true,4); this.player={x:30,y:28}; this.anchor={...this.player}; this.move("right",true,4.03); this.move("up",true,2); this.move("left",true,4.03); this.player={x:34,y:24}; this.anchor={...this.player}; } return selected; };';
+      if (info.title.includes('coast precision') && info.title.includes('0.3-world-unit')) body = body.replaceAll('true,4.03)', 'true,4.3)');
       if (info.title.includes('internal seam')) {
         // Reproduce a sub-tolerance contact with the real geometry. Browser
         // frame timing cannot reliably land within 2.5e-8 world units of shore.
@@ -312,21 +313,39 @@ for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast kee
   await page.screenshot({ path: `test-results/continuous-closure-${input}.png`, fullPage: true });
 });
 
-for (const phone of [false, true]) test(`island coast precision walks past a 0.03-world-unit step made by real captures on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+for (const step of [0.03, 0.3]) for (const input of ['desktop', 'phone', 'two-hand phone']) test(`island coast precision walks both ways across a ${step}-world-unit step made by real captures on ${input}`, async ({ page }) => {
+  const phone = input !== 'desktop', single = input === 'phone';
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  if (phone) await controlMode(page, 'one-hand');
+  if (single) await controlMode(page, 'one-hand');
   await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(1200);
   expect((await probe(page)).player).toEqual({ x: 34, y: 24 }); const score = await page.locator('#score').textContent(), percent = await page.locator('#percent').textContent();
   let session: Awaited<ReturnType<ReturnType<typeof page.context>['newCDPSession']>> | undefined;
-  if (phone) { const finger = await touchJoystick(page); session = finger.session; await finger.move(0, 18); }
-  else await page.keyboard.down('ArrowDown');
+  const touchDirection = async (direction: 'up' | 'down') => {
+    if (single) { const finger = await touchJoystick(page); session = finger.session; await finger.move(0, direction === 'down' ? 18 : -18); }
+    else {
+      session = await page.context().newCDPSession(page); await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      const points = await Promise.all([`[data-dir="${direction}"]`, '#touch-draw'].map(async (selector, i) => {
+        const b = (await page.locator(selector).boundingBox())!; return { id: i + 1, x: b.x + b.width / 2, y: b.y + b.height / 2 };
+      }));
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points });
+      await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+    }
+  };
+  const stop = async (direction: 'up' | 'down') => {
+    if (phone) { await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session!.detach(); }
+    else await page.keyboard.up(direction === 'down' ? 'ArrowDown' : 'ArrowUp');
+  };
+  if (phone) await touchDirection('down'); else await page.keyboard.down('ArrowDown');
   await page.clock.runFor(160); const player = (await probe(page)).player;
-  expect(player.x).toBeCloseTo(34.03, 7); expect(player.y).toBeGreaterThan(27); expect(player.y).toBeLessThan(28);
-  expect((await probe(page)).trail).toHaveLength(0); await expect(page.locator('#score')).toHaveText(score!); await expect(page.locator('#percent')).toHaveText(percent!);
-  if (phone) { await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session!.detach(); }
-  else await page.keyboard.up('ArrowDown');
-  await page.clock.runFor(64); expect((await probe(page)).player).toEqual(player); expect(errors).toEqual([]);
-  await page.screenshot({ path: `test-results/coast-precision-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+  expect(player.x).toBeCloseTo(34 + step, 7); expect(player.y).toBeGreaterThan(27); expect(player.y).toBeLessThan(28);
+  expect((await probe(page)).trail).toHaveLength(0); await stop('down');
+  await page.clock.runFor(64); expect((await probe(page)).player).toEqual(player);
+  if (phone) await touchDirection('up'); else await page.keyboard.down('ArrowUp');
+  await page.clock.runFor(160); const returned = (await probe(page)).player;
+  expect(returned.x).toBeCloseTo(34, 7); expect(returned.y).toBeLessThan(25); expect(returned.y).toBeGreaterThan(22);
+  expect((await probe(page)).trail).toHaveLength(0); await stop('up');
+  await expect(page.locator('#score')).toHaveText(score!); await expect(page.locator('#percent')).toHaveText(percent!); expect(errors).toEqual([]);
+  await page.screenshot({ path: `test-results/coast-precision-${step}-${input.replaceAll(' ', '-')}.png`, fullPage: true });
 });
 
 for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast resumes retraction with ${input}${input === 'keyboard' ? '' : ' on phone'}`, async ({ page }) => {

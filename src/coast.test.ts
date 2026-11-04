@@ -67,7 +67,7 @@ describe('continuous coast feel and invisible steps', () => {
   it('preserves a visible step and genuine corner, and never bridges disconnected edges', () => {
     const { game, place, move } = fixture(0, SHORE_STEP_TOLERANCE + 0.001); place(20, 14); move('down', 8, false);
     expect(game.player).toEqual({ x: 20, y: 16 }); move('right', SHORE_STEP_TOLERANCE + 0.001, false); move('down', 8, false);
-    expect(game.player.x).toBeCloseTo(20.041); expect(game.player.y).toBe(20); move('down', 3, false); expect(game.player.y).toBe(20);
+    expect(game.player.x).toBeCloseTo(20 + SHORE_STEP_TOLERANCE + 0.001); expect(game.player.y).toBe(20); move('down', 3, false); expect(game.player.y).toBe(20);
     expect(walkCoast({ x: 0.5, y: 0 }, { x: 1, y: 0 }, 2, [[{ x: 0, y: 0 }, { x: 1, y: 0 }], [{ x: 1.02, y: 0 }, { x: 2, y: 0 }]])).toEqual([{ x: 0.5, y: 0 }, { x: 1, y: 0 }]);
   });
 
@@ -75,6 +75,46 @@ describe('continuous coast feel and invisible steps', () => {
     const { game, place, move } = fixture();
     place(19.975, 12); move('up', 0.25);
     expect(game.player).toEqual({ x: 19.975, y: 11.75 }); expect(game.trail).toHaveLength(2); expect(game.anchor).toEqual({ x: 19.975, y: 12 });
+  });
+
+  it.each([0, 1, 2, 3])('passes screenshot-sized rises in both directions without lifting, turns=%s', turns => {
+    const { game, place, move, rotate } = fixture(turns, 0.3); const claimed = game.claimed;
+    place(20, 14); move('down', 5);
+    const lower = rotate({ x: 20.3, y: 18.7 });
+    expect(game.player.x).toBeCloseTo(lower.x, 8); expect(game.player.y).toBeCloseTo(lower.y, 8);
+    move('up', 5); const upper = rotate({ x: 20, y: 14 });
+    expect(game.player.x).toBeCloseTo(upper.x, 8); expect(game.player.y).toBeCloseTo(upper.y, 8);
+    expect(game.trail).toHaveLength(0); expect(game.claimed).toBe(claimed); expect(game.score).toBe(0);
+  });
+
+  it.each([30, 60, 120])('finishes a wider correction across physics frames at %s Hz', hz => {
+    const { game, place } = fixture(0, 0.3); place(20, 15.99);
+    for (let i = 0; i < hz / 6; i++) game.update(1 / hz, 'down', true);
+    expect(game.player.x).toBeCloseTo(20.3, 8);
+    expect(game.player.y).toBeCloseTo(15.99 + PLAYER_SPEED / 6 - 0.3, 8);
+    expect(game.trail).toHaveLength(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
+  });
+
+  it('handles consecutive small rises and dips while following each real shore segment', () => {
+    const shape = [{ x: 12, y: 12 }, { x: 20, y: 12 }, { x: 20, y: 15 }, { x: 20.24, y: 15 }, { x: 20.24, y: 15.08 }, { x: 20.08, y: 15.08 }, { x: 20.08, y: 15.16 }, { x: 20.3, y: 15.16 }, { x: 20.3, y: 20 }, { x: 12, y: 20 }];
+    const game = new Game(40, 40, { opening: true, enemies: [], boss: null, random: () => 0.5 });
+    game.start(); game.opening!.region = shape; game.confirmOpening(); game.player = { x: 20, y: 14 }; game.anchor = { ...game.player };
+    const claimed = game.claimed;
+    for (let i = 0; i < 200; i++) {
+      game.move('down', true, 0.02); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
+      expect(game.trail).toHaveLength(0);
+    }
+    expect(game.player.x).toBeCloseTo(20.3, 8); expect(game.player.y).toBeCloseTo(17.38, 8);
+    expect(game.claimed).toBe(claimed); expect(game.score).toBe(0);
+  });
+
+  it('lets a new outward direction leave a short shore or interrupt an in-progress correction', () => {
+    const a = fixture(0, 0.3); a.place(20.15, 16); a.move('up', 0.25);
+    expect(a.game.player).toEqual({ x: 20.15, y: 15.75 }); expect(a.game.trail).toHaveLength(2);
+    const b = fixture(0, 0.3); b.place(20, 15.99); b.move('down', 0.06);
+    expect(b.game.player.x).toBeCloseTo(20.05); expect(b.game.player.y).toBe(16);
+    b.move('up', 0.25);
+    expect(b.game.player.x).toBeCloseTo(20.05); expect(b.game.player.y).toBe(15.75); expect(b.game.trail).toHaveLength(2);
   });
 
   it('canonicalizes only numerical contact noise while retaining strict closure geometry', () => {

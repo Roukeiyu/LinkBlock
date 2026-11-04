@@ -38,6 +38,7 @@ export class Game {
   private island: Island | undefined;
   private boundaryRelocated = false;
   private playerPath: Point[] = [];
+  private shoreStep: { direction: Direction; point: Point } | undefined;
   private resumePhase: 'playing' | 'opening' = 'playing';
   opening: Opening | undefined;
   actorsReady = false;
@@ -127,15 +128,18 @@ export class Game {
   move(direction: Direction, drawing: boolean, amount: number) {
     this.playerPath = [{ ...this.player }];
     if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
+    const previousStep = this.shoreStep; this.shoreStep = undefined;
     const v = vectors[direction]; let p = this.player;
     if (this.trail.length && !drawing) return false;
     if (!this.trail.length) {
       const shore = this.island ? this.island.project(p, SHORE_CONTACT_TOLERANCE) : this.isBoundary(p.x, p.y) ? p : undefined;
       if (!shore) return false;
       p = this.player = shore; this.playerPath.push({ ...p });
-      const route = walkCoast(p, v, amount, this.boundarySegments);
+      const continuingStep = previousStep?.direction === direction && same(previousStep.point, this.playerPath[0]);
+      const route = walkCoast(p, v, amount, this.boundarySegments, continuingStep);
       if (route.length > 1) {
         this.playerPath.push(...route.slice(1)); this.player = route.at(-1)!;
+        if (route.stepping) this.shoreStep = { direction, point: { ...this.player } };
         return false;
       }
       if (!drawing || this.protection > 0) return false;
@@ -209,6 +213,7 @@ export class Game {
     return true;
   }
   private capture() {
+    this.shoreStep = undefined;
     let bossEnclosed = false;
     let remaining: Polygon[] = [];
     if (this.island) {
@@ -343,6 +348,7 @@ export class Game {
     return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= body.radius + 0.12));
   }
   private hit() {
+    this.shoreStep = undefined;
     this.trail = []; this.cutRegion = -1; this.retracting = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
