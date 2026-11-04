@@ -36,6 +36,13 @@ async function encloseRoster(page: Page) {
 test.beforeEach(async ({ page }, info) => {
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
   if ((randomOpening || islandPlay || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
+  if (info.title.includes('notice safe area')) await page.route('**/src/style.css*', async route => {
+    const response = await route.fetch();
+    // Exercise the real layout rules with the values Safari supplies for a
+    // notched screen. Chromium here does not expose native safe-area emulation.
+    const insets = { top: 44, bottom: 34, left: 20, right: 20 };
+    await route.fulfill({ response, body: (await response.text()).replace(/env\(safe-area-inset-(top|bottom|left|right)\)/g, (_, edge: keyof typeof insets) => `${insets[edge]}px`) });
+  });
   const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
   const controlled = randomOpening || islandPlay || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X') || info.title.includes('enclosed image');
   if (!randomOpening) {
@@ -954,6 +961,67 @@ test('portrait controller swaps sides, stays within the screen and is hidden on 
   await page.getByRole('button', { name: '开始探索' }).click(); await expect(page.locator('#overlay')).toBeHidden();
   await page.setViewportSize({ width: 844, height: 390 }); await expect(page.locator('.touch-controls')).toBeHidden();
   await page.setViewportSize({ width: 1000, height: 800 }); await expect(page.locator('.touch-controls')).toBeHidden();
+});
+
+for (const variant of ['portrait', 'small', 'safe area']) test(`island coast phone notice ${variant} stays outside play and touch areas in every control mode`, async ({ page }) => {
+  const viewport = variant === 'small' ? { width: 320, height: 568 } : { width: 390, height: 844 };
+  await page.setViewportSize(viewport); await page.keyboard.press('Space'); await page.clock.runFor(32);
+  const geometry = async () => Promise.all(['.board-shell', '.board-footer', '.touch-controls'].map(s => page.locator(s).boundingBox()));
+  const before = await geometry();
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 12);
+  await moveClock(page, 'ArrowRight', p => p.x >= 28);
+  await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6); await page.keyboard.up('Space'); await page.clock.runFor(250);
+  await moveClock(page, 'ArrowUp', p => p.y <= 12);
+  const anchor = (await probe(page)).player;
+  const toast = page.locator('#toast'); await expect(toast).toHaveClass('toast visible');
+  await expect(toast.locator('.toast-compact')).toHaveText('领地已扩大');
+  expect(await toast.ariaSnapshot()).toContain('连接成功 · 新的领地已揭开');
+  expect(await geometry()).toEqual(before);
+  const check = async () => {
+    await expect(page.locator('#mobile-notice-slot > #toast')).toHaveCount(1); await expect(page.getByRole('status')).toHaveCount(1);
+    const [board, footer, controls] = await geometry(), message = (await toast.boundingBox())!;
+    expect(message.y).toBeGreaterThanOrEqual(board!.y + board!.height);
+    expect(message.y).toBeGreaterThanOrEqual(footer!.y); expect(message.y + message.height).toBeLessThanOrEqual(footer!.y + footer!.height);
+    expect(message.y + message.height).toBeLessThanOrEqual(controls!.y);
+    expect(await toast.evaluate(e => ({ overflow: e.scrollWidth > e.clientWidth, pointer: getComputedStyle(e).pointerEvents }))).toEqual({ overflow: false, pointer: 'none' });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+    const mode = (await page.locator('#control-mode').boundingBox())!;
+    expect(mode.y + mode.height).toBeLessThanOrEqual(viewport.height - (variant === 'safe area' ? 34 : 0));
+  };
+  for (const mode of ['two-left', 'two-right', 'one-hand']) {
+    await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', mode); await check();
+    if (mode === 'one-hand') {
+      const { session, move } = await touchJoystick(page); await move(0, -18); await page.clock.runFor(64);
+      expect((await probe(page)).player.y).toBeLessThan(anchor.y);
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session.detach();
+    } else {
+      const session = await page.context().newCDPSession(page);
+      await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      const points = await Promise.all(['.dpad [data-dir="up"]', '#touch-draw'].map(async (s, i) => {
+        const b = (await page.locator(s).boundingBox())!; return { id: i + 1, x: b.x + b.width / 2, y: b.y + b.height / 2, radiusX: 4, radiusY: 4, force: 1 };
+      }));
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points });
+      await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true'); await page.clock.runFor(64);
+      expect((await probe(page)).player.y).toBeLessThan(anchor.y);
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session.detach();
+    }
+    await page.clock.runFor(100); expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);
+    if (mode !== 'one-hand') await page.locator('#control-mode').click();
+  }
+  await page.screenshot({ path: `test-results/mobile-notice-${variant.replace(' ', '-')}.png`, fullPage: true });
+  if (variant === 'portrait') {
+    await page.setViewportSize({ width: 844, height: 390 }); await page.clock.runFor(32);
+    await expect(page.locator('.touch-controls')).toBeHidden(); await expect(page.locator('#mobile-notice-slot > #toast')).toHaveCount(1);
+    const message = (await toast.boundingBox())!, board = (await page.locator('.board-shell').boundingBox())!;
+    expect(message.y).toBeGreaterThanOrEqual(board.y + board.height); expect(message.y + message.height).toBeLessThanOrEqual(390);
+    await page.screenshot({ path: 'test-results/mobile-notice-landscape.png', fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 800 }); await page.clock.runFor(32);
+    await expect(page.locator('.board-shell > #toast')).toHaveCount(1); await expect(toast.locator('.toast-compact')).toBeHidden();
+    await expect(toast.locator('.toast-full')).toBeVisible();
+    expect(await toast.evaluate(e => getComputedStyle(e).position)).toBe('absolute');
+    await page.screenshot({ path: 'test-results/mobile-notice-desktop.png', fullPage: true });
+  }
+  await page.clock.runFor(2300); await expect(toast).not.toHaveClass('toast visible');
 });
 
 test('reduced motion reveals territory without drifting particles', async ({ page }) => {

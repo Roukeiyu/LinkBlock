@@ -36,10 +36,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <div id="overlay" class="overlay">
             <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
-          <div id="toast" class="toast" role="status" aria-live="polite"></div>
+          <div id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
-        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span class="footer-note">保持连接，发现更多</span></div>
+        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="mobile-notice-slot"></span><span class="footer-note">保持连接，发现更多</span></div>
         <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
         <div class="touch-controls" aria-label="手机手柄" data-mode="two-left"><div class="controller-side dpad-side"><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side"><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side" hidden><button id="joystick" aria-label="单手摇杆，按住拖动画线，松开收线" aria-pressed="false"><span class="joystick-guides" aria-hidden="true">＋</span><i class="joystick-knob" aria-hidden="true"></i></button><span>按住拖动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">双手 · 方向在左</span></button></div>
       </div>
@@ -55,6 +55,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const canvas = $<HTMLCanvasElement>('#board');
 const ctx = canvas.getContext('2d')!;
+const noticeLayout = matchMedia('(max-width:620px), (max-width:1000px) and (max-height:500px)');
+function positionNotice() {
+  (noticeLayout.matches ? $('#mobile-notice-slot') : $('.board-shell')).append($('#toast'));
+}
+noticeLayout.addEventListener('change', positionNotice); positionNotice();
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;
@@ -322,31 +327,31 @@ joystick.addEventListener('blur', () => {
 });
 window.matchMedia('(max-width: 620px) and (orientation: portrait)').addEventListener('change', () => { clearInput(); });
 
-function notify(message: string) {
-  $('#toast').textContent = message;
+function notify(message: string, compact = message) {
+  $('.toast-full').textContent = message; $('.toast-compact').textContent = compact;
   $('#toast').classList.add('visible'); toastUntil = performance.now() + 2200;
 }
 function handleEvent(event: GameEvent) {
   if (typeof event === 'object') {
     if (event.type === 'bossHit') {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
-      notify(`守卫受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
+      notify(`守卫受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `守卫 ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
       const names = event.enemies.map(enemy => ENEMY_STYLES[enemy.kind].name).join('、');
       const points = event.enemies.reduce((sum, enemy) => sum + enemy.points, 0);
-      notify(`圈敌成功 · ${names} +${points}`); tone(660); tone(990, 0.2, 0.08);
+      notify(`圈敌成功 · ${names} +${points}`, `击败${event.enemies.length}敌 · +${points}`); tone(660); tone(990, 0.2, 0.08);
     }
   } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push(theme.createCaptureEffect(region, reducedMotion.matches));
-    notify('连接成功 · 新的领地已揭开');
+    notify('连接成功 · 新的领地已揭开', '领地已扩大');
     tone(523); tone(784, 0.18, 0.08);
   } else if (event === 'partition') {
-    notify('通路已连接 · 继续围出闭合区域'); tone(440);
+    notify('通路已连接 · 继续围出闭合区域', '通路已连接，继续圈地'); tone(440);
   } else if (event === 'bossAttack') {
     tone(180, 0.15, 0, 'triangle');
   } else if (event === 'hit') {
-    hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`);
+    hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`, `受击 · 剩余${game.lives}命`);
     tone(120, 0.25, 0, 'triangle');
   } else if (event === 'won') {
     tone(523); tone(659, 0.2, 0.15); tone(1046, 0.4, 0.3);

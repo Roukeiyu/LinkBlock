@@ -51,5 +51,22 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
 @media(max-width:620px) and (orientation:portrait) and (max-height:700px){.touch-controls #joystick{width:108px;height:108px}.joystick-knob{width:42px;height:42px}.joystick-guides{inset:15px;font-size:62px}.touch-controls #control-mode{height:32px}}
 
 .dpad-hit-area{position:absolute;inset:-18px;border-radius:50%;z-index:2;touch-action:none;background:transparent}
+@media(max-width:1000px) and (max-height:500px) and (orientation:landscape){
+ html,body{height:100%;overflow:hidden;overscroll-behavior:none}body{min-width:0}
+ #app{height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+ .site-header{height:32px;min-height:32px;width:100%;padding:0 max(14px,env(safe-area-inset-left));margin:0}.brand{font-size:14px}.intro,aside,.site-footer{display:none}
+ main{display:flex;flex:1;min-height:0;width:100%;padding:4px max(10px,env(safe-area-inset-left),env(safe-area-inset-right)) 8px}
+ .game-layout{display:flex;flex:1;min-height:0;align-items:stretch}.game-main{display:flex;flex-direction:column;flex:1;min-height:0}
+ .hud{flex:none;padding:8px 14px;gap:20px}.stat-label{margin-bottom:5px}.progress-row strong{font-size:18px}.hud-stat>strong{font-size:16px}
+ .board-shell{flex:1;min-height:0;aspect-ratio:auto}canvas{object-fit:contain;touch-action:none}.board-footer{height:24px;flex:none;padding:0 12px;gap:10px}
+}
+#mobile-notice-slot,.toast-compact{display:none}
+@media(max-width:620px),(max-width:1000px) and (max-height:500px){
+ #mobile-notice-slot{display:flex;flex:1;min-width:0;height:100%;align-items:center;pointer-events:none;overflow:hidden}
+ .footer-note{display:none}
+ #mobile-notice-slot .toast{position:static;inset:auto;transform:none;min-width:0;max-width:100%;padding:0;border:0;border-radius:0;background:none;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
+ .toast-compact{display:inline}
+ .toast-full{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
 #opening-hint{position:absolute;top:16px;left:50%;transform:translateX(-50%);max-width:92%;white-space:nowrap;padding:8px 12px;border:1px solid #b69c5e66;border-radius:6px;background:#12222eee;color:#ffe0a0;font-size:11px;letter-spacing:.03em;pointer-events:none}#opening-hint[hidden]{display:none}
 @media(max-width:620px){#opening-hint{top:10px;padding:6px 8px;font-size:9px}}
