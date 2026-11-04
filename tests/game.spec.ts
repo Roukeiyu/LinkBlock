@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; bossRadius: number; warningFrame: string; warningShots: number; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
+type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; enemyBodies: { x: number; y: number; color: string; angle: number }[]; bossRadius: number; warningFrame: string; warningShots: number; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
@@ -22,27 +22,34 @@ async function encloseRoster(page: Page) {
   await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space'); await page.clock.runFor(250);
 }
 test.beforeEach(async ({ page }, info) => {
+  const randomOpening = info.title.includes('random opening');
+  if (randomOpening && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
-  const controlled = info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview);
-  if (phasePreview) {
-    // Exercise the real theme's stage skill/rendering in an isolated fixture.
-    // Health-driven transitions are covered through actual enclosures in stages.test.ts.
+  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview);
+  if (!randomOpening) {
+    // Fixed scene fixtures keep input/capture/effect regressions independent of
+    // random hazards. Dedicated opening tests below use the unchanged real app.
     await page.route('**/src/engine.ts', async route => {
       const response = await route.fetch();
-      const body = (await response.text()).replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
+      let body = (await response.text())
+        .replace('defaultBoss(width, height)', "createEnemy('boss', { x: width * 0.84, y: height * 0.76 })")
+        .replace('defaultEnemies(width, height, this.boss, this.random)', "['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width * x, y: height * [0.25, 0.51, 0.76][row] })))");
+      if (phasePreview) body = body.replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
       await route.fulfill({ response, body });
     });
   }
   if (controlled) await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], bossRadius: 0, warningFrame: '', warningShots: -1, defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
+    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], enemyBodies: [] as { x: number; y: number; color: string; angle: number }[], bossRadius: 0, warningFrame: '', warningShots: -1, defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
     (window as unknown as { probe: typeof state }).probe = state;
     const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
-    for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect'] as const) {
+    const translations = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }>();
+    for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect', 'translate'] as const) {
       const original = CanvasRenderingContext2D.prototype[method];
       CanvasRenderingContext2D.prototype[method] = function(this: CanvasRenderingContext2D, ...args: number[]) {
-        if (method === 'clearRect' && this.canvas.id === 'board') { state.trail = []; state.shots = []; state.enemyColors = []; state.jumpScales = []; state.jumpShadows = 0; }
+        if (method === 'clearRect' && this.canvas.id === 'board') { state.trail = []; state.shots = []; state.enemyColors = []; state.enemyBodies = []; state.jumpScales = []; state.jumpShadows = 0; }
+        if (method === 'translate') translations.set(this, { x: args[0], y: args[1] });
         if (method === 'beginPath') paths.set(this, []);
         if (method === 'moveTo' || method === 'lineTo') paths.get(this)?.push({ x: args[0], y: args[1] });
         if (method === 'stroke' && this.strokeStyle === '#ffcf75') state.trail = [...(paths.get(this) ?? [])];
@@ -81,7 +88,11 @@ test.beforeEach(async ({ page }, info) => {
     };
     const fill = CanvasRenderingContext2D.prototype.fill;
     CanvasRenderingContext2D.prototype.fill = function(...args: unknown[]) {
-      if (['#ff727d', '#bda4ff', '#72cfff', '#ffa56e'].includes(String(this.fillStyle))) state.enemyColors.push(String(this.fillStyle));
+      if (['#ff727d', '#bda4ff', '#72cfff', '#ffa56e'].includes(String(this.fillStyle))) {
+        const color = String(this.fillStyle), p = translations.get(this), transform = this.getTransform();
+        state.enemyColors.push(color);
+        if (p) state.enemyBodies.push({ ...p, color, angle: Math.atan2(transform.b, transform.a) });
+      }
       if (this.fillStyle === '#ffffff') {
         state.white++;
         if (state.white === 1) queueMicrotask(() => { state.flash = this.canvas.toDataURL(); });
@@ -95,6 +106,35 @@ test.beforeEach(async ({ page }, info) => {
   // behind the app's initial performance.now() and drop simulated frames.
   if (controlled) await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.getByRole('button', { name: '开始探索' }).click();
+});
+
+for (const viewport of ['desktop', 'phone']) test(`random opening has varied safe spawns, a centered boss and fresh restart/reload on ${viewport}`, async ({ page }) => {
+  const verify = async () => {
+    const bodies = (await probe(page)).enemyBodies;
+    expect(bodies).toHaveLength(10);
+    const boss = bodies.find(body => body.color === '#ffa56e')!;
+    expect({ x: boss.x, y: boss.y }).toEqual({ x: 36, y: 24 });
+    const radii: Record<string, number> = { '#ff727d': 0.85, '#bda4ff': 0.67, '#72cfff': 0.78, '#ffa56e': 2 };
+    for (const color of ['#ff727d', '#bda4ff', '#72cfff']) expect(bodies.filter(body => body.color === color)).toHaveLength(3);
+    for (const body of bodies.filter(body => body !== boss)) {
+      const r = radii[body.color];
+      expect(Math.min(body.x, 72 - body.x, body.y, 48 - body.y)).toBeGreaterThanOrEqual(r + 0.16 - 1e-7);
+      expect(Math.hypot(body.x - 36, body.y)).toBeGreaterThanOrEqual(r + 3.34);
+      for (const other of bodies.filter(other => other !== body)) expect(Math.hypot(body.x - other.x, body.y - other.y)).toBeGreaterThanOrEqual(r + radii[other.color] + 0.25 - 1e-7);
+    }
+    const arrows = bodies.filter(body => body.color === '#ff727d');
+    for (let i = 0; i < arrows.length; i++) for (let j = i + 1; j < arrows.length; j++) {
+      expect(Math.acos(Math.cos(arrows[i].angle - arrows[j].angle))).toBeGreaterThanOrEqual(Math.PI / 3 - 1e-7);
+    }
+    return bodies.filter(body => body !== boss).map(body => [body.x, body.y, body.angle]);
+  };
+  const first = await verify();
+  await page.screenshot({ path: `test-results/random-opening-${viewport}.png`, fullPage: true });
+  await page.keyboard.press('KeyR'); await page.keyboard.press('KeyP'); await page.clock.runFor(16);
+  const restart = await verify(); expect(restart).not.toEqual(first);
+  await expect(page.locator('#score')).toHaveText('000000'); await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '5');
+  await page.goto('/'); await page.clock.runFor(16);
+  const reloaded = await verify(); expect(reloaded).not.toEqual(restart); expect(reloaded).not.toEqual(first);
 });
 
 test('continuous movement stays on the drawn edge and turns between arbitrary coordinates', async ({ page }) => {

@@ -31,29 +31,48 @@ export function createEnemy(kind: EnemyKind, position: Point, velocity?: Point):
     previous: { ...position }, turnClock: 0, turnSign: 1, traceClock: 0, trace: [{ ...position }] };
 }
 export function defaultBoss(width: number, height: number) {
-  const clearance = ENEMY_STYLES.boss.visualRadius + 0.16;
-  return createEnemy('boss', { x: Math.max(clearance, Math.min(width - clearance, width * 0.84)),
-    y: Math.max(clearance, Math.min(height - clearance, height * 0.76)) });
+  return createEnemy('boss', { x: width / 2, y: height / 2 });
 }
-export function defaultEnemies(width: number, height: number, boss?: Enemy) {
+export function defaultEnemies(width: number, height: number, boss?: Enemy, random = Math.random) {
   const kinds = ['straight', 'orbit', 'zigzag'] as const;
-  const preferred = kinds.flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width * x, y: height * [0.25, 0.51, 0.76][row] })));
-  const safe = (enemy: Enemy, placed: Enemy[]) => enemy.x >= enemy.radius + 0.1 && enemy.x <= width - enemy.radius - 0.1
-    && enemy.y >= enemy.radius + 0.1 && enemy.y <= height - enemy.radius - 0.1
-    && Math.hypot(enemy.x - width / 2, enemy.y) >= enemy.radius + 0.34 + 0.1
-    && (!boss || Math.hypot(enemy.x - boss.x, enemy.y - boss.y) >= enemy.radius + boss.visualRadius + 0.06)
-    && placed.every(other => Math.hypot(enemy.x - other.x, enemy.y - other.y) >= enemy.radius + other.radius + 0.06 - EPS);
-  if (preferred.every((enemy, i) => safe(enemy, preferred.slice(0, i)))) return preferred;
-  // Compact test arenas use a deterministic, finite placement search instead
-  // of clamping several enemies onto the same point or into the larger boss.
-  const placed: Enemy[] = [], radius = ENEMY_STYLES.straight.radius, spacing = radius * 2 + 0.06;
-  for (let y = radius + 0.1; y <= height - radius - 0.1 + EPS && placed.length < 9; y += spacing) {
-    for (let x = radius + 0.1; x <= width - radius - 0.1 + EPS && placed.length < 9; x += spacing) {
-      const enemy = createEnemy(kinds[Math.floor(placed.length / 3)], { x, y });
-      if (safe(enemy, placed)) placed.push(enemy);
+  const placed: Enemy[] = [];
+  const safe = (p: Point, r: number) => p.x >= r + 0.16 && p.x <= width - r - 0.16
+    && p.y >= r + 0.16 && p.y <= height - r - 0.16
+    && Math.hypot(p.x - width / 2, p.y) >= r + 0.34 + 3
+    && (!boss || Math.hypot(p.x - boss.x, p.y - boss.y) >= r + boss.visualRadius + 0.25)
+    && placed.every(other => Math.hypot(p.x - other.x, p.y - other.y) >= r + other.visualRadius + 0.25 - EPS);
+  for (const kind of kinds) {
+    const offset = random() * Math.PI * 2, r = ENEMY_STYLES[kind].visualRadius, edge = r + 0.16;
+    for (let copy = 0; copy < 3; copy++) {
+      // Separate angular sectors prevent even a constant test RNG from giving
+      // all three copies identical headings. Speed and motion rules stay intact.
+      const angle = offset + copy * Math.PI * 2 / 3 + (random() - 0.5) * Math.PI / 3;
+      let position: Point | undefined;
+      for (let attempt = 0; attempt < 96; attempt++) {
+        const p = { x: edge + random() * (width - edge * 2), y: edge + random() * (height - edge * 2) };
+        if (safe(p, r)) { position = p; break; }
+      }
+      if (!position) {
+        // Finite geometric fallback handles unlucky/repeating random samples.
+        // This only selects spawn points; movement remains continuous.
+        const cols = Math.max(1, Math.floor((width - edge * 2) / (r * 2 + 0.25)) + 1);
+        const rows = Math.max(1, Math.floor((height - edge * 2) / (r * 2 + 0.25)) + 1);
+        for (let i = 0; i < Math.min(2048, cols * rows); i++) {
+          const p = { x: edge + (i % cols) * (width - edge * 2) / Math.max(1, cols - 1),
+            y: edge + Math.floor(i / cols) * (height - edge * 2) / Math.max(1, rows - 1) };
+          if (safe(p, r)) { position = p; break; }
+        }
+      }
+      // An undersized custom arena may not hold all nine bodies. Leave out an
+      // unplaceable enemy rather than overlap, clip or block startup forever.
+      if (!position) continue;
+      const speed = ENEMY_STYLES[kind].speed;
+      const enemy = createEnemy(kind, position, { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed });
+      enemy.turnSign = random() < 0.5 ? -1 : 1;
+      if (kind === 'zigzag') enemy.turnClock = random() * 0.72;
+      placed.push(enemy);
     }
   }
-  if (placed.length !== 9) throw new Error('Board cannot safely hold the default enemy roster');
   return placed;
 }
 function rotate(enemy: Enemy, angle: number) {

@@ -8,7 +8,7 @@ import { inside } from './geometry';
 function seeded() { let seed = 13; return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
 function lake() {
   const game = new Game(72, 48, { bossConfig: lakeBossConfig, victory: { territory: false }, random: seeded() });
-  for (const enemy of game.enemies) { enemy.vx = 0; enemy.vy = 0; }
+  game.enemies.forEach((enemy, i) => { enemy.x = 8 + i * 3; enemy.y = 12 + i; enemy.vx = 0; enemy.vy = 0; });
   game.boss!.vx = 0; game.boss!.vy = 0; game.start(); return game;
 }
 function hit(game: Game) {
@@ -40,7 +40,7 @@ describe('lake boss phases and vertical reinforcements', () => {
     const fresh = lake(); expect(fresh.bossHealth).toBe(5); expect(fresh.bossPhase).toBe('一阶段'); expect(fresh.enemies).toHaveLength(9);
   });
   it('periodically fills to 9, then 15 without exceeding the target or spawning in midair', () => {
-    const game = lake(); hit(game); hit(game);
+    const game = lake(); hit(game); hit(game); game.enemies.splice(0, 3);
     const before = game.enemies.length; game.update(0.8); expect(game.bossJump).toBeDefined(); expect(game.enemies).toHaveLength(before);
     game.update(3.6); expect(game.bossJump).toBeUndefined(); expect(game.enemies).toHaveLength(before);
     game.update(0.6); expect(game.enemies).toHaveLength(9);

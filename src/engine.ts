@@ -71,7 +71,7 @@ export class Game {
     this.player = { x: width / 2, y: 0 };
     this.anchor = { ...this.player };
     this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(width, height);
-    this.enemies = options.enemies ?? defaultEnemies(width, height, this.boss);
+    this.enemies = options.enemies ?? defaultEnemies(width, height, this.boss, this.random);
     if (!this.boss && !this.territoryVictory) throw new Error('Boss-only victory needs a boss');
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();

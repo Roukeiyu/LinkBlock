@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceEnemy, createEnemy, ENEMY_STYLES, type EnemyKind } from './enemies';
+import { advanceEnemy, createEnemy, defaultEnemies, ENEMY_STYLES, type EnemyKind } from './enemies';
 import { Game } from './engine';
 import { distance, edges, inside } from './geometry';
 import { MAX_HAZARDS } from './attacks';
@@ -10,6 +10,7 @@ const walls = [edges(arena)];
 function run(enemy: ReturnType<typeof createEnemy>, seconds: number) {
   for (let i = 0; i < Math.round(seconds * 120); i++) advanceEnemy(enemy, 1 / 120, [arena], walls);
 }
+function seeded(seed = 13) { return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
 
 describe('independent enemy motion', () => {
   it('spawns three of each ordinary enemy and a slower, visibly larger boss with independent state', () => {
@@ -28,17 +29,57 @@ describe('independent enemy motion', () => {
     expect(game.bossAttack).not.toBe(fresh.bossAttack);
     for (const body of [...game.enemies, game.boss!]) expect(inside(body, game.territories[0])).toBe(true);
   });
-  it.each([[6, 6], [6, 20], [20, 6], [20, 20], [72, 48]])('safely places the full roster in a %s × %s arena', (width, height) => {
-    const game = new Game(width, height), bodies = [...game.enemies, game.boss!];
-    expect(game.enemies).toHaveLength(9);
+  it.each([[6, 6], [6, 20], [20, 6], [20, 20], [72, 48]])('safely places only bodies that fit in a %s × %s arena', (width, height) => {
+    const game = new Game(width, height, { random: seeded() }), bodies = [...game.enemies, game.boss!];
+    expect(game.enemies.length).toBeLessThanOrEqual(9);
+    if (width >= 20 && height >= 20) expect(game.enemies).toHaveLength(9);
+    expect({ x: game.boss!.x, y: game.boss!.y }).toEqual({ x: width / 2, y: height / 2 });
     for (const body of bodies) {
-      const clearance = body.kind === 'boss' ? body.visualRadius : body.radius;
+      const clearance = body.visualRadius;
       expect(Math.min(...edges(game.outline).map(([a, b]) => distance(body, a, b)))).toBeGreaterThanOrEqual(clearance);
       expect(Math.hypot(body.x - game.player.x, body.y - game.player.y)).toBeGreaterThan(body.radius + 0.34);
       for (const other of bodies.filter(other => other !== body)) {
-        expect(Math.hypot(body.x - other.x, body.y - other.y)).toBeGreaterThan(body.radius + other.radius);
+        expect(Math.hypot(body.x - other.x, body.y - other.y)).toBeGreaterThan(body.visualRadius + other.visualRadius);
       }
     }
+  });
+  it('repeats a seed exactly, changes layouts and headings between seeds, and advances a shared RNG on restart', () => {
+    const first = new Game(72, 48, { random: seeded(1) }), same = new Game(72, 48, { random: seeded(1) });
+    expect(first.enemies).toEqual(same.enemies); expect(first.boss).toEqual(same.boss);
+    const random = seeded(1), start = new Game(72, 48, { random }), restart = new Game(72, 48, { random });
+    expect(restart.enemies.map(e => [e.x, e.y])).not.toEqual(start.enemies.map(e => [e.x, e.y]));
+    expect(restart.enemies.map(e => [e.vx, e.vy])).not.toEqual(start.enemies.map(e => [e.vx, e.vy]));
+    expect(new Game(72, 48, { random: seeded(2) }).enemies).not.toEqual(first.enemies);
+  });
+  it('keeps all nine visible bodies clear of the player, boss and each other across 64 seeded openings', () => {
+    for (let seed = 0; seed < 64; seed++) {
+      const game = new Game(72, 48, { random: seeded(seed) }); expect(game.enemies).toHaveLength(9);
+      for (const kind of kinds.slice(0, 3)) {
+        const group = game.enemies.filter(e => e.kind === kind); expect(group).toHaveLength(3);
+        for (const enemy of group) {
+          expect(Math.hypot(enemy.vx, enemy.vy)).toBeCloseTo(ENEMY_STYLES[kind].speed, 10);
+          expect(enemy.previous).toEqual({ x: enemy.x, y: enemy.y }); expect(enemy.trace).toEqual([enemy.previous]);
+          expect(Math.min(...edges(game.outline).map(([a, b]) => distance(enemy, a, b)))).toBeGreaterThanOrEqual(enemy.visualRadius + 0.16 - 1e-7);
+          expect(Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y)).toBeGreaterThanOrEqual(enemy.visualRadius + 3.34);
+          expect(Math.hypot(enemy.x - game.boss!.x, enemy.y - game.boss!.y)).toBeGreaterThanOrEqual(enemy.visualRadius + game.boss!.visualRadius + 0.25);
+          for (const other of game.enemies.filter(other => other !== enemy)) expect(Math.hypot(enemy.x - other.x, enemy.y - other.y)).toBeGreaterThanOrEqual(enemy.visualRadius + other.visualRadius + 0.25 - 1e-7);
+          for (const other of group.filter(other => other !== enemy)) {
+            const cosine = (enemy.vx * other.vx + enemy.vy * other.vy) / ENEMY_STYLES[kind].speed ** 2;
+            expect(Math.acos(Math.max(-1, Math.min(1, cosine)))).toBeGreaterThanOrEqual(Math.PI / 3 - 1e-7);
+          }
+        }
+      }
+    }
+  });
+  it.each([0, 0.5, 1 - Number.EPSILON])('bounds placement searches and finds safe fallbacks with constant random=%s', value => {
+    let calls = 0; const start = performance.now();
+    const boss = createEnemy('boss', { x: 36, y: 24 });
+    const enemies = defaultEnemies(72, 48, boss, () => { calls++; return value; });
+    expect(enemies).toHaveLength(9); expect(calls).toBeLessThan(2000);
+    for (const kind of kinds.slice(0, 3)) expect(new Set(enemies.filter(e => e.kind === kind).map(e => Math.atan2(e.vy, e.vx))).size).toBe(3);
+    const occupied = createEnemy('boss', { x: 3, y: 3 }); occupied.visualRadius = 100;
+    expect(defaultEnemies(6, 6, occupied, () => value)).toEqual([]);
+    expect(performance.now() - start).toBeLessThan(500);
   });
   it('moves straight at constant speed, curves in an orbit and alternates zigzag legs', () => {
     const straight = createEnemy('straight', { x: 50, y: 50 });
@@ -63,7 +104,7 @@ describe('independent enemy motion', () => {
     expect(Math.hypot(enemy.vx, enemy.vy)).toBeCloseTo(ENEMY_STYLES[kind].speed, 8);
   });
   it('never steers towards the player or follows a live trail', () => {
-    const a = new Game(), b = new Game(); a.start(); b.start();
+    const a = new Game(72, 48, { random: seeded() }), b = new Game(72, 48, { random: seeded() }); a.start(); b.start();
     b.move('down', true, 5);
     a.protection = b.protection = 100;
     for (let i = 0; i < 600; i++) { a.update(1 / 60); b.update(1 / 60, undefined, true); }
