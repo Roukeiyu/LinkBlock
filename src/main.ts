@@ -3,6 +3,7 @@ import { Game, type Direction, type GameEvent } from './engine';
 import { ENEMY_STYLES } from './enemies';
 import { renderEnemy } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
+import { DragJoystick } from './joystick';
 import { lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
@@ -76,8 +77,8 @@ const drawPointers = new Set<number>();
 const controlModes = ['two-left', 'two-right', 'one-hand'] as const;
 let controlModeIndex = 0;
 let joystickPointer: number | undefined;
-let joystickCenter = { x: 0, y: 0 };
-let joystickRadius = 0;
+let joystickPoint: { x: number; y: number } | undefined;
+const joystickInput = new DragJoystick();
 const joystickKeys = new Set<string>();
 const image = new Image();
 image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
@@ -258,6 +259,7 @@ function syncTouchDrawing() {
   $('#joystick').setAttribute('aria-pressed', String(joystickPointer !== undefined || joystickKeys.size > 0));
 }
 function resetJoystick() {
+  joystickPoint = undefined; joystickInput.reset();
   $('#joystick').style.removeProperty('--stick-x'); $('#joystick').style.removeProperty('--stick-y');
 }
 function cardinalDirection(dx: number, dy: number): Direction | undefined {
@@ -266,20 +268,32 @@ function cardinalDirection(dx: number, dy: number): Direction | undefined {
 }
 function updateJoystick(e: PointerEvent) {
   if (e.pointerId !== joystickPointer) return;
-  const dx = e.clientX - joystickCenter.x, dy = e.clientY - joystickCenter.y;
-  const length = Math.hypot(dx, dy), ratio = Math.min(1, joystickRadius / (length || 1));
+  const events = e.getCoalescedEvents?.();
+  let changed = false;
+  for (const point of events?.length ? events : [e]) {
+    changed = joystickInput.move(point.clientX, point.clientY) || changed;
+    joystickPoint = { x: point.clientX, y: point.clientY };
+  }
+  sampleJoystick();
+  // A fresh swipe can continue after a completed loop, even in the same direction.
+  if (changed && joystickInput.direction) { held.delete(joystickInput.direction); held.add(joystickInput.direction); }
+}
+function sampleJoystick() {
+  if (joystickPointer === undefined || !joystickPoint) return;
+  const box = joystick.getBoundingClientRect(), knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
+  const radius = Math.max(0, (box.width - knob.offsetWidth) / 2 - 10);
+  // Center coordinates only position the knob; movement uses local touch deltas.
+  const dx = joystickPoint.x - box.x - box.width / 2, dy = joystickPoint.y - box.y - box.height / 2;
+  const ratio = Math.min(1, radius / (Math.hypot(dx, dy) || 1));
   joystick.style.setProperty('--stick-x', `${dx * ratio}px`); joystick.style.setProperty('--stick-y', `${dy * ratio}px`);
-  const direction = cardinalDirection(dx, dy);
-  setPointerDirection(e.pointerId, direction);
+  setPointerDirection(joystickPointer, joystickInput.direction);
 }
 joystick.addEventListener('pointerdown', e => {
   e.preventDefault();
   if (game.phase === 'opening') { confirmOpening(); return; }
   if (game.phase !== 'playing' || controlModes[controlModeIndex] !== 'one-hand' || joystickPointer !== undefined) return;
-  const box = joystick.getBoundingClientRect(), knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
-  joystickCenter = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  joystickRadius = Math.max(0, (box.width - knob.offsetWidth) / 2 - 10);
-  joystickPointer = e.pointerId; drawPointers.add(e.pointerId); joystick.setPointerCapture(e.pointerId);
+  joystickPointer = e.pointerId; joystickInput.start(e.clientX, e.clientY);
+  drawPointers.add(e.pointerId); joystick.setPointerCapture(e.pointerId);
   syncTouchDrawing(); updateJoystick(e);
 });
 joystick.addEventListener('click', () => { if (game.phase === 'opening') confirmOpening(); });
@@ -474,6 +488,7 @@ function frame(now: number) {
   previous = now;
   const wasOpening = game.phase === 'opening';
   const candidateBefore = game.opening?.candidates;
+  sampleJoystick();
   if (game.update(dt, [...held].at(-1), drawHeld || touchDraw)) held.clear();
   if (wasOpening && game.phase === 'playing') clearInput();
   for (const effect of effects) effect.update(game.phase === 'paused' ? 0 : dt);

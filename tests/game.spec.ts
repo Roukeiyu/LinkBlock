@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; boundary: { x: number; y: number }[]; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; enemyBodies: { x: number; y: number; color: string; angle: number }[]; bossRadius: number; warningFrame: string; warningShots: number; warningAngles: number[]; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
+type Probe = { joystickPoint: { x: number; y: number }; player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; boundary: { x: number; y: number }[]; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; enemyBodies: { x: number; y: number; color: string; angle: number }[]; bossRadius: number; warningFrame: string; warningShots: number; warningAngles: number[]; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
 async function worldPixel(page: Page, x: number, y: number) {
   return page.locator('#board').evaluate((canvas: HTMLCanvasElement, p) => {
@@ -68,8 +68,12 @@ test.beforeEach(async ({ page }, info) => {
   if (controlled) await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
-    const state = { player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', boundary: [] as { x: number; y: number }[], trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], enemyBodies: [] as { x: number; y: number; color: string; angle: number }[], bossRadius: 0, warningFrame: '', warningShots: -1, warningAngles: [] as number[], defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
+    const state = { joystickPoint: { x: 0, y: 0 }, player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', boundary: [] as { x: number; y: number }[], trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], enemyBodies: [] as { x: number; y: number; color: string; angle: number }[], bossRadius: 0, warningFrame: '', warningShots: -1, warningAngles: [] as number[], defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
     (window as unknown as { probe: typeof state }).probe = state;
+    for (const type of ['pointerdown', 'pointermove']) document.addEventListener(type, event => {
+      const e = event as PointerEvent;
+      if (e.target instanceof Element && e.target.closest('#joystick')) state.joystickPoint = { x: e.clientX, y: e.clientY };
+    });
     const paths = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }[]>();
     const translations = new WeakMap<CanvasRenderingContext2D, { x: number; y: number }>();
     for (const method of ['beginPath', 'moveTo', 'lineTo', 'stroke', 'clearRect', 'translate'] as const) {
@@ -373,7 +377,16 @@ async function touchJoystick(page: Page) {
   await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   const point = (dx = 0, dy = 0) => ({ id: 1, x: x + dx, y: y + dy, radiusX: 4, radiusY: 4, force: 1 });
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
-  return { session, move: (dx: number, dy: number) => session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(dx, dy)] }) };
+  return { session, point, move: async (dx: number, dy: number) => {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(dx, dy)] });
+    // Chrome can coalesce pointermove until its compositor frame. Observe
+    // actual input coordinates (the knob may already be clamped at this angle).
+    if (await page.locator('#joystick').getAttribute('aria-pressed') === 'false') return;
+    await expect.poll(async () => {
+      const actual = (await probe(page)).joystickPoint, expected = point(dx, dy);
+      return Math.abs(actual.x - expected.x) < 0.1 && Math.abs(actual.y - expected.y) < 0.1;
+    }).toBe(true);
+  } };
 }
 
 test('one-handed joystick draws while held, turns continuously, clamps the knob and retracts on release', async ({ page }) => {
@@ -383,21 +396,95 @@ test('one-handed joystick draws while held, turns continuously, clamps the knob 
   await page.waitForTimeout(100); expect((await probe(page)).player).toEqual({ x: 36, y: 0 });
   await move(0, 45); await page.waitForTimeout(300); const down = (await probe(page)).player;
   expect(down.y).toBeGreaterThan(0); expect((await probe(page)).trail.length).toBeGreaterThan(1);
-  await move(120, 10); await page.waitForTimeout(120); const right = (await probe(page)).player;
+  await move(120, 45); await page.waitForTimeout(120); const right = (await probe(page)).player;
   expect(right.x).toBeGreaterThan(down.x);
   const knob = await page.locator('#joystick').evaluate(element => Number.parseFloat((element as HTMLElement).style.getPropertyValue('--stick-x')));
   expect(knob).toBeGreaterThan(0); expect(knob).toBeLessThan(60);
-  await move(0, -45); await page.waitForTimeout(100); const up = (await probe(page)).player; expect(up.y).toBeLessThan(right.y);
-  await move(2, 2); await page.waitForTimeout(40); const stopped = (await probe(page)).player;
-  await page.waitForTimeout(100); expect((await probe(page)).player).toEqual(stopped);
+  await move(120, 0); await page.waitForTimeout(100); const up = (await probe(page)).player; expect(up.y).toBeLessThan(right.y);
+  const beforeStill = (await probe(page)).player; await move(120, 0); await page.waitForTimeout(60);
+  const stopped = (await probe(page)).player; expect(stopped.x).toBe(beforeStill.x); expect(stopped.y).toBeLessThan(beforeStill.y);
   await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
-  await move(-45, 0); await page.waitForTimeout(70); expect((await probe(page)).player.x).toBeLessThan(stopped.x);
+  await move(75, 0); await page.waitForTimeout(70); expect((await probe(page)).player.x).toBeLessThan(stopped.x);
   await page.screenshot({ path: 'test-results/single-hand-joystick.png', fullPage: true });
   await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
   await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); expect((await probe(page)).trail).toHaveLength(0);
   expect(await page.locator('#joystick').evaluate(element => (element as HTMLElement).style.getPropertyValue('--stick-x'))).toBe('');
   await session.detach(); expect(errors).toEqual([]);
+});
+
+test('island coast joystick drag follows local turns on one side, keeps stationary direction and ignores other fingers on phone', async ({ page }) => {
+  await singleHand(page); await page.locator('#joystick').click(); await page.clock.runFor(32);
+  const { session, move, point } = await touchJoystick(page);
+  await page.clock.runFor(48); expect((await probe(page)).player).toEqual({ x: 24, y: 18 });
+  await move(160, 0); await page.clock.runFor(80); const anchor = (await probe(page)).player;
+  expect(anchor.x).toBeGreaterThan(24); expect(anchor.y).toBe(18);
+  await move(160, -30); await page.clock.runFor(80); const up = (await probe(page)).player;
+  expect(up.x).toBe(anchor.x); expect(up.y).toBeLessThan(anchor.y);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(160, -30), { ...point(-40, 30), id: 2 }] });
+  await page.clock.runFor(48); expect((await probe(page)).player.x).toBe(anchor.x);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ ...point(-40, 30), id: 2 }] });
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
+  const beforeLeft = (await probe(page)).player;
+  await move(145, -30); await page.clock.runFor(64); const left = (await probe(page)).player;
+  expect(left.x).toBeLessThan(beforeLeft.x); expect(left.y).toBe(beforeLeft.y);
+  expect(await page.locator('#joystick').evaluate(e => parseFloat((e as HTMLElement).style.getPropertyValue('--stick-x')))).toBeGreaterThan(0);
+  expect(await page.locator('#joystick').evaluate(e => parseFloat((e as HTMLElement).style.getPropertyValue('--stick-x')))).toBeLessThan(40);
+  await move(145, 0); await page.clock.runFor(32); const down = (await probe(page)).player;
+  expect(down.x).toBe(left.x); expect(down.y).toBeGreaterThan(left.y);
+  await page.clock.runFor(32); const still = (await probe(page)).player;
+  expect(still.x).toBe(down.x); expect(still.y).toBeGreaterThan(down.y);
+  for (const [x, y] of [[145.5, 0.5], [145, 0], [145.3, -0.3]]) {
+    await move(x, y); await page.clock.runFor(16); expect((await probe(page)).player.x).toBe(down.x);
+  }
+  const beforeTurn = (await probe(page)).player; await move(120, 0); await page.clock.runFor(32);
+  expect((await probe(page)).player.x).toBeLessThan(beforeTurn.x); expect((await probe(page)).player.y).toBe(beforeTurn.y);
+  await page.screenshot({ path: 'test-results/joystick-drag-phone.png', fullPage: true });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await page.clock.runFor(500);
+  expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); await session.detach();
+});
+
+test('island coast joystick drag closes a real island loop and resets the previous touch point on phone', async ({ page }) => {
+  await singleHand(page); await page.locator('#joystick').click(); await page.clock.runFor(32);
+  const initial = Number(await page.locator('.progress-track').getAttribute('aria-valuenow'));
+  const { session, move } = await touchJoystick(page);
+  const until = async (done: (p: Probe['player']) => boolean) => {
+    for (let i = 0; i < 120 && !done((await probe(page)).player); i++) await page.clock.runFor(16);
+    expect(done((await probe(page)).player)).toBe(true);
+  };
+  await move(0, -30); await until(p => p.y <= 12);
+  await move(-30, -30); await until(p => p.x <= 20);
+  await move(-30, 0); await page.clock.runFor(32);
+  const path = (await probe(page)).trail, y = path[1].y, x = path[2].x;
+  await until(p => Math.abs(p.y - 18) < 1e-6); expect((await probe(page)).trail).toHaveLength(0);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await session.detach(); await page.clock.runFor(1300);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(initial + (24 - x) * (18 - y) / (72 * 48) * 100, 7);
+  expect(await worldPixel(page, 22, 15)).not.toEqual([14, 32, 43]);
+  const next = await touchJoystick(page); await next.move(0, -20); await page.clock.runFor(48);
+  expect((await probe(page)).player.x).toBe(x); expect((await probe(page)).player.y).toBeLessThan(18);
+  await next.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await next.session.detach();
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await page.screenshot({ path: 'test-results/joystick-drag-capture-phone.png', fullPage: true });
+});
+
+test('island coast joystick drag starts off center and accepts a short local swipe on a small phone', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 }); await page.clock.runFor(32);
+  await page.locator('#control-mode').click(); await page.locator('#control-mode').click();
+  await page.locator('#joystick').click(); await page.clock.runFor(32);
+  const box = (await page.locator('#joystick').boundingBox())!, x = box.x + box.width / 2 + 35, y = box.y + box.height / 2;
+  const session = await page.context().newCDPSession(page), touch = (dy: number) => ({ id: 1, x, y: y + dy });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch(0)] }); await page.clock.runFor(96);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); // Position inside the pad is not a movement command.
+  await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [touch(-8)] });
+  await expect.poll(async () => Math.abs((await probe(page)).joystickPoint.y - (y - 8)) < 0.1).toBe(true);
+  await page.clock.runFor(80); const moving = (await probe(page)).player;
+  expect(moving.x).toBe(24); expect(moving.y).toBeLessThan(18);
+  await page.clock.runFor(48); expect((await probe(page)).player.y).toBeLessThan(moving.y);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await page.clock.runFor(300);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/joystick-drag-small-phone.png', fullPage: true }); await session.detach();
 });
 
 test('mode switching, touch cancellation and wide layout discard active joystick input', async ({ page }) => {
