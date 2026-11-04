@@ -21,7 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span></div>
   </header>
   <main>
-    <section class="intro"><div><p class="eyebrow">A LITTLE COURAGE. A NEW TERRITORY.</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">越过边界，连接起点。让你的领地，一点点生长。</p></div><div class="chapter"><span>01 / 01</span><p>初见 · 静谧之湖</p></div></section>
+    <section class="intro"><div><p class="eyebrow">A LITTLE COURAGE. A NEW TERRITORY.</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">越过边界，连接起点。让未知的风景，一点点显现。</p></div><div class="chapter"><span>01 / 01</span><p>初见 · 静谧之湖</p></div></section>
     <section class="game-layout" aria-label="LinkBlock 游戏">
       <div class="game-main">
         <div class="hud">
@@ -33,7 +33,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。方向键或 WASD 移动，按住空格画线，松开空格快速收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>让领地扩大到 75%，或击败湖心守卫。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
           <div id="toast" class="toast" role="status" aria-live="polite"></div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
@@ -325,7 +325,7 @@ function handleEvent(event: GameEvent) {
     }
   } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push(theme.createCaptureEffect(region, reducedMotion.matches));
-    notify('连接成功 · 领地已扩大');
+    notify('连接成功 · 新的领地已揭开');
     tone(523); tone(784, 0.18, 0.08);
   } else if (event === 'partition') {
     notify('通路已连接 · 继续围出闭合区域'); tone(440);
@@ -390,11 +390,11 @@ function sync() {
     $('#overlay-title').textContent = '这片风景，属于你。';
     $('#overlay-copy').textContent = `已占领 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
     $('#primary').innerHTML = `再探索一次 ${icon('reset')}`;
-    $('#overlay-hint').textContent = game.winReason === 'boss' ? '静谧之湖 · 守卫已击败' : '静谧之湖 · 领地目标已达成';
+    $('#overlay-hint').textContent = game.winReason === 'boss' ? '静谧之湖 · 守卫已击败' : '静谧之湖 · 已解锁完整风景';
   } else if (game.phase === 'lost') {
     $('#overlay-kicker').textContent = 'EVERY TRY IS A NEW BEGINNING';
     $('#overlay-title').textContent = '下一次，再远一点。';
-    $('#overlay-copy').textContent = `你已占领 ${percent.toFixed(1)}% 的领地，获得 ${game.score.toLocaleString()} 分。再试一次？`;
+    $('#overlay-copy').textContent = `你已揭开 ${percent.toFixed(1)}% 的风景，获得 ${game.score.toLocaleString()} 分。再试一次？`;
     $('#primary').innerHTML = `重新挑战 ${icon('reset')}`;
   }
   if (!['playing', 'ready', 'opening'].includes(game.phase)) {
@@ -407,20 +407,19 @@ function render(now: number) {
   const width = canvas.width, height = canvas.height;
   const scale = Math.min((width - 24) / game.width, (height - 24) / game.height);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = theme.danger; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#0e202b'; ctx.fillRect(0, 0, width, height);
   ctx.save();
   ctx.translate((width - game.width * scale) / 2, (height - game.height * scale) / 2);
   ctx.scale(scale, scale);
   if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
-  ctx.fillStyle = theme.backdropShade; ctx.fillRect(0, 0, game.width, game.height);
-  // Captures add solid foreground shapes over the landscape backdrop. Keep
-  // the exact claimed polygons even on a Boss victory below the area target.
-  ctx.fillStyle = theme.territory;
-  for (const region of game.captured) { polygonPath(ctx, region); ctx.fill(); }
+  if (game.phase !== 'won') {
+    ctx.fillStyle = theme.danger;
+    for (const region of game.territories) { polygonPath(ctx, region); ctx.fill(); }
+  }
   for (const effect of effects) effect.render(ctx);
   if (game.phase === 'opening' && game.opening) {
     ctx.save(); polygonPath(ctx, game.opening.region); ctx.clip();
-    ctx.fillStyle = theme.territory; ctx.fillRect(0, 0, game.width, game.height);
+    if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
     ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(0, 0, game.width, game.height); ctx.restore();
     ctx.save(); ctx.strokeStyle = '#ffcf75'; ctx.lineWidth = 0.18; ctx.shadowColor = '#ffcf75'; ctx.shadowBlur = 12;
     polygonPath(ctx, game.opening.region); ctx.stroke(); ctx.restore();
