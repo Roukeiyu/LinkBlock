@@ -64,7 +64,7 @@ test.beforeEach(async ({ page }, info) => {
         // frame timing cannot reliably land within 2.5e-8 world units of shore.
         body += '\nconst confirmForSeam = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForSeam.call(this); if (selected) { this.player={x:30,y:22}; this.anchor={...this.player}; this.move("right",true,4); this.move("down",true,4); this.move("left",true,4-2.5e-8); } return selected; };';
       }
-      if (info.title.includes('frame departure')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
+      if (info.title.includes('frame departure') || info.title.includes('resumes retraction')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
       if (info.title.includes('enclosed image')) body = body
         .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
         .replace('this.boss = options.boss === null ?', 'this.boss = true ?');
@@ -72,7 +72,12 @@ test.beforeEach(async ({ page }, info) => {
       await route.fulfill({ response, body });
     });
   }
-  if (controlled) await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
+  if (controlled) {
+    await page.clock.install({ time: new Date('2026-11-03T00:00:00Z') });
+    // Freeze before navigation, before the app schedules its first animation
+    // frame. Pausing after load can leave that frame ahead of the replayed clock.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  }
   // Observe the real canvas drawing commands without adding debug APIs to the app.
   await page.addInitScript(() => {
     const state = { joystickPoint: { x: 0, y: 0 }, player: { x: 0, y: 0 }, positions: [] as { x: number; y: number; time: number }[], white: 0, particles: 0, flash: '', boundary: [] as { x: number; y: number }[], trail: [] as { x: number; y: number }[], shots: [] as { x: number; y: number }[], enemyColors: [] as string[], enemyBodies: [] as { x: number; y: number; color: string; angle: number }[], bossRadius: 0, warningFrame: '', warningShots: -1, warningAngles: [] as number[], defeatFrame: '', awards: [] as { text: string; color: string }[], jumpScales: [] as number[], jumpShadows: 0 };
@@ -142,9 +147,6 @@ test.beforeEach(async ({ page }, info) => {
     };
   });
   await page.goto('/');
-  // Always pause in the future: slow module loading must not rewind the clock
-  // behind the app's initial performance.now() and drop simulated frames.
-  if (controlled) await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.getByRole('button', { name: '开始探索' }).click();
   // Existing direction-pad fixtures explicitly select that mode. Dedicated wide
   // touchpad tests below exercise the unchanged production single-hand default.
@@ -256,13 +258,13 @@ test('continuous movement stays on the drawn edge and turns between arbitrary co
   expect(errors).toEqual([]);
 });
 
-test('Space release retracts a bent trail, ignores new input until the anchor and allows a fresh cut', async ({ page }) => {
+test('Space release retracts bends at triple speed, stops at the anchor and allows a fresh cut', async ({ page }) => {
   await page.keyboard.down('Space');
   await hold(page, 'ArrowDown', 450); await hold(page, 'ArrowLeft', 350); await hold(page, 'ArrowDown', 350);
   const before = await probe(page), start = before.trail[0];
   expect(before.trail).toHaveLength(4);
   const releasedAt = await page.evaluate(() => performance.now());
-  await page.keyboard.up('Space'); await page.keyboard.down('Space'); await page.keyboard.down('ArrowRight');
+  await page.keyboard.up('Space');
   await page.waitForTimeout(60);
   const during = await probe(page);
   expect(during.player.x).toBeCloseTo(before.player.x, 7);
@@ -285,9 +287,95 @@ test('Space release retracts a bent trail, ignores new input until the anchor an
   await page.waitForTimeout(100); expect((await probe(page)).player).toEqual(start);
   await expect(page.locator('#percent')).toHaveText('0.0%'); await expect(page.locator('#score')).toHaveText('000000');
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
-  await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
   await page.keyboard.down('Space'); await hold(page, 'ArrowDown', 100);
   expect((await probe(page)).player.y).toBeGreaterThan(0); await page.keyboard.up('Space');
+});
+
+for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast resumes retraction with ${input}${input === 'keyboard' ? '' : ' on phone'}`, async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  if (input === 'one-hand') await controlMode(page, 'one-hand');
+  await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(32);
+  const initialPercent = await page.locator('#percent').textContent(), anchor = (await probe(page)).player;
+  type Direction = 'up' | 'right' | 'down' | 'left';
+  const keys = { up: 'ArrowUp', right: 'ArrowRight', down: 'ArrowDown', left: 'ArrowLeft' };
+  const session = input === 'keyboard' ? undefined : await page.context().newCDPSession(page);
+  if (session) await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const center = async (selector: string) => { const b = (await page.locator(selector).boundingBox())!; return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  const pad = input === 'one-hand' ? (await page.locator('#joystick').boundingBox())! : undefined;
+  const drawPoint = input === 'two-hand' ? { id: 2, ...await center('#touch-draw') } : undefined;
+  let point = { id: 1, x: pad ? pad.x + pad.width / 2 : 0, y: pad ? pad.y + pad.height / 2 : 0 };
+  let drawing = false, direction: Direction | undefined, presses = 0;
+  const contacts = () => [...(direction ? [point] : []), ...(drawing && drawPoint ? [drawPoint] : [])];
+  const press = async () => {
+    presses++;
+    if (input === 'keyboard') await page.keyboard.down('Space');
+    else if (input === 'one-hand') {
+      point = { id: 1, x: presses % 2 ? pad!.x + pad!.width - 12 : pad!.x + 12, y: pad!.y + pad!.height / 2 };
+      await session!.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+      await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
+    } else {
+      drawing = true; await session!.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: contacts() });
+      await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+    }
+  };
+  const setDirection = async (next: Direction) => {
+    if (input === 'keyboard') { if (direction) await page.keyboard.up(keys[direction]); await page.keyboard.down(keys[next]); }
+    else if (input === 'one-hand') {
+      point = { ...point, x: point.x + (next === 'right' ? 10 : next === 'left' ? -10 : 0), y: point.y + (next === 'down' ? 10 : next === 'up' ? -10 : 0) };
+      await session!.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+      await expect.poll(async () => Math.abs((await probe(page)).joystickPoint.x - point.x) < 0.1 && Math.abs((await probe(page)).joystickPoint.y - point.y) < 0.1).toBe(true);
+    } else {
+      point = { id: 1, ...await center(`[data-dir="${next}"]`) };
+      const type = direction ? 'touchMove' : 'touchStart'; direction = next;
+      await session!.send('Input.dispatchTouchEvent', { type, touchPoints: contacts() });
+      await expect(page.locator(`[data-dir="${next}"]`)).toHaveClass(/is-held/);
+    }
+    direction = next;
+  };
+  const release = async () => {
+    if (input === 'keyboard') { if (direction) await page.keyboard.up(keys[direction]); await page.keyboard.up('Space'); }
+    else { await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await expect(page.locator(input === 'one-hand' ? '#joystick' : '#touch-draw')).toHaveAttribute('aria-pressed', 'false'); }
+    direction = undefined; drawing = false;
+  };
+  const drive = async (next: Direction, done: (p: Probe['player']) => boolean) => {
+    await setDirection(next);
+    for (let i = 0; i < 150 && !done((await probe(page)).player); i++) await page.clock.runFor(16);
+    expect(done((await probe(page)).player), JSON.stringify((await probe(page)).player)).toBe(true);
+    if (input === 'keyboard') { await page.keyboard.up(keys[next]); direction = undefined; }
+    else if (input === 'two-hand') { await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [point] }); direction = undefined; }
+  };
+  await press(); await drive('up', p => p.y <= 8); await drive('right', p => p.x >= 30); await drive('down', p => p.y >= 12);
+  const end = (await probe(page)).player; await release(); await page.clock.runFor(32);
+  const partial = await probe(page); expect(partial.player.y).toBeLessThan(end.y); expect(partial.player.x).toBe(end.x);
+  await press(); await page.clock.runFor(64);
+  expect((await probe(page)).player).toEqual(partial.player); expect((await probe(page)).trail).toEqual(partial.trail);
+  const beforeRight = (await probe(page)).player; await setDirection('right'); await page.clock.runFor(64);
+  expect((await probe(page)).player.x).toBeGreaterThan(beforeRight.x); expect((await probe(page)).player.y).toBe(beforeRight.y);
+  // Keep the keyboard/d-pad direction held while only the drawing action is
+  // released, then verify that pressing the action resumes that same direction.
+  if (input === 'keyboard') await page.keyboard.up('Space');
+  else if (input === 'two-hand') {
+    drawing = false; await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [drawPoint!] });
+    await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'false');
+  } else await release();
+  await page.clock.runFor(16); let second = await probe(page);
+  await press();
+  if (input !== 'one-hand') {
+    await page.clock.runFor(16); expect((await probe(page)).player.x).toBeGreaterThan(second.player.x);
+    if (input === 'keyboard') await page.keyboard.up('ArrowRight');
+    else await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [point] });
+    direction = undefined; second = await probe(page);
+  }
+  await page.clock.runFor(48); expect((await probe(page)).player).toEqual(second.player); expect((await probe(page)).trail).toEqual(second.trail);
+  await setDirection('up'); await page.clock.runFor(64); expect((await probe(page)).player.y).toBeLessThan(second.player.y);
+  await page.screenshot({ path: `test-results/resumed-line-${input}.png`, fullPage: true });
+  await release(); await page.clock.runFor(1500); expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);
+  await expect(page.locator('#percent')).toHaveText(initialPercent!); await expect(page.locator('#score')).toHaveText('000000');
+  await press(); await drive('up', p => p.y <= 12); await drive('right', p => p.x >= 28); await drive('down', p => Math.abs(p.y - 18) < 1e-6);
+  await release(); await page.clock.runFor(100);
+  expect((await probe(page)).trail).toHaveLength(0); expect(Number(await page.locator('#percent').textContent().then(s => s!.replace('%', '')))).toBeGreaterThan(Number(initialPercent!.replace('%', '')));
+  expect(Number(await page.locator('#score').textContent())).toBeGreaterThan(0); await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await session?.detach(); expect(errors).toEqual([]);
 });
 
 async function touchController(page: Page) {
@@ -472,6 +560,7 @@ test('one-handed joystick draws while held, turns continuously, clamps the knob 
 });
 
 test('island coast joystick drag follows local turns on one side, keeps stationary direction and ignores other fingers on phone', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await singleHand(page); await page.locator('#joystick').click(); await page.clock.runFor(32);
   const { session, move, point } = await touchJoystick(page);
   await page.clock.runFor(48); expect((await probe(page)).player).toEqual({ x: 24, y: 18 });
@@ -500,7 +589,7 @@ test('island coast joystick drag follows local turns on one side, keeps stationa
   await page.screenshot({ path: 'test-results/joystick-drag-phone.png', fullPage: true });
   await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await page.clock.runFor(500);
   expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);
-  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); await session.detach();
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); await session.detach(); expect(errors).toEqual([]);
 });
 
 test('island coast joystick drag closes a real island loop and resets the previous touch point on phone', async ({ page }) => {

@@ -169,16 +169,17 @@ describe('automatic trail retraction', () => {
     expect(a.player.x).toBeCloseTo(b.player.x, 8); expect(a.player.y).toBeCloseTo(b.player.y, 8);
     expect(a.retracting && b.retracting).toBe(true);
   });
-  it('latches a release even if drawing is pressed again, and stops at the anchor', () => {
-    const game = bentTrail(); game.beginRetraction();
-    const tip = { ...game.player };
-    game.move('left', true, 1); expect(game.player).toEqual(tip);
+  it('stops retraction on a fresh press and continues from the shortened tip', () => {
+    const game = bentTrail(); game.update(0.01);
+    const tip = { ...game.player }, remaining = structuredClone(game.trail);
+    game.resumeDrawing(); expect(game.retracting).toBe(false);
+    game.update(0.01, undefined, true); expect(game.player).toEqual(tip); expect(game.trail).toEqual(remaining);
     game.update(0.01, 'right', true);
-    expect(game.player.y).toBeLessThan(tip.y); expect(game.player.x).toBe(tip.x);
-    expect(game.update(1, 'down', true)).toBe(true);
+    expect(game.player.y).toBe(tip.y); expect(game.player.x).toBeCloseTo(tip.x + PLAYER_SPEED * 0.01, 8);
+    expect(game.anchor).toEqual({ x: 4, y: 0 }); expect(game.claimed).toBe(0); expect(game.score).toBe(0);
+    game.beginRetraction(); game.update(1);
     expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
-    game.move('down', true, 0.125); expect(game.player.y).toBe(0.125);
-    expect(game.retracting).toBe(false);
+    game.update(0.01, 'down', true); expect(game.player.y).toBeCloseTo(PLAYER_SPEED * 0.01, 8);
   });
   it('keeps remaining line vulnerable and cancels retraction on a hit', () => {
     const game = bentTrail(); game.beginRetraction();

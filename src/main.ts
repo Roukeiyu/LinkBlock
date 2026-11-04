@@ -185,7 +185,7 @@ window.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (e.code === 'KeyR') { restart(); return; }
-  if (e.code === 'Space') drawHeld = true;
+  if (e.code === 'Space') { drawHeld = true; game.resumeDrawing(); }
   const direction = keyDirections[e.code];
   if (direction && game.phase === 'playing') {
     keyboardHeld.add(direction); held.delete(direction); held.add(direction);
@@ -268,7 +268,9 @@ function releaseDrawPointer(e: PointerEvent) {
 drawButton.addEventListener('pointerup', releaseDrawPointer); drawButton.addEventListener('pointercancel', releaseDrawPointer); drawButton.addEventListener('lostpointercapture', releaseDrawPointer);
 const joystick = $<HTMLButtonElement>('#joystick');
 function syncTouchDrawing() {
+  const wasDrawing = touchDraw;
   touchDraw = drawPointers.size > 0 || joystickKeys.size > 0;
+  if (touchDraw && !wasDrawing) game.resumeDrawing();
   $('#touch-draw').setAttribute('aria-pressed', String(touchDraw));
   $('#joystick').setAttribute('aria-pressed', String(joystickPointer !== undefined || joystickKeys.size > 0));
 }

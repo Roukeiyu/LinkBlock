@@ -50,6 +50,7 @@ export class Game {
   hazards: AttackHazard[] = [];
   trail: Polygon = [];
   retracting = false;
+  private drawingHeld = false;
   phase: Phase = 'ready';
   lives = 3;
   score = 0;
@@ -188,6 +189,14 @@ export class Game {
     return false;
   }
   beginRetraction() {
+    this.drawingHeld = false;
+    this.startRetraction();
+  }
+  resumeDrawing() {
+    if (this.phase !== 'playing') return;
+    this.drawingHeld = true; this.retracting = false;
+  }
+  private startRetraction() {
     if (this.phase === 'playing' && this.trail.length > 1) this.retracting = true;
   }
   private retract(amount: number) {
@@ -214,7 +223,11 @@ export class Game {
     if (this.island) {
       let captured: Polygon[] | undefined;
       try { captured = this.island.close(this.trail, this.territories[this.cutRegion]); } catch { /* Keep the path recoverable if a degenerate loop cannot be resolved. */ }
-      if (!captured) { this.beginRetraction(); return; }
+      if (!captured) {
+        // A failed geometric closure must still recover while the same press is
+        // held. Only a fresh press may interrupt that recovery.
+        this.drawingHeld = true; this.startRetraction(); return;
+      }
       this.lastCapture = captured; this.territories = this.island.regions;
       bossEnclosed = Boolean(this.boss && captured.some(region => inside(this.boss!, region)));
     } else {
@@ -366,6 +379,7 @@ export class Game {
       return false;
     }
     if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
+    if (drawing && !this.drawingHeld) this.resumeDrawing();
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy)), ...this.bossSettings.phases.map(phase => phase.reinforcements?.speed ?? 0));
