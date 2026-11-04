@@ -41,7 +41,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="mobile-notice-slot"></span><span class="footer-note">保持连接，发现更多</span></div>
         <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
-        <div class="touch-controls" aria-label="手机手柄" data-mode="two-left"><div class="controller-side dpad-side"><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side"><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side" hidden><button id="joystick" aria-label="单手摇杆，按住拖动画线，松开收线" aria-pressed="false"><span class="joystick-guides" aria-hidden="true">＋</span><i class="joystick-knob" aria-hidden="true"></i></button><span>按住拖动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">双手 · 方向在左</span></button></div>
+        <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
       <aside>
         <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已揭示小岛的岸线移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>回到小岛岸线，揭开圈内风景。<br>圈住普通访客可击败并得分，<br>圈住守卫可削减一格生命。<br>裸露外框不能靠岸；碰边可转向。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
@@ -80,9 +80,10 @@ const pointerDirections = new Map<number, Direction>();
 const directionPointers = new Set<number>();
 const drawPointers = new Set<number>();
 const controlModes = ['two-left', 'two-right', 'one-hand'] as const;
-let controlModeIndex = 0;
+let controlModeIndex = 2;
 let joystickPointer: number | undefined;
 let joystickPoint: { x: number; y: number } | undefined;
+let joystickOrigin: { x: number; y: number } | undefined;
 const joystickInput = new DragJoystick();
 const joystickKeys = new Set<string>();
 const image = new Image();
@@ -140,15 +141,23 @@ pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
 $('#mobile-pause').addEventListener('click', togglePause);
 $('#mobile-restart').addEventListener('click', restart);
-const interactionArea = $('.game-main');
-interactionArea.addEventListener('contextmenu', e => e.preventDefault());
-interactionArea.addEventListener('selectstart', e => e.preventDefault());
+// Safari's text selection and link/image callouts also apply to the header and
+// instructions. Block only native selection/menu/drag defaults, never touches;
+// real form fields and editable content retain their normal editing behavior.
+function isEditableTarget(target: EventTarget | null) {
+  const element = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  return Boolean(element?.closest('input, textarea, select') || element?.closest<HTMLElement>('[contenteditable]')?.isContentEditable);
+}
+for (const type of ['contextmenu', 'selectstart', 'dragstart']) $('#app').addEventListener(type, event => {
+  if (isEditableTarget(event.target)) return;
+  event.preventDefault();
+}, { capture: true });
 $('#control-mode').addEventListener('click', () => {
   clearInput(); controlModeIndex = (controlModeIndex + 1) % controlModes.length;
   const mode = controlModes[controlModeIndex], single = mode === 'one-hand', panel = $('.touch-controls');
   panel.dataset.mode = mode; panel.classList.toggle('swapped', mode === 'two-right'); panel.classList.toggle('single', single);
   $('.dpad-side').hidden = single; $('.draw-side').hidden = single; $('.joystick-side').hidden = !single;
-  const label = single ? '单手 · 拖动摇杆' : mode === 'two-right' ? '双手 · 方向在右' : '双手 · 方向在左';
+  const label = single ? '单手 · 自由触控' : mode === 'two-right' ? '双手 · 方向在右' : '双手 · 方向在左';
   $('#control-mode-name').textContent = label; $('#control-mode').setAttribute('aria-label', `切换操作方式，当前${label}`);
 });
 $('#sound').addEventListener('click', () => {
@@ -163,7 +172,7 @@ const keyDirections: Record<string, Direction> = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
 };
 window.addEventListener('keydown', e => {
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === 'Space' && game.phase === 'opening') {
     if (e.target instanceof HTMLButtonElement && !e.target.matches('#touch-draw, #joystick')) return;
     e.preventDefault(); if (!e.repeat) confirmOpening(); return;
@@ -264,8 +273,9 @@ function syncTouchDrawing() {
   $('#joystick').setAttribute('aria-pressed', String(joystickPointer !== undefined || joystickKeys.size > 0));
 }
 function resetJoystick() {
-  joystickPoint = undefined; joystickInput.reset();
+  joystickPoint = undefined; joystickOrigin = undefined; joystickInput.reset();
   $('#joystick').style.removeProperty('--stick-x'); $('#joystick').style.removeProperty('--stick-y');
+  $('#joystick').style.removeProperty('--origin-x'); $('#joystick').style.removeProperty('--origin-y');
 }
 function cardinalDirection(dx: number, dy: number): Direction | undefined {
   if (Math.hypot(dx, dy) < 12) return undefined;
@@ -284,11 +294,13 @@ function updateJoystick(e: PointerEvent) {
   if (changed && joystickInput.direction) { held.delete(joystickInput.direction); held.add(joystickInput.direction); }
 }
 function sampleJoystick() {
-  if (joystickPointer === undefined || !joystickPoint) return;
-  const box = joystick.getBoundingClientRect(), knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
-  const radius = Math.max(0, (box.width - knob.offsetWidth) / 2 - 10);
-  // Center coordinates only position the knob; movement uses local touch deltas.
-  const dx = joystickPoint.x - box.x - box.width / 2, dy = joystickPoint.y - box.y - box.height / 2;
+  if (joystickPointer === undefined || !joystickPoint || !joystickOrigin) return;
+  const box = joystick.getBoundingClientRect(), disc = joystick.querySelector<HTMLElement>('.joystick-disc')!, knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
+  const radius = Math.max(0, (disc.offsetWidth - knob.offsetWidth) / 2 - 10);
+  // The ring follows this gesture's touchdown; both visual offsets and movement
+  // are independent of the pad's fixed center. Only movement uses local deltas.
+  joystick.style.setProperty('--origin-x', `${joystickOrigin.x - box.x}px`); joystick.style.setProperty('--origin-y', `${joystickOrigin.y - box.y}px`);
+  const dx = joystickPoint.x - joystickOrigin.x, dy = joystickPoint.y - joystickOrigin.y;
   const ratio = Math.min(1, radius / (Math.hypot(dx, dy) || 1));
   joystick.style.setProperty('--stick-x', `${dx * ratio}px`); joystick.style.setProperty('--stick-y', `${dy * ratio}px`);
   setPointerDirection(joystickPointer, joystickInput.direction);
@@ -297,7 +309,7 @@ joystick.addEventListener('pointerdown', e => {
   e.preventDefault();
   if (game.phase === 'opening') { confirmOpening(); return; }
   if (game.phase !== 'playing' || controlModes[controlModeIndex] !== 'one-hand' || joystickPointer !== undefined) return;
-  joystickPointer = e.pointerId; joystickInput.start(e.clientX, e.clientY);
+  joystickPointer = e.pointerId; joystickOrigin = { x: e.clientX, y: e.clientY }; joystickInput.start(e.clientX, e.clientY);
   drawPointers.add(e.pointerId); joystick.setPointerCapture(e.pointerId);
   syncTouchDrawing(); updateJoystick(e);
 });
@@ -363,9 +375,9 @@ function sync() {
   $('#opening-hint').hidden = !selecting;
   if (selecting && game.opening) $('#opening-hint').textContent = `${openingPercent(game.opening, game.width, game.height).toFixed(1)}% · 空格 / 动作键确认 · ${Math.max(0, OPENING_SECONDS - game.opening.elapsed).toFixed(1)}s`;
   drawButton.setAttribute('aria-label', selecting ? '确认起点' : '按住画线，松开收线');
-  joystick.setAttribute('aria-label', selecting ? '确认起点' : '单手摇杆，按住拖动画线，松开收线');
+  joystick.setAttribute('aria-label', selecting ? '确认起点' : '单手触控区，任意位置按住滑动画线，松开收线');
   $('.draw-side > span').textContent = selecting ? '点击确认起点' : '按住画线 · 松开收线';
-  $('.joystick-side > span').textContent = selecting ? '点击确认起点' : '按住拖动画线 · 松开收线';
+  $('.joystick-side > span').textContent = selecting ? '区域内轻触确认起点' : '任意位置滑动画线 · 松开收线';
   const percent = game.percent;
   $('#percent').innerHTML = `${percent.toFixed(1)}<span>%</span>`;
   $('#progress-fill').style.width = `${Math.min(percent / game.target * 100, 100)}%`;

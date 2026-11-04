@@ -36,7 +36,7 @@ async function encloseRoster(page: Page) {
 test.beforeEach(async ({ page }, info) => {
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
   if ((randomOpening || islandPlay || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
-  if (info.title.includes('notice safe area')) await page.route('**/src/style.css*', async route => {
+  if (info.title.includes('notice safe area') || info.title.includes('wide touchpad safe area')) await page.route('**/src/style.css*', async route => {
     const response = await route.fetch();
     // Exercise the real layout rules with the values Safari supplies for a
     // notched screen. Chromium here does not expose native safe-area emulation.
@@ -146,6 +146,9 @@ test.beforeEach(async ({ page }, info) => {
   // behind the app's initial performance.now() and drop simulated frames.
   if (controlled) await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.getByRole('button', { name: '开始探索' }).click();
+  // Existing direction-pad fixtures explicitly select that mode. Dedicated wide
+  // touchpad tests below exercise the unchanged production single-hand default.
+  if (!info.title.includes('wide touchpad')) await page.locator('#control-mode').evaluate((e: HTMLButtonElement) => e.click());
 });
 
 for (const viewport of ['desktop', 'phone']) test(`random opening has varied safe spawns, a centered boss and fresh restart/reload on ${viewport}`, async ({ page }) => {
@@ -159,7 +162,7 @@ for (const viewport of ['desktop', 'phone']) test(`random opening has varied saf
     }
     expect(rectangle).not.toEqual(initial);
     if (viewport === 'phone') {
-      if (single) { await page.locator('#control-mode').click(); await page.locator('#control-mode').click(); }
+      await controlMode(page, single ? 'one-hand' : 'two-left');
       const button = page.locator(single ? '#joystick' : '#touch-draw');
       await expect(button).toHaveAttribute('aria-label', '确认起点');
       const box = (await button.boundingBox())!, session = await page.context().newCDPSession(page);
@@ -371,9 +374,13 @@ for (const swapped of [false, true]) {
   });
 }
 
+async function controlMode(page: Page, mode: string) {
+  for (let i = 0; i < 3 && await page.locator('.touch-controls').getAttribute('data-mode') !== mode; i++) await page.locator('#control-mode').click();
+  await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', mode);
+}
 async function singleHand(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('#control-mode').click(); await page.locator('#control-mode').click();
+  await controlMode(page, 'one-hand');
   await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'one-hand');
   await expect(page.locator('.dpad-side')).toBeHidden(); await expect(page.locator('.draw-side')).toBeHidden();
   await expect(page.locator('#joystick')).toBeVisible();
@@ -384,6 +391,7 @@ async function touchJoystick(page: Page) {
   await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   const point = (dx = 0, dy = 0) => ({ id: 1, x: x + dx, y: y + dy, radiusX: 4, radiusY: 4, force: 1 });
   await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
   return { session, point, move: async (dx: number, dy: number) => {
     await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(dx, dy)] });
     // Chrome can coalesce pointermove until its compositor frame. Observe
@@ -395,6 +403,49 @@ async function touchJoystick(page: Page) {
     }).toBe(true);
   } };
 }
+
+for (const variant of ['left edge', 'right edge', 'safe area']) test(`island coast phone wide touchpad ${variant} starts anywhere, captures outside and keeps buttons separate`, async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const viewport = variant === 'left edge' ? { width: 320, height: 568 } : { width: 390, height: 844 };
+  await page.setViewportSize(viewport);
+  await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'one-hand'); await expect(page.locator('.dpad-side')).toBeHidden();
+  const pad = page.locator('#joystick'), box = (await pad.boundingBox())!, mode = (await page.locator('#control-mode').boundingBox())!, status = (await page.locator('.mobile-game-status').boundingBox())!;
+  expect(box.width).toBeGreaterThan(viewport.width * 0.78); expect(box.y).toBeGreaterThanOrEqual(status.y + status.height); expect(box.y + box.height).toBeLessThan(mode.y);
+  expect(mode.y + mode.height).toBeLessThanOrEqual(viewport.height - (variant === 'safe area' ? 34 : 0));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+  const session = await page.context().newCDPSession(page); await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const startX = variant === 'right edge' ? box.x + box.width - 4 : box.x + 4, startY = box.y + box.height / 2;
+  const point = (dx = 0, dy = 0) => ({ id: 1, x: startX + dx, y: startY + dy });
+  // A touch anywhere first confirms the opening without inheriting a drawing gesture.
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] }); await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.clock.runFor(32);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] }); await page.clock.runFor(48);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); await expect(pad).toHaveAttribute('aria-pressed', 'true');
+  expect(await pad.evaluate(e => parseFloat((e as HTMLElement).style.getPropertyValue('--origin-x')))).toBeCloseTo(startX - box.x, 1);
+  const move = async (dx: number, dy: number) => {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(dx, dy)] });
+    await expect.poll(async () => Math.abs((await probe(page)).joystickPoint.y - point(dx, dy).y) < 0.1 && Math.abs((await probe(page)).joystickPoint.x - point(dx, dy).x) < 0.1).toBe(true);
+  };
+  await move(0, -10); await page.clock.runFor(64); const up = (await probe(page)).player;
+  expect(up.x).toBe(24); expect(up.y).toBeLessThan(18);
+  // The second contact cannot replace the owning finger or its origin.
+  const other = { id: 2, x: box.x + box.width / 2, y: startY + 15 };
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(0, -10), other] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [other] }); await expect(pad).toHaveAttribute('aria-pressed', 'true');
+  const dx = variant === 'right edge' ? -10 : 10;
+  await move(dx, -10); await page.clock.runFor(64); const turn = (await probe(page)).player;
+  expect(turn.y).toBe(up.y); expect(Math.sign(turn.x - up.x)).toBe(Math.sign(dx));
+  const outside = box.y - 10 - startY;
+  await move(dx, outside); await page.clock.runFor(64); expect((await probe(page)).player.y).toBeLessThan(turn.y);
+  await expect(pad).toHaveAttribute('aria-pressed', 'true'); expect(await page.evaluate(() => getSelection()?.toString())).toBe('');
+  await page.screenshot({ path: `test-results/wide-touchpad-${variant.replace(' ', '-')}-active.png`, fullPage: true });
+  await session.send('Input.dispatchTouchEvent', { type: variant === 'safe area' ? 'touchCancel' : 'touchEnd', touchPoints: [] }); await page.clock.runFor(500); await session.detach();
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0); await expect(pad).toHaveAttribute('aria-pressed', 'false');
+  expect(await pad.evaluate(e => (e as HTMLElement).style.getPropertyValue('--origin-x'))).toBe('');
+  await page.locator('#mobile-pause').click(); await expect(page.locator('#state-label')).toHaveText('已暂停'); await page.locator('#mobile-pause').click();
+  await page.locator('#control-mode').click(); await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'two-left'); await expect(pad).toBeHidden();
+  await page.locator('#mobile-restart').click(); await expect(page.locator('#state-label')).toHaveText('选择起点'); expect(errors).toEqual([]);
+});
 
 test('one-handed joystick draws while held, turns continuously, clamps the knob and retracts on release', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message)); await singleHand(page);
@@ -533,28 +584,89 @@ test('single-hand control retains a keyboard equivalent and clears on restart', 
   await finger.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await finger.session.detach();
 });
 
-test('long press cannot select game text or open menus, while controls remain focusable', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('long press cannot select the whole page on the landing screen or in either mobile mode', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await expect(page.getByRole('button', { name: '开始探索' })).toBeVisible();
   const session = await page.context().newCDPSession(page);
   await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-  const box = await page.locator('#percent').boundingBox();
-  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: box!.x + box!.width / 2, y: box!.y + box!.height / 2, radiusX: 4, radiusY: 4, force: 1 }] });
-  await page.waitForTimeout(700); await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  expect(await page.evaluate(() => getSelection()?.toString())).toBe('');
-  const behavior = await page.evaluate(() => {
-    const cancelled = (selector: string, type: string) => !document.querySelector(selector)!.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }));
-    return {
-      menu: ['#board', '[data-dir="down"]', '#touch-draw'].map(selector => cancelled(selector, 'contextmenu')),
-      selection: cancelled('#percent', 'selectstart'),
-      outsideMenu: cancelled('h1', 'contextmenu'), outsideSelection: cancelled('h1', 'selectstart'),
-      userSelect: ['#board', '#percent', '[data-dir="down"]', '#touch-draw'].map(selector => getComputedStyle(document.querySelector(selector)!).userSelect),
-    };
-  });
-  expect(behavior.menu).toEqual([true, true, true]); expect(behavior.selection).toBe(true);
-  expect(behavior.outsideMenu).toBe(false); expect(behavior.outsideSelection).toBe(false);
-  expect(behavior.userSelect).toEqual(['none', 'none', 'none', 'none']);
-  await page.getByRole('button', { name: '向下' }).focus(); await expect(page.getByRole('button', { name: '向下' })).toBeFocused();
+  for (const stage of ['landing', 'two-hand', 'one-hand']) {
+    if (stage === 'two-hand') { await page.getByRole('button', { name: '开始探索' }).click(); await controlMode(page, 'two-left'); }
+    if (stage === 'one-hand') await controlMode(page, 'one-hand');
+    for (const selector of ['.brand-light', 'h1']) {
+      const box = (await page.locator(selector).boundingBox())!;
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2, radiusX: 4, radiusY: 4, force: 1 }] });
+      await page.waitForTimeout(750); expect(await page.evaluate(() => getSelection()?.toString()), `${stage}: ${selector}`).toBe('');
+      await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    }
+    const selectors = ['.brand', '.brand-light', '.brand-icon i', 'h1', 'h1 span', '.intro-copy', '#board', '#percent', '.board-footer', '#control-mode', stage !== 'two-hand' ? '#joystick' : '#touch-draw'];
+    const behavior = await page.evaluate(selectors => selectors.map(selector => {
+      const element = document.querySelector(selector)!;
+      return { selector, selection: getComputedStyle(element).userSelect,
+        cancelled: ['contextmenu', 'selectstart', 'dragstart'].map(type => !element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }))) };
+    }), selectors);
+    for (const result of behavior) { expect(result.selection, result.selector).toBe('none'); expect(result.cancelled, result.selector).toEqual([true, true, true]); }
+    await expect(page.getByRole('heading', { name: '连接，划出你的领地。' })).toBeVisible();
+    const button = page.locator(stage !== 'two-hand' ? '#joystick' : '[data-dir="down"]');
+    await button.focus(); await expect(button).toBeFocused();
+  }
   await session.detach();
+  await page.screenshot({ path: 'test-results/page-long-press-phone.png', fullPage: true });
+});
+
+test('island coast native editors retain selection, menus and typing without game shortcuts', async ({ page }) => {
+  await page.evaluate(() => {
+    const form = document.createElement('div'); form.id = 'editing-fixture';
+    form.innerHTML = '<input id="native-input" aria-label="输入测试"><textarea id="native-textarea" aria-label="多行测试"></textarea><select id="native-select" aria-label="选择测试"><option>one</option><option>two</option></select><div id="native-editor" contenteditable><span id="native-child">editable words</span><span id="native-static" contenteditable="false">static label</span><span id="native-nested" contenteditable="true">nested editor</span></div>';
+    document.querySelector('.game-main')!.append(form);
+  });
+  const editors = ['#native-input', '#native-textarea', '#native-select', '#native-editor', '#native-child', '#native-nested'];
+  const behavior = await page.evaluate(selectors => selectors.map(selector => {
+    const element = document.querySelector(selector)!;
+    return { selector, selection: getComputedStyle(element).userSelect,
+      cancelled: ['contextmenu', 'selectstart', 'dragstart'].map(type => !element.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }))) };
+  }), editors);
+  for (const result of behavior) { expect(result.selection, result.selector).toBe('text'); expect(result.cancelled, result.selector).toEqual([false, false, false]); }
+  expect(await page.locator('#native-static').evaluate(e => ({ selection: getComputedStyle(e).userSelect, menu: e.dispatchEvent(new Event('contextmenu', { bubbles: true, cancelable: true })) }))).toEqual({ selection: 'none', menu: false });
+  for (const selector of ['#native-input', '#native-textarea']) {
+    await page.locator(selector).focus(); await page.keyboard.type('wasd p r '); await expect(page.locator(selector)).toHaveValue('wasd p r ');
+    await page.keyboard.press('ControlOrMeta+A');
+    expect(await page.locator(selector).evaluate((e: HTMLInputElement | HTMLTextAreaElement) => e.selectionEnd! - e.selectionStart!)).toBe(9);
+  }
+  await page.locator('#native-child').click(); await page.keyboard.press('ControlOrMeta+A');
+  expect(await page.evaluate(() => getSelection()?.toString())).toContain('editable words');
+  await page.keyboard.type('wasd p r '); await expect(page.locator('#native-editor')).toContainText('wasd p r');
+  await page.locator('#native-select').selectOption({ label: 'two' }); await expect(page.locator('#native-select')).toHaveValue('two');
+  await expect(page.locator('#state-label')).toHaveText('选择起点'); expect((await probe(page)).enemyBodies).toHaveLength(0);
+  await page.locator('#editing-fixture').evaluate(e => e.remove()); await page.locator('#board').focus();
+  await page.keyboard.press('Space'); await page.clock.runFor(32); await expect(page.locator('#state-label')).toHaveText('探索中');
+});
+
+test('page graphics and links cannot drag, text cannot be mouse-selected and desktop scrolling remains available', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 700 }); await page.goto('/');
+  await page.evaluate(() => {
+    const image = document.createElement('img'); image.id = 'image-fixture'; image.alt = '测试图标';
+    image.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="20" fill="green"/></svg>';
+    document.querySelector('.intro')!.append(image);
+    (window as unknown as { nativeDrags: boolean[] }).nativeDrags = [];
+    document.addEventListener('dragstart', event => (window as unknown as { nativeDrags: boolean[] }).nativeDrags.push(event.defaultPrevented));
+  });
+  for (const selector of ['h1', '.brand', '#image-fixture']) {
+    const box = (await page.locator(selector).boundingBox())!;
+    await page.mouse.move(box.x + 5, box.y + box.height / 2); await page.mouse.down();
+    await page.mouse.move(box.x + box.width + 40, box.y + box.height / 2, { steps: 12 }); await page.mouse.up();
+    expect(await page.evaluate(() => getSelection()?.toString())).toBe('');
+  }
+  expect(await page.evaluate(() => (window as unknown as { nativeDrags: boolean[] }).nativeDrags.every(cancelled => cancelled))).toBe(true);
+  for (const selector of ['.brand', '#image-fixture', '.primary-button svg']) {
+    expect(await page.locator(selector).evaluate(e => ({ drag: getComputedStyle(e).getPropertyValue('-webkit-user-drag'), cancelled: !e.dispatchEvent(new Event('dragstart', { bubbles: true, cancelable: true })) }))).toEqual({ drag: 'none', cancelled: true });
+  }
+  await page.mouse.wheel(0, 650); await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  await page.getByRole('button', { name: '开始探索' }).click(); await expect(page.locator('#overlay')).toBeHidden();
+  await page.setViewportSize({ width: 780, height: 900 }); await page.evaluate(() => scrollTo(0, 0));
+  const session = await page.context().newCDPSession(page); await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: 700, y: 450 }] });
+  for (const y of [400, 350, 300, 250, 200]) await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 1, x: 700, y }] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0); await session.detach();
 });
 
 test('mobile held draw and direction support simultaneous touches, release and cancellation', async ({ page }) => {

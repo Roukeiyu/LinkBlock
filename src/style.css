@@ -38,17 +38,22 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
 
 .touch-controls .dpad button.is-held{background:#365b50;border-color:#79edc9;color:#d9fff1;box-shadow:0 1px 0 #09151d,inset 0 0 12px #79edc914}
 
-.game-main,.game-main *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body,#app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app *{-webkit-user-select:inherit;user-select:inherit;-webkit-touch-callout:inherit}
+#app img,#app svg,#app a{-webkit-user-drag:none}
+#app :is(input,textarea,select,[contenteditable=""],[contenteditable="true" i],[contenteditable="plaintext-only" i]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+#app [contenteditable="false" i]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 .controller-side[hidden]{display:none}.joystick-side{display:none}
 @media(max-width:620px) and (orientation:portrait){
- .touch-controls.single .joystick-side{display:flex;grid-column:1/-1;grid-row:1}.touch-controls #control-mode{height:36px;line-height:1.4}#control-mode-name{display:block;font-size:8px;color:#587b83;margin-top:3px}
- .touch-controls #joystick{display:block;position:relative;width:144px;height:144px;padding:0;border-radius:50%;border:1px solid #4b7f79;background:radial-gradient(circle,#1e3f43,#132b35);box-shadow:inset 0 0 24px #0a1d24,0 5px 0 #08171e;touch-action:none;transform:none}
- #joystick:before{content:'';position:absolute;inset:13px;border:1px solid #5c8c7a55;border-radius:50%}.joystick-guides{font-size:87px;font-weight:200;line-height:1;color:#345952;position:absolute;inset:19px;pointer-events:none}
+ .touch-controls.single .joystick-side{display:flex;grid-column:1/-1;grid-row:1;align-self:stretch;min-height:0;width:100%}.touch-controls #control-mode{height:36px;line-height:1.4}#control-mode-name{display:block;font-size:8px;color:#587b83;margin-top:3px}
+ .touch-controls #joystick{display:block;position:relative;flex:1;min-height:144px;width:100%;height:auto;padding:0;overflow:hidden;border-radius:16px;border:1px solid #314e54;background:linear-gradient(145deg,#142d35,#10232e);box-shadow:inset 0 0 24px #0a1d2455;touch-action:none;transform:none}
+ .joystick-disc{position:absolute;left:var(--origin-x,50%);top:var(--origin-y,50%);transform:translate(-50%,-50%);width:144px;height:144px;border:1px solid #4b7f79;border-radius:50%;background:radial-gradient(circle,#1e3f43,#132b35);box-shadow:inset 0 0 24px #0a1d24;pointer-events:none}
+ .joystick-disc:before{content:'';position:absolute;inset:13px;border:1px solid #5c8c7a55;border-radius:50%}.joystick-guides{font-size:87px;font-weight:200;line-height:1;color:#345952;position:absolute;inset:19px;pointer-events:none}
  .joystick-knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border:1px solid #91edcc;border-radius:50%;background:radial-gradient(circle at 38% 30%,#8bf2d0,#4c998d);box-shadow:0 4px 15px #0005;transform:translate(-50%,-50%) translate(var(--stick-x,0px),var(--stick-y,0px));pointer-events:none}
- .touch-controls #joystick[aria-pressed=true]{border-color:#d8ba7a;background:radial-gradient(circle,#3b3b2e,#172b32)}#joystick[aria-pressed=true] .joystick-knob{background:radial-gradient(circle at 38% 30%,#ffe0a0,#b6975d);border-color:#ffe0a0}
+ .touch-controls #joystick[aria-pressed=true]{border-color:#d8ba7a}#joystick[aria-pressed=true] .joystick-disc{background:radial-gradient(circle,#3b3b2e,#172b32)}#joystick[aria-pressed=true] .joystick-knob{background:radial-gradient(circle at 38% 30%,#ffe0a0,#b6975d);border-color:#ffe0a0}
 }
-@media(max-width:620px) and (orientation:portrait) and (max-height:700px){.touch-controls #joystick{width:108px;height:108px}.joystick-knob{width:42px;height:42px}.joystick-guides{inset:15px;font-size:62px}.touch-controls #control-mode{height:32px}}
+@media(max-width:620px) and (orientation:portrait) and (max-height:700px){.touch-controls #joystick{min-height:108px}.joystick-disc{width:108px;height:108px}.joystick-knob{width:42px;height:42px}.joystick-guides{inset:15px;font-size:62px}.touch-controls #control-mode{height:32px}}
 
 .dpad-hit-area{position:absolute;inset:-18px;border-radius:50%;z-index:2;touch-action:none;background:transparent}
 @media(max-width:1000px) and (max-height:500px) and (orientation:landscape){
