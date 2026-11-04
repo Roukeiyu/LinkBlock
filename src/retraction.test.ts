@@ -72,11 +72,11 @@ describe('interruptible retraction on the real island', () => {
     expect(game.trail).toHaveLength(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
   });
 
-  it('keeps reverse motion and self-crossings blocked after stopping retraction', () => {
+  it('allows reverse trimming after stopping retraction and still blocks self-crossings', () => {
     const { game, move } = fixture(); move('up', 6); move('right', 8); game.update(1 / RETRACT_SPEED); game.resumeDrawing();
-    const tip = { ...game.player }; move('left', 2); expect(game.player).toEqual(tip);
+    move('left', 2); expect(game.player.x).toBeCloseTo(21); expect(game.player.y).toBeCloseTo(6);
     move('down', 2); move('left', 10);
-    expect(game.player.x).toBeCloseTo(23); expect(game.player.y).toBeCloseTo(8); expect(game.claimed).toBe(64);
+    expect(game.player.x).toBeCloseTo(21); expect(game.player.y).toBeCloseTo(8); expect(game.claimed).toBe(64);
   });
 
   it.each(['straight', 'boss', 'projectile'] as const)('still hits a stationary resumed tip once with %s', kind => {
@@ -121,5 +121,76 @@ describe('interruptible retraction on the real island', () => {
     game.togglePause(); game.update(0.01, undefined, true); expect(game.retracting).toBe(false);
     game.phase = 'lost'; game.beginRetraction(); game.resumeDrawing(); game.update(1, 'right', true);
     expect(game.player).toEqual(tip); expect(game.protection).toBe(0);
+  });
+});
+
+describe('directional trail backtracking while drawing is held', () => {
+  function bent() {
+    const scene = fixture(); scene.move('up', 6); scene.move('right', 8); scene.move('down', 4); return scene;
+  }
+  it('trims the tip at walking speed and stops at every old bend and the original shore', () => {
+    const { game, move } = bent(); move('up', 1);
+    expect(game.player).toEqual({ x: 24, y: 9 }); expect(game.retracting).toBe(false);
+    expect(game.update(0.05, 'up', true)).toBe(false);
+    expect(game.player.y).toBeCloseTo(9 - PLAYER_SPEED * 0.05, 8); expect(game.trail.at(-1)).toEqual(game.player);
+    expect(game.update(1, 'up', true)).toBe(true); expect(game.player).toEqual({ x: 24, y: 6 }); expect(game.trail).toHaveLength(3);
+    expect(game.update(1, 'left', true)).toBe(true); expect(game.player).toEqual({ x: 16, y: 6 }); expect(game.trail).toHaveLength(2);
+    expect(game.update(1, 'down', true)).toBe(true); expect(game.player).toEqual({ x: 16, y: 12 }); expect(game.trail).toHaveLength(0);
+    expect(game.retracting).toBe(false); expect(game.claimed).toBe(64); expect(game.score).toBe(0);
+    expect(game.events.filter(e => e === 'capture' || e === 'partition')).toHaveLength(0);
+    game.update(0.02, undefined, true); expect(game.player).toEqual(game.anchor);
+    move('up', 0.25); expect(game.player).toEqual({ x: 16, y: 11.75 }); expect(game.trail).toHaveLength(2);
+  });
+
+  it('can immediately redraw an erased direction, change course and close only the remaining path', () => {
+    const { game, move } = fixture(); move('up', 6); move('down', 2);
+    expect(game.player).toEqual({ x: 16, y: 8 }); move('up', 1); expect(game.player).toEqual({ x: 16, y: 7 });
+    move('right', 2); move('down', 5);
+    expect(game.claimed).toBe(74); expect(game.score).toBe(160); expect(game.trail).toHaveLength(0);
+    expect(game.lastCapture.reduce((sum, p) => sum + area(p), 0)).toBe(10); expect(game.events.filter(e => e === 'capture')).toHaveLength(1);
+  });
+
+  it('switches between manual reverse, fast release and a fresh press without restoring erased pieces', () => {
+    const { game, move } = bent(); move('up', 1); game.beginRetraction(); game.update(0.01);
+    const tip = { ...game.player }; expect(tip.y).toBeCloseTo(9 - RETRACT_SPEED * 0.01); expect(game.retracting).toBe(true);
+    game.resumeDrawing(); game.update(0.02, undefined, true); expect(game.player).toEqual(tip); expect(game.retracting).toBe(false);
+    move('right', 2); move('left', 1); expect(game.player.x).toBe(25); expect(game.player.y).toBe(tip.y);
+    game.beginRetraction(); game.update(1); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+    expect(game.claimed).toBe(64); expect(game.score).toBe(0);
+  });
+
+  it.each([0, 1, 2, 3])('erases a frame-launched line without making bare frame safe, turns=%s', turns => {
+    const { game, place, move, rotate } = fixture(turns);
+    place(14, 12); move('up', 12); move('right', 4); move('down', 12); place(18, 0);
+    const score = game.score; move('right', 4); move('left', 1.5); const expected = rotate({ x: 20.5, y: 0 });
+    expect(game.player.x).toBeCloseTo(expected.x, 8); expect(game.player.y).toBeCloseTo(expected.y, 8);
+    expect(game.isBoundary(game.player.x, game.player.y)).toBe(false); expect(game.trail).toHaveLength(2);
+    move('left', 100); expect(game.player).toEqual(rotate({ x: 18, y: 0 })); expect(game.trail).toHaveLength(0);
+    expect(game.claimed).toBe(112); expect(game.score).toBe(score);
+  });
+
+  it('still rejects crossings of un-erased older segments', () => {
+    const { game, move } = bent(); move('up', 1); const tip = { ...game.player };
+    move('left', 10); expect(game.player).toEqual(tip); expect(game.claimed).toBe(64); expect(game.score).toBe(0);
+  });
+
+  it.each(['straight', 'boss', 'projectile'] as const)('keeps the remaining path vulnerable to %s and deducts one life', kind => {
+    const { game, move } = fixture(); move('up', 6);
+    const point = { x: 16, y: 9 };
+    if (kind === 'projectile') { game.spawnHazard(new Projectile(point, { x: 0, y: 0 })); game.spawnHazard(new Projectile(point, { x: 0, y: 0 })); }
+    else if (kind === 'boss') game.boss = createEnemy(kind, point, { x: 0, y: 0 });
+    else game.enemies.push(createEnemy(kind, point, { x: 0, y: 0 }));
+    game.update(0.05, 'down', true);
+    expect(game.lives).toBe(2); expect(game.events.filter(e => e === 'hit')).toHaveLength(1);
+    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0); expect(game.score).toBe(0); expect(game.claimed).toBe(64);
+  });
+
+  it('does not collide with erased geometry, including a fast shot through an erased segment', () => {
+    const { game, move } = fixture(); move('up', 6); move('down', 2);
+    game.enemies.push(createEnemy('straight', { x: 16, y: 6.5 }, { x: 0, y: 0 }));
+    game.spawnHazard(new Projectile({ x: 13, y: 7 }, { x: 1000, y: 0 }));
+    game.update(0.006, 'down', true);
+    expect(game.lives).toBe(3); expect(game.player.y).toBeCloseTo(8 + PLAYER_SPEED * 0.006, 8);
+    expect(game.trail).toHaveLength(2); expect(game.retracting).toBe(false); expect(game.events).not.toContain('hit');
   });
 });

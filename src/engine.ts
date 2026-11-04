@@ -39,6 +39,7 @@ export class Game {
   private boundaryRelocated = false;
   private playerPath: Point[] = [];
   private shoreStep: { direction: Direction; point: Point } | undefined;
+  private backtrackEnded = false;
   private resumePhase: 'playing' | 'opening' = 'playing';
   opening: Opening | undefined;
   actorsReady = false;
@@ -126,6 +127,7 @@ export class Game {
   }
   // Distance is continuous world-space distance, never a cell count.
   move(direction: Direction, drawing: boolean, amount: number) {
+    this.backtrackEnded = false;
     this.playerPath = [{ ...this.player }];
     if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
     const previousStep = this.shoreStep; this.shoreStep = undefined;
@@ -159,8 +161,17 @@ export class Game {
     }
     const last = this.trail.at(-1)!;
     const previous = same(last, p) && this.trail.length > 1 ? this.trail.at(-2)! : last;
-    // Reversing would retrace the live line.
-    if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) return false;
+    // Reverse input erases only the current segment, at the normal walking
+    // speed. Stop at its old corner so a held key cannot draw a new branch
+    // before the player chooses how to continue.
+    if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) {
+      if (this.collidesWithTrail() || this.hazardsHit(p, p)) { this.hit(); return false; }
+      const segmentLength = Math.hypot(p.x - previous.x, p.y - previous.y);
+      const travel = Math.min(amount, segmentLength), returned = this.retract(travel);
+      if (this.collidesWithTrail() || this.hazardsHit(p, this.player)) { this.hit(); return false; }
+      this.backtrackEnded = returned || travel >= segmentLength - EPS;
+      return false;
+    }
     let wall = Infinity;
     for (const [a, b] of (this.island ? this.boundarySegments : wallEdges(this.territories[this.cutRegion]))) wall = Math.min(wall, rayDistance(p, v, a, b));
     const arenaReach = v.x > 0 ? this.width - p.x : v.x < 0 ? p.x : v.y > 0 ? this.height - p.y : p.y;
@@ -411,7 +422,7 @@ export class Game {
             route.push(...this.playerPath.slice(1)); boundaryChanged ||= closed;
             // A normal closure keeps both the direction and the unused travel
             // budget. Relocation, recovery and defeat still end the gesture.
-            gestureEnded = closed && (this.boundaryRelocated || this.retracting || this.phase !== 'playing');
+            gestureEnded = this.backtrackEnded || (closed && (this.boundaryRelocated || this.retracting || this.phase !== 'playing'));
             remaining = Math.max(0, remaining - travelled);
             if (!closed || gestureEnded || travelled <= EPS) break;
           }

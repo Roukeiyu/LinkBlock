@@ -28,15 +28,15 @@ describe('continuous territory rules', () => {
     for (let i = 0; i < 36; i++) b.update(1 / 120, 'down', true);
     expect(a.player.y).toBeCloseTo(b.player.y, 8);
   });
-  it('requires drawing and blocks retracing and intersections', () => {
+  it('requires drawing, trims reversed movement and blocks intersections', () => {
     const game = fixture();
     game.move('down', false, 3); expect(game.player.y).toBe(0);
     game.move('down', true, 3.2);
     game.move('up', true, 1); game.move('left', false, 1);
-    expect(game.player).toEqual({ x: 4, y: 3.2 });
+    expect(game.player).toEqual({ x: 4, y: 2.2 });
     game.move('right', true, 2); game.move('up', true, 1);
     game.move('left', true, 3); // crosses the first segment
-    expect(game.player).toEqual({ x: 6, y: 2.2 });
+    expect(game.player.x).toBe(6); expect(game.player.y).toBeCloseTo(1.2, 10);
     expect(game.claimed).toBe(0);
   });
   it('splits exact fractional areas and preserves the enemy side', () => {
