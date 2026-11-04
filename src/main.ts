@@ -36,10 +36,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <div id="overlay" class="overlay">
             <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
-          <div id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
-        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="mobile-notice-slot"></span><span class="footer-note">保持连接，发现更多</span></div>
+        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
         <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
         <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
@@ -55,11 +54,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const canvas = $<HTMLCanvasElement>('#board');
 const ctx = canvas.getContext('2d')!;
-const noticeLayout = matchMedia('(max-width:620px), (max-width:1000px) and (max-height:500px)');
-function positionNotice() {
-  (noticeLayout.matches ? $('#mobile-notice-slot') : $('.board-shell')).append($('#toast'));
-}
-noticeLayout.addEventListener('change', positionNotice); positionNotice();
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;

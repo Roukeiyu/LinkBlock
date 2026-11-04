@@ -1221,6 +1221,28 @@ test('portrait controller swaps sides, stays within the screen and is hidden on 
   await page.setViewportSize({ width: 1000, height: 800 }); await expect(page.locator('.touch-controls')).toBeHidden();
 });
 
+test('island coast desktop notice stays outside the canvas at every width without changing layout', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.keyboard.press('Space'); await page.clock.runFor(32);
+  const geometry = async () => Promise.all(['.board-shell', '.board-footer'].map(s => page.locator(s).boundingBox()));
+  const before = await geometry();
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 12);
+  await moveClock(page, 'ArrowRight', p => p.x >= 28); await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6);
+  await page.keyboard.up('Space'); await page.clock.runFor(250);
+  expect(await geometry()).toEqual(before); await expect(page.locator('#toast')).toHaveClass('toast visible');
+  await expect(page.locator('#toast .toast-full')).toHaveText('连接成功 · 新的领地已揭开');
+  for (const width of [1280, 1000, 1600]) {
+    await page.setViewportSize({ width, height: 800 }); await page.clock.runFor(32);
+    await expect(page.locator('#notice-slot > #toast')).toHaveCount(1); await expect(page.locator('.board-shell [role="status"]')).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(1);
+    const [board, footer] = await geometry(), message = (await page.locator('#toast').boundingBox())!, elapsed = (await page.locator('#elapsed').boundingBox())!;
+    expect(message.y).toBeGreaterThanOrEqual(board!.y + board!.height); expect(message.y + message.height).toBeLessThanOrEqual(footer!.y + footer!.height);
+    expect(message.x).toBeGreaterThanOrEqual(elapsed.x + elapsed.width); expect(message.x + message.width).toBeLessThanOrEqual(footer!.x + footer!.width);
+    expect(await page.locator('#toast').evaluate(e => ({ pointer: getComputedStyle(e).pointerEvents, overflow: e.scrollWidth > e.clientWidth }))).toEqual({ pointer: 'none', overflow: false });
+    await page.screenshot({ path: `test-results/notice-outside-desktop-${width}.png`, fullPage: true });
+  }
+  const visible = await geometry(); await page.clock.runFor(2300); await expect(page.locator('#toast')).not.toHaveClass('toast visible'); expect(await geometry()).toEqual(visible);
+});
+
 for (const variant of ['portrait', 'small', 'safe area']) test(`island coast phone notice ${variant} stays outside play and touch areas in every control mode`, async ({ page }) => {
   const viewport = variant === 'small' ? { width: 320, height: 568 } : { width: 390, height: 844 };
   await page.setViewportSize(viewport); await page.keyboard.press('Space'); await page.clock.runFor(32);
@@ -1236,7 +1258,7 @@ for (const variant of ['portrait', 'small', 'safe area']) test(`island coast pho
   expect(await toast.ariaSnapshot()).toContain('连接成功 · 新的领地已揭开');
   expect(await geometry()).toEqual(before);
   const check = async () => {
-    await expect(page.locator('#mobile-notice-slot > #toast')).toHaveCount(1); await expect(page.getByRole('status')).toHaveCount(1);
+    await expect(page.locator('#notice-slot > #toast')).toHaveCount(1); await expect(page.getByRole('status')).toHaveCount(1);
     const [board, footer, controls] = await geometry(), message = (await toast.boundingBox())!;
     expect(message.y).toBeGreaterThanOrEqual(board!.y + board!.height);
     expect(message.y).toBeGreaterThanOrEqual(footer!.y); expect(message.y + message.height).toBeLessThanOrEqual(footer!.y + footer!.height);
@@ -1269,14 +1291,16 @@ for (const variant of ['portrait', 'small', 'safe area']) test(`island coast pho
   await page.screenshot({ path: `test-results/mobile-notice-${variant.replace(' ', '-')}.png`, fullPage: true });
   if (variant === 'portrait') {
     await page.setViewportSize({ width: 844, height: 390 }); await page.clock.runFor(32);
-    await expect(page.locator('.touch-controls')).toBeHidden(); await expect(page.locator('#mobile-notice-slot > #toast')).toHaveCount(1);
+    await expect(page.locator('.touch-controls')).toBeHidden(); await expect(page.locator('#notice-slot > #toast')).toHaveCount(1);
     const message = (await toast.boundingBox())!, board = (await page.locator('.board-shell').boundingBox())!;
     expect(message.y).toBeGreaterThanOrEqual(board.y + board.height); expect(message.y + message.height).toBeLessThanOrEqual(390);
     await page.screenshot({ path: 'test-results/mobile-notice-landscape.png', fullPage: true });
     await page.setViewportSize({ width: 1280, height: 800 }); await page.clock.runFor(32);
-    await expect(page.locator('.board-shell > #toast')).toHaveCount(1); await expect(toast.locator('.toast-compact')).toBeHidden();
+    await expect(page.locator('#notice-slot > #toast')).toHaveCount(1); await expect(page.locator('.board-shell #toast')).toHaveCount(0); await expect(toast.locator('.toast-compact')).toBeHidden();
     await expect(toast.locator('.toast-full')).toBeVisible();
-    expect(await toast.evaluate(e => getComputedStyle(e).position)).toBe('absolute');
+    expect(await toast.evaluate(e => getComputedStyle(e).position)).toBe('static');
+    const desktopMessage = (await toast.boundingBox())!, desktopBoard = (await page.locator('.board-shell').boundingBox())!;
+    expect(desktopMessage.y).toBeGreaterThanOrEqual(desktopBoard.y + desktopBoard.height);
     await page.screenshot({ path: 'test-results/mobile-notice-desktop.png', fullPage: true });
   }
   await page.clock.runFor(2300); await expect(toast).not.toHaveClass('toast visible');
