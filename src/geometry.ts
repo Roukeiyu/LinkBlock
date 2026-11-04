@@ -3,6 +3,11 @@ export type Polygon = Point[];
 export const EPS = 1e-7;
 export const same = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y) < EPS;
 export const edges = (points: Polygon): [Point, Point][] => points.map((p, i) => [p, points[(i + 1) % points.length]]);
+export function closestPoint(p: Point, a: Point, b: Point): Point {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+  return { x: a.x + t * dx, y: a.y + t * dy };
+}
 export function distance(p: Point, a: Point, b: Point) {
   const dx = b.x - a.x, dy = b.y - a.y;
   const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));

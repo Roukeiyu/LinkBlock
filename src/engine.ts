@@ -1,4 +1,4 @@
-import { area, distance, edges, EPS, inside, onSegment, rayDistance, segmentDistance, same, simplify, split, type Point, type Polygon } from './geometry';
+import { area, closestPoint, distance, edges, EPS, inside, onSegment, rayDistance, segmentDistance, same, simplify, split, type Point, type Polygon } from './geometry';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
@@ -31,6 +31,7 @@ export class Game {
   readonly outline: Polygon;
   territories: Polygon[];
   private cutRegion = -1;
+  private boundaryRelocated = false;
   lastCapture: Polygon[] = [];
   lastDefeats: DefeatedEnemy[] = [];
   captured: Polygon[] = [];
@@ -79,8 +80,11 @@ export class Game {
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.claimed / (this.width * this.height) * 100; }
   get reinforcementTarget() { return this.reinforcementRule?.targetCount; }
+  // Rendering and walking use the same current perimeter. The immutable arena
+  // outline still defines size/score but never keeps an already claimed edge alive.
+  get boundarySegments() { return this.territories.flatMap(edges); }
   isBoundary(x: number, y: number) {
-    return [...edges(this.outline), ...this.territories.flatMap(edges)].some(([a, b]) => onSegment({ x, y }, a, b));
+    return this.boundarySegments.some(([a, b]) => onSegment({ x, y }, a, b));
   }
   start() { if (this.phase === 'ready') { this.phase = 'playing'; this.events.push('start'); } }
   togglePause() {
@@ -93,9 +97,10 @@ export class Game {
     const v = vectors[direction], p = this.player;
     if (this.trail.length && !drawing) return false;
     if (!this.trail.length) {
+      if (!this.isBoundary(p.x, p.y)) return false;
       // Merge touching collinear edges so a capture junction never causes a hitch.
       let reach = 0;
-      const segments = [...edges(this.outline), ...this.territories.flatMap(edges)];
+      const segments = this.boundarySegments;
       for (let pass = 0; pass <= segments.length; pass++) {
         const before = reach;
         for (const [a, b] of segments) {
@@ -181,6 +186,14 @@ export class Game {
     this.cutRegion = -1;
     this.captured.push(...this.lastCapture);
     this.trail = [];
+    if (!this.isBoundary(this.player.x, this.player.y)) {
+      // Finishing an entire disconnected room can erase the closure point too.
+      // Reconnect to the nearest surviving perimeter instead of stranding the
+      // player or allowing invisible travel through the finished room.
+      const candidates = this.boundarySegments.map(([a, b]) => closestPoint(this.player, a, b));
+      const nearest = candidates.sort((a, b) => Math.hypot(a.x - this.player.x, a.y - this.player.y) - Math.hypot(b.x - this.player.x, b.y - this.player.y))[0];
+      if (nearest) { this.player = nearest; this.boundaryRelocated = true; }
+    }
     this.anchor = { ...this.player };
     const claimed = this.lastCapture.reduce((sum, region) => sum + area(region), 0);
     this.score += Math.round(claimed * 10 + length * 5) + this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0);
@@ -297,6 +310,7 @@ export class Game {
         origin: this.boss, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),
       });
       for (const hazard of this.hazards) hazard.update(dt, this);
+      this.boundaryRelocated = false;
       const lives = this.lives, playerBefore = { ...this.player };
       const bodyHit = this.collidesWithTrail(true), attackHit = this.hazardsHit(playerBefore, playerBefore);
       if (bodyHit || attackHit) this.hit();
@@ -304,7 +318,7 @@ export class Game {
       if (!gestureEnded) {
         if (this.retracting) gestureEnded = this.retract(RETRACT_SPEED * dt);
         else if (direction) gestureEnded = this.move(direction, drawing, PLAYER_SPEED * dt);
-        if (this.hazardsHit(playerBefore, this.player)) this.hit();
+        if (this.hazardsHit(this.boundaryRelocated ? this.player : playerBefore, this.player)) this.hit();
         if (lives !== this.lives) gestureEnded = true;
         if (gestureEnded) {
           walls = this.territories.map(edges);

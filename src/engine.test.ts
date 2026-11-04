@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
 import { createEnemy } from './enemies';
+import { Projectile } from './attacks';
 import { area, distance, edges, inside, split } from './geometry';
 
 function fixture() {
@@ -71,13 +72,45 @@ describe('continuous territory rules', () => {
     expect(game.player).toEqual({ x: 4, y: 3.75 });
     game.move('down', false, 0.35); expect(game.player.y).toBeCloseTo(4.1);
   });
-  it('keeps the complete outside outline traversable', () => {
+  it('removes claimed outside edges from both walking and drawing', () => {
     const game = fixture(); game.move('down', true, 10);
     game.move('left', false, 4); game.move('up', false, 5.75);
-    expect(game.player).toEqual({ x: 0, y: 4.25 });
-    game.move('right', true, 1); expect(game.player.x).toBe(0);
-    game.move('up', false, 9); game.move('right', false, 7);
-    expect(game.player).toEqual({ x: 7, y: 0 });
+    expect(game.player).toEqual({ x: 4, y: 4.25 });
+    expect(game.isBoundary(0, 4.25)).toBe(false); expect(game.isBoundary(2, 0)).toBe(false);
+    game.move('up', false, 9); expect(game.player).toEqual({ x: 4, y: 0 });
+    game.move('left', false, 2); game.move('left', true, 2); expect(game.player).toEqual({ x: 4, y: 0 });
+    expect(game.trail).toHaveLength(0);
+    game.move('right', false, 3); expect(game.player).toEqual({ x: 7, y: 0 });
+  });
+  it('removes a captured top/left corner and later removes the old edge between two captured regions', () => {
+    const game = fixture(); game.move('down', true, 3); game.move('left', true, 4);
+    expect(game.isBoundary(2, 0)).toBe(false); expect(game.isBoundary(0, 1)).toBe(false);
+    expect(game.isBoundary(2, 3)).toBe(true); expect(game.isBoundary(4, 1)).toBe(true); expect(game.isBoundary(8, 0)).toBe(true);
+    game.move('up', false, 3); game.move('up', true, 3); expect(game.player).toEqual({ x: 0, y: 3 });
+    game.move('right', false, 4); game.move('down', true, 3); game.move('left', true, 4);
+    expect(game.isBoundary(2, 3)).toBe(false); expect(game.isBoundary(0, 4)).toBe(false);
+    expect(game.isBoundary(2, 6)).toBe(true); expect(game.isBoundary(4, 4)).toBe(true);
+    game.move('right', false, 4); game.move('up', false, 6);
+    expect(game.player).toEqual({ x: 4, y: 0 });
+  });
+  it('does not let a manually placed player start a cut from an erased edge', () => {
+    const game = fixture(); game.move('down', true, 10); game.player = { x: 0, y: 5 };
+    game.move('right', true, 8); expect(game.player).toEqual({ x: 0, y: 5 }); expect(game.trail).toHaveLength(0);
+  });
+  it('reconnects after clearing a whole component and retracts to its new visible anchor without crossing-gap projectile hits', () => {
+    const game = new Game(20, 20, { enemies: [createEnemy('straight', { x: 0.8, y: 5 }, { x: 0, y: 0 }), createEnemy('orbit', { x: 15, y: 14 }, { x: 0, y: 0 })], boss: null, victory: { territoryPercent: 100 } });
+    game.start(); game.move('down', true, 20); expect(game.territories).toHaveLength(2);
+    game.move('up', false, 20); game.move('left', false, 8); game.move('down', true, 10);
+    const shot = new Projectile({ x: 5, y: 10 }, { x: 0, y: 0 }); game.spawnHazard(shot);
+    game.update(0.1, 'left', true);
+    expect(game.territories).toHaveLength(1); expect(game.percent).toBe(50); expect(game.phase).toBe('playing');
+    expect(game.player).toEqual({ x: 10, y: 10 }); expect(game.anchor).toEqual(game.player);
+    expect(game.isBoundary(0, 10)).toBe(false); expect(game.isBoundary(10, 10)).toBe(true);
+    expect(game.hazards).toContain(shot); expect(game.lives).toBe(3);
+    game.move('right', true, 2.5); game.update(1);
+    expect(game.player).toEqual({ x: 10, y: 10 }); expect(game.trail).toHaveLength(0); expect(game.lives).toBe(3);
+    game.spawnHazard(new Projectile({ ...game.player }, { x: 0, y: 0 })); game.update(0.01);
+    expect(game.lives).toBe(2); expect(game.isBoundary(game.anchor.x, game.anchor.y)).toBe(true);
   });
   it('stops the current gesture at a closure', () => {
     const game = fixture();
@@ -91,6 +124,7 @@ describe('continuous territory rules', () => {
     game.move('right', false, 3.5); game.move('down', true, 10);
     expect(game.phase).toBe('won'); expect(game.percent).toBe(100);
     expect(game.enemies).toHaveLength(0); expect(game.score).toBe(4550);
+    expect(game.boundarySegments).toHaveLength(0); expect(game.isBoundary(0, 0)).toBe(false);
     const player = { ...game.player }; game.update(1, 'left', true);
     expect(game.player).toEqual(player); expect(game.events).toContain('won');
   });

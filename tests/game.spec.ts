@@ -446,6 +446,10 @@ test('closure flashes only the captured region white, dissolves and keeps player
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await page.locator('#board').screenshot({ path: 'test-results/capture-dissolve.png' });
   const before = (await probe(page)).player;
+  await hold(page, 'ArrowLeft', 120);
+  expect((await probe(page)).player).toEqual(before);
+  await page.keyboard.down('Space'); await hold(page, 'ArrowLeft', 120); await page.keyboard.up('Space');
+  expect((await probe(page)).player).toEqual(before); expect((await probe(page)).trail).toHaveLength(0);
   await hold(page, 'ArrowUp', 280);
   const edge = (await probe(page)).player;
   expect(edge.x).toBe(36); expect(edge.y).toBeLessThan(before.y);
@@ -466,6 +470,14 @@ test('closure flashes only the captured region white, dissolves and keeps player
   await page.waitForTimeout(1300); const settled = await probe(page);
   await page.waitForTimeout(120); const later = await probe(page);
   expect(later.particles).toBe(settled.particles); expect(later.white).toBe(settled.white);
+  const edges = await page.locator('#board').evaluate((canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext('2d')!, s = Math.min((canvas.width - 24) / 72, (canvas.height - 24) / 48);
+    const at = (x: number, y: number) => [...ctx.getImageData(Math.round((canvas.width - 72 * s) / 2 + x * s), Math.round((canvas.height - 48 * s) / 2 + y * s), 1, 1).data].slice(0, 3);
+    return { removed: [at(10, 0), at(0, 24), at(10, 48)], retained: [at(60, 0), at(72, 24), at(60, 48), at(36, 12)] };
+  });
+  for (const pixel of edges.removed) expect(pixel[1]).toBeLessThan(150);
+  for (const pixel of edges.retained) expect(pixel[1]).toBeGreaterThan(180);
+  await page.locator('#board').screenshot({ path: 'test-results/obsolete-edges-removed.png' });
   await page.locator('#board').screenshot({ path: 'test-results/continuous-edge.png' });
 });
 

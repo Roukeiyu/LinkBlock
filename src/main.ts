@@ -389,8 +389,11 @@ function render(now: number) {
   ctx.save();
   ctx.lineWidth = 1.4 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = theme.boundary; ctx.shadowColor = theme.boundary; ctx.shadowBlur = 5;
-  polygonPath(ctx, game.outline); ctx.stroke();
-  if (game.phase !== 'won') for (const region of game.territories) { polygonPath(ctx, region); ctx.stroke(); }
+  if (game.phase !== 'won') {
+    ctx.beginPath();
+    for (const [a, b] of game.boundarySegments) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+    ctx.stroke();
+  }
   ctx.restore();
   if (game.phase !== 'won') {
     if (game.trail.length) {
