@@ -3,6 +3,18 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; boundary: { x: number; y: number }[]; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; enemyBodies: { x: number; y: number; color: string; angle: number }[]; bossRadius: number; warningFrame: string; warningShots: number; warningAngles: number[]; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
+async function worldPixel(page: Page, x: number, y: number) {
+  return page.locator('#board').evaluate((canvas: HTMLCanvasElement, p) => {
+    const scale = Math.min((canvas.width - 24) / 72, (canvas.height - 24) / 48);
+    return [...canvas.getContext('2d')!.getImageData(Math.round((canvas.width - 72 * scale) / 2 + p.x * scale), Math.round((canvas.height - 48 * scale) / 2 + p.y * scale), 1, 1).data].slice(0, 3);
+  }, { x, y });
+}
+async function moveClock(page: Page, key: string, done: (p: Probe['player']) => boolean) {
+  await page.keyboard.down(key);
+  for (let i = 0; i < 200 && !done((await probe(page)).player); i++) await page.clock.runFor(16);
+  expect(done((await probe(page)).player), JSON.stringify({ player: (await probe(page)).player, trail: (await probe(page)).trail, progress: await page.locator('#percent').textContent(), lives: await page.locator('#lives').getAttribute('aria-label') })).toBe(true);
+  await page.keyboard.up(key);
+}
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
 }
@@ -23,9 +35,9 @@ async function encloseRoster(page: Page) {
 }
 test.beforeEach(async ({ page }, info) => {
   const randomOpening = info.title.includes('random opening');
-  if (randomOpening && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
+  if ((randomOpening || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
-  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X');
+  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X') || info.title.includes('enclosed image');
   if (!randomOpening) {
     // Fixed scene fixtures keep input/capture/effect regressions independent of
     // random hazards. Dedicated opening tests below use the unchanged real app.
@@ -36,6 +48,9 @@ test.beforeEach(async ({ page }, info) => {
         .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })")
         .replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
       body += "\nfunction fixtureEnemies(width, height) { return ['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width*x, y: height*[0.25,0.51,0.76][row] }))); }";
+      if (info.title.includes('enclosed image')) body = body
+        .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
+        .replace('this.boss = options.boss === null ?', 'this.boss = true ?');
       if (phasePreview) body = body.replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
       await route.fulfill({ response, body });
     });
@@ -540,6 +555,44 @@ test('closure flashes only the captured region white, dissolves and keeps player
   await page.locator('#board').screenshot({ path: 'test-results/continuous-edge.png' });
 });
 
+for (const phone of [false, true]) test(`enclosed image reveals a large loop and subsequent growth, not their exterior, ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  await page.clock.runFor(32);
+  await moveClock(page, 'ArrowLeft', p => p.x <= 4);
+  const left = (await probe(page)).player.x;
+  await page.keyboard.down('Space');
+  await moveClock(page, 'ArrowDown', p => p.y >= 40);
+  const bottom = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowRight', p => p.x >= 66);
+  const right = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  const expected = (right - left) * bottom / (72 * 48) * 100;
+  expect(expected).toBeGreaterThan(70);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(expected, 6);
+  expect(await worldPixel(page, 30, 20)).not.toEqual([14, 32, 43]);
+  expect(await worldPixel(page, 70, 20)).toEqual([14, 32, 43]);
+  expect(await worldPixel(page, 30, 46)).toEqual([14, 32, 43]);
+  expect((await probe(page)).enemyColors).toHaveLength(0);
+  // Follow the new perimeter, then grow a second small pocket outward from it.
+  await moveClock(page, 'ArrowDown', p => p.y >= bottom - 1e-6);
+  await moveClock(page, 'ArrowLeft', p => p.x <= 56);
+  const a = { ...(await probe(page)).player };
+  await page.keyboard.down('Space');
+  await moveClock(page, 'ArrowDown', p => p.y >= 44);
+  const y = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowLeft', p => p.x <= 48);
+  const x = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowUp', p => Math.abs(p.y - bottom) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  const next = expected + (a.x - x) * (y - bottom) / (72 * 48) * 100;
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(next, 6);
+  expect(await worldPixel(page, 52, 42)).not.toEqual([14, 32, 43]);
+  expect(await worldPixel(page, 30, 20)).not.toEqual([14, 32, 43]);
+  expect(await worldPixel(page, 30, 46)).toEqual([14, 32, 43]);
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await page.screenshot({ path: `test-results/enclosed-image-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
 test('pause, sound, restart and background pause', async ({ page }) => {
   await firstCut(page);
   await page.keyboard.press('KeyP'); await expect(page.getByRole('heading', { name: '风景会等你。' })).toBeVisible();
@@ -617,6 +670,9 @@ for (const phase of [2, 3]) test(`configured phase ${phase} renders eight shots 
   await page.locator('#board').screenshot({ path: `test-results/phase-${phase}-shots.png` });
   for (let i = 0; i < 60 && (await probe(page)).enemyColors.length !== (phase === 2 ? 10 : 16); i++) await page.clock.runFor(100);
   expect((await probe(page)).enemyColors).toHaveLength(phase === 2 ? 10 : 16);
+  // Rendering observes a spawn before the throttled HUD update; advance the
+  // frozen clock so the UI can report the same already verified roster.
+  await page.clock.runFor(100);
   await expect(page.locator('#boss-phase')).toContainText(phase === 2 ? '9/9' : '15/15');
   if (phase === 3) {
     const arrows = (await probe(page)).enemyBodies.filter(body => body.color === '#ff727d');

@@ -1,5 +1,6 @@
 export interface Point { x: number; y: number }
 export type Polygon = Point[] & { hole?: { outer: Polygon; interior: Polygon; seam: [Point, Point] } };
+export type Partition = Polygon[] & { enclosed?: number };
 export const EPS = 1e-7;
 export const same = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y) < EPS;
 export const edges = (points: Polygon): [Point, Point][] => points.map((p, i) => [p, points[(i + 1) % points.length]]);
@@ -103,8 +104,18 @@ export function withHole(outer: Polygon, interior: Polygon): Polygon {
   const result: Polygon = [...outside, o, ...hole, h];
   result.hole = { outer, interior, seam: [o, h] }; return result;
 }
-export function partitionRegion(polygon: Polygon, cut: Polygon): Polygon[] {
-  if (!polygon.hole) return split(polygon, cut);
+export function partitionRegion(polygon: Polygon, cut: Polygon): Partition {
+  if (!polygon.hole) {
+    const parts: Partition = split(polygon, cut), start = cut[0], end = cut.at(-1)!;
+    // Returning to the same straight edge closes an explicit loop. The face
+    // touching the direct closing segment is its interior, regardless of size.
+    if (area(cut) > EPS && wallEdges(polygon).some(([a, b]) => onSegment(start, a, b) && onSegment(end, a, b))) {
+      const midpoint = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+      const matches = parts.flatMap((part, i) => wallEdges(part).some(([a, b]) => onSegment(midpoint, a, b)) ? [i] : []);
+      if (matches.length === 1) parts.enclosed = matches[0];
+    }
+    return parts;
+  }
   const { outer, interior } = polygon.hole, start = cut[0], end = cut.at(-1)!;
   const onHole = (p: Point) => edges(interior).some(([a, b]) => onSegment(p, a, b));
   const startInside = onHole(start), endInside = onHole(end);
@@ -112,10 +123,11 @@ export function partitionRegion(polygon: Polygon, cut: Polygon): Polygon[] {
     const pieces = split(interior, cut);
     const pocket = pieces.find(p => signedArea(p) < -EPS), enlarged = pieces.find(p => signedArea(p) > area(interior) + EPS);
     if (!pocket || !enlarged) throw new Error('Inner cut did not enclose new territory');
-    return [[...pocket].reverse(), withHole(outer, enlarged)];
+    return Object.assign([[...pocket].reverse(), withHole(outer, enlarged)], { enclosed: 0 });
   }
   if (!startInside && !endInside) {
-    return split(outer, cut).map(part => inside(interior[0], part) ? withHole(part, interior) : part);
+    const parts = partitionRegion(outer, cut);
+    return Object.assign(parts.map(part => inside(interior[0], part) ? withHole(part, interior) : part), { enclosed: parts.enclosed });
   }
   const path = startInside ? cut : [...cut].reverse(), h = path[0], o = path.at(-1)!;
   const outside = boundaryWalk(outer, o, true), hole = boundaryWalk(interior, h, false);

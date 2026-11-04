@@ -202,13 +202,13 @@ export class Game {
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
     const difference = area(parts[0]) - area(parts[1]);
-    // The smaller newly enclosed side is the pocket the player captures, even
-    // when the outer frame completes its boundary. A populated 50/50 split has
-    // no smaller pocket: retain both until a later cut identifies one.
-    const pocket = Math.abs(difference) <= EPS ? -1 : difference < 0 ? 0 : 1;
+    // An explicit return loop owns its interior, even when that is the larger
+    // face. Through-cuts retain the existing smaller-side/equal-split rule;
+    // an empty exterior never expands an explicit loop beyond what was drawn.
+    const pocket = parts.enclosed ?? (Math.abs(difference) <= EPS ? -1 : difference < 0 ? 0 : 1);
     const bossEnclosed = Boolean(this.boss && pocket >= 0 && inside(this.boss, parts[pocket as 0 | 1]));
     const keepRoomForLanding = bossEnclosed && (this.bossJump || this.bossHealth > 1);
-    this.lastCapture = parts.filter((_, i) => i === pocket || (!keepRoomForLanding && !occupants[i].length));
+    this.lastCapture = parts.filter((_, i) => i === pocket || (parts.enclosed === undefined && !keepRoomForLanding && !occupants[i].length));
     const remaining = parts.filter(part => !this.lastCapture.includes(part));
     const defeated = new Set(this.enemies.filter(body => this.lastCapture.some(part => inside(body, part))));
     this.lastDefeats = [...defeated].map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));

@@ -95,6 +95,43 @@ describe('continuous territory around the starting hole', () => {
     expect(game.claimed).toBe(68); expect(game.lastCapture.map(area)).toEqual([12]); expect(game.territories[0].hole).toBeDefined();
     expect(inside({ x: 9, y: 6 }, game.territories[0])).toBe(false); expect(inside({ x: 9, y: 2 }, game.territories[0])).toBe(true);
   });
+  it.each([false, true])('reveals the large loop around the opening, never its smaller complement, reversed=%s', reversed => {
+    const game = ringGame();
+    const enclosed = createEnemy('orbit', { x: 25, y: 30 }, { x: 0, y: 0 });
+    const outside = createEnemy('straight', { x: 25, y: 3 }, { x: 0, y: 0 });
+    game.enemies = [enclosed, outside];
+    if (!reversed) {
+      place(game, 12, 12); game.move('right', true, 26); game.move('down', true, 26);
+      game.move('left', true, 36); game.move('up', true, 26); game.move('right', true, 3);
+    } else {
+      place(game, 5, 12); game.move('left', true, 3); game.move('down', true, 26);
+      game.move('right', true, 36); game.move('up', true, 26); game.move('left', true, 26);
+    }
+    expect(game.lastCapture.map(area)).toEqual([908]); expect(game.claimed).toBe(964);
+    expect(game.lastDefeats.map(body => body.kind)).toEqual(['orbit']); expect(game.enemies).toEqual([outside]);
+    expect(game.captured.some(region => inside(enclosed, region))).toBe(true);
+    expect(game.territories.some(region => inside(outside, region))).toBe(true);
+    expect(game.score).toBe(9080 + 117 * 5 + 500); expect(game.phase).toBe('playing');
+  });
+  it('only reveals the explicit inner loop even if its entire outside has no enemies', () => {
+    const game = ringGame(); game.enemies = [];
+    place(game, 8, 8); game.move('up', true, 4); game.move('right', true, 3); game.move('down', true, 4);
+    expect(game.lastCapture.map(area)).toEqual([12]); expect(game.claimed).toBe(68);
+    expect(game.territories).toHaveLength(1); expect(game.phase).toBe('playing');
+  });
+  it('damages only the boss in a large inner enclosure and leaves its exterior available for landing', () => {
+    const game = ringGame(); game.enemies = [];
+    game.boss = createEnemy('boss', { x: 25, y: 30 }, { x: 0, y: 0 });
+    place(game, 12, 12); game.move('right', true, 26); game.move('down', true, 26);
+    game.move('left', true, 36); game.move('up', true, 26); game.move('right', true, 3);
+    expect(game.claimed).toBe(964); expect(game.bossHealth).toBe(4); expect(game.bossJump?.to).toBeTruthy();
+    expect(game.score).toBe(9080 + 117 * 5 + 250); expect(game.phase).toBe('playing');
+    game.update(1); expect(game.bossJump).toBeUndefined();
+    expect(game.territories.some(region => inside(game.boss!, region))).toBe(true);
+    expect(game.captured.some(region => inside(game.boss!, region))).toBe(false);
+    expect(game.captured.reduce((sum, region) => sum + area(region), 0)
+      + game.territories.reduce((sum, region) => sum + area(region), 0)).toBe(1600);
+  });
   it.each([
     { start: { x: 5, y: 12 }, dir: 'left' as const, length: 5 },
     { start: { x: 12, y: 12 }, dir: 'right' as const, length: 28 },

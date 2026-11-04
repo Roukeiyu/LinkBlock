@@ -59,6 +59,17 @@ describe('continuous territory rules', () => {
     expect(other.claimed).toBeCloseTo(4);
     expect(inside(other.enemies[0], other.territories[0])).toBe(true);
   });
+  it.each([false, true])('claims a large same-edge enclosure instead of its small exterior, reversed=%s', reversed => {
+    const enclosed = createEnemy('orbit', { x: 25, y: 20 }, { x: 0, y: 0 });
+    const outside = createEnemy('straight', { x: 5, y: 20 }, { x: 0, y: 0 });
+    const game = new Game(40, 40, { enemies: [enclosed, outside], boss: null, victory: { territoryPercent: 100 } });
+    game.start(); game.player = { x: reversed ? 38 : 10, y: 0 }; game.anchor = { ...game.player };
+    game.move('down', true, 35); game.move(reversed ? 'left' : 'right', true, 28); game.move('up', true, 35);
+    expect(game.lastCapture.map(area)).toEqual([980]); expect(game.claimed).toBe(980);
+    expect(game.enemies).toEqual([outside]); expect(game.lastDefeats.map(body => body.kind)).toEqual(['orbit']);
+    expect(game.isBoundary(25, 0)).toBe(false); expect(game.isBoundary(10, 20)).toBe(true);
+    expect(game.territories.some(region => inside(outside, region))).toBe(true);
+  });
   it('follows the exact cut, blocks filled interior and rounds capture corners', () => {
     const game = fixture(); game.move('down', true, 10);
     game.move('up', false, 6.25);
