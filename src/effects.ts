@@ -11,6 +11,9 @@ export interface CaptureEffect {
 export interface GameTheme {
   id: string;
   landscape: string;
+  /** Solid positive shape accumulated by captures, independent of the backdrop. */
+  territory: string;
+  backdropShade: string;
   danger: string;
   boundary: string;
   trail: string;
@@ -116,7 +119,7 @@ export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): Captur
 }
 
 export const lakeTheme: GameTheme = {
-  id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
+  id: 'quiet-lake', landscape: 'landscape.svg', territory: '#163c3c', backdropShade: '#07141a66', danger: '#0e202b', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new AlternatingCrossAttack(),
   bossConfig: lakeBossConfig,
 };

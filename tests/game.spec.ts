@@ -3,6 +3,21 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 type Probe = { player: { x: number; y: number }; positions: { x: number; y: number; time: number }[]; white: number; particles: number; flash: string; boundary: { x: number; y: number }[]; trail: { x: number; y: number }[]; shots: { x: number; y: number }[]; enemyColors: string[]; enemyBodies: { x: number; y: number; color: string; angle: number }[]; bossRadius: number; warningFrame: string; warningShots: number; warningAngles: number[]; defeatFrame: string; awards: { text: string; color: string }[]; jumpScales: number[]; jumpShadows: number };
 const probe = (page: Page) => page.evaluate(() => (window as unknown as { probe: Probe }).probe);
+async function boardPixel(page: Page, x: number, y: number) {
+  return page.locator('#board').evaluate((canvas: HTMLCanvasElement, point) => {
+    const scale = Math.min((canvas.width - 24) / 72, (canvas.height - 24) / 48);
+    return [...canvas.getContext('2d')!.getImageData(
+      Math.round((canvas.width - 72 * scale) / 2 + point.x * scale),
+      Math.round((canvas.height - 48 * scale) / 2 + point.y * scale), 1, 1).data].slice(0, 3);
+  }, { x, y });
+}
+async function clockMove(page: Page, key: string, done: (p: Probe['player']) => boolean, drawing = false) {
+  if (drawing) await page.keyboard.down('Space');
+  await page.keyboard.down(key);
+  for (let i = 0; i < 100 && !done((await probe(page)).player); i++) await page.clock.runFor(50);
+  expect(done((await probe(page)).player)).toBe(true);
+  await page.keyboard.up(key); if (drawing) await page.keyboard.up('Space');
+}
 async function hold(page: Page, key: string, duration: number) {
   await page.keyboard.down(key); await page.waitForTimeout(duration); await page.keyboard.up(key);
 }
@@ -25,7 +40,7 @@ test.beforeEach(async ({ page }, info) => {
   const randomOpening = info.title.includes('random opening');
   if (randomOpening && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
-  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X');
+  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X') || info.title.includes('positive shapes');
   if (!randomOpening) {
     // Fixed scene fixtures keep input/capture/effect regressions independent of
     // random hazards. Dedicated opening tests below use the unchanged real app.
@@ -36,6 +51,10 @@ test.beforeEach(async ({ page }, info) => {
         .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })")
         .replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
       body += "\nfunction fixtureEnemies(width, height) { return ['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width*x, y: height*[0.25,0.51,0.76][row] }))); }";
+      // Pixel/area accumulation fixtures keep bodies and the attack clock still;
+      // enemy motion and live attacks remain covered by the gameplay cases.
+      if (info.title.includes('positive shapes')) body = body.replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)').replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
+      if (info.title.includes('positive shapes victory')) body = body.replace('options.victory?.territoryPercent ?? 75', '40');
       if (phasePreview) body = body.replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
       await route.fulfill({ response, body });
     });
@@ -133,6 +152,8 @@ for (const viewport of ['desktop', 'phone']) test(`random opening has varied saf
     await expect(page.locator('#opening-hint')).toBeHidden(); await expect(page.locator('#state-label')).toHaveText('探索中');
     const percent = Math.abs((rectangle[1].x - rectangle[0].x) * (rectangle[3].y - rectangle[0].y)) / (72 * 48) * 100;
     expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(percent, 7);
+    const center = { x: (rectangle[0].x + rectangle[2].x) / 2, y: (rectangle[0].y + rectangle[2].y) / 2 };
+    expect(await boardPixel(page, center.x, center.y)).toEqual([22, 60, 60]);
     const player = (await probe(page)).player;
     expect(player.x).toBeGreaterThan(0); expect(player.y).toBeGreaterThan(0);
     const onEdge = rectangle.some((a, i) => {
@@ -499,7 +520,8 @@ test('closure flashes only the captured region white, dissolves and keeps player
     return { captured: at(394), danger: at(470) };
   }, flash);
   expect(Math.min(...flashPixels.captured)).toBeGreaterThan(230);
-  expect(flashPixels.danger).toEqual([14, 32, 43]);
+  expect(flashPixels.danger).not.toEqual([22, 60, 60]);
+  expect(Math.min(...flashPixels.danger)).toBeLessThan(200);
   await expect.poll(async () => (await probe(page)).particles).toBeGreaterThan(0);
   await expect(page.locator('#percent')).toHaveText('50.0%');
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
@@ -517,15 +539,15 @@ test('closure flashes only the captured region white, dissolves and keeps player
   await page.keyboard.down('Space'); await hold(page, 'ArrowLeft', 100); await page.keyboard.up('Space');
   expect((await probe(page)).player).toEqual(edge);
   // A pixel on the line above the player is mint; equal distances on each side
-  // lie in the revealed landscape and dark field respectively.
+  // lie in the accumulated solid territory and landscape background respectively.
   const pixels = await page.locator('#board').evaluate((canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext('2d')!;
     const at = (x: number, y: number) => [...ctx.getImageData(x, y, 1, 1).data].slice(0, 3);
-    return { line: at(432, 480), danger: at(470, 480), revealed: at(394, 480) };
+    return { line: at(432, 480), danger: at(470, 480), territory: at(394, 480) };
   });
-  expect(pixels.line[1]).toBeGreaterThan(pixels.danger[1] + 80);
-  expect(pixels.danger).toEqual([14, 32, 43]);
-  expect(pixels.revealed).not.toEqual(pixels.danger);
+  expect(pixels.line[1]).toBeGreaterThan(180);
+  expect(pixels.territory).toEqual([22, 60, 60]);
+  expect(pixels.danger).not.toEqual(pixels.territory);
   await page.waitForTimeout(1300); const settled = await probe(page);
   await page.waitForTimeout(120); const later = await probe(page);
   expect(later.particles).toBe(settled.particles); expect(later.white).toBe(settled.white);
@@ -538,6 +560,40 @@ test('closure flashes only the captured region white, dissolves and keeps player
   for (const pixel of edges.retained) expect(pixel[1]).toBeGreaterThan(180);
   await page.locator('#board').screenshot({ path: 'test-results/obsolete-edges-removed.png' });
   await page.locator('#board').screenshot({ path: 'test-results/continuous-edge.png' });
+});
+
+for (const phone of [false, true]) test(`positive shapes accumulate over landscape across consecutive captures on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  if (phone) await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.runFor(16);
+  const background = await boardPixel(page, 10, 10);
+  expect(background).not.toEqual([22, 60, 60]);
+  await clockMove(page, 'ArrowDown', p => p.y === 48, true);
+  await page.clock.runFor(1300);
+  await expect(page.locator('#percent')).toHaveText('50.0%');
+  expect(await boardPixel(page, 10, 10)).toEqual([22, 60, 60]);
+  const untouched = await boardPixel(page, 65, 5);
+  expect(untouched).not.toEqual([22, 60, 60]);
+  await clockMove(page, 'ArrowUp', p => p.y <= 32);
+  await clockMove(page, 'ArrowRight', p => p.x === 72, true);
+  await page.clock.runFor(1300);
+  const percent = Number(await page.locator('.progress-track').getAttribute('aria-valuenow'));
+  expect(percent).toBeGreaterThan(65); expect(percent).toBeLessThan(70);
+  expect(await boardPixel(page, 10, 10)).toEqual([22, 60, 60]);
+  expect(await boardPixel(page, 60, 44)).toEqual([22, 60, 60]);
+  expect(await boardPixel(page, 65, 5)).toEqual(untouched);
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  const score = Number(await page.locator('#score').textContent()); expect(score).toBeGreaterThan(0);
+  await page.screenshot({ path: `test-results/positive-shapes-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
+test('positive shapes victory retains actual territory instead of filling the remaining backdrop', async ({ page }) => {
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowDown');
+  await page.clock.runFor(2500); await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space');
+  await page.clock.runFor(1400);
+  await expect(page.locator('#state-label')).toHaveText('探索完成');
+  await expect(page.locator('#percent')).toHaveText('50.0%');
+  expect(await boardPixel(page, 10, 10)).toEqual([22, 60, 60]);
+  expect(await boardPixel(page, 65, 5)).not.toEqual([22, 60, 60]);
 });
 
 test('pause, sound, restart and background pause', async ({ page }) => {
