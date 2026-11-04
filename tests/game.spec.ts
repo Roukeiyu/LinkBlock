@@ -143,7 +143,7 @@ for (const swapped of [false, true]) {
   test(`a held mobile direction slides through all buttons and stops outside, swapped=${swapped}`, async ({ page }) => {
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
-    if (swapped) await page.locator('#swap-controls').click();
+    if (swapped) await page.locator('#control-mode').click();
     const center = async (selector: string) => {
       const box = await page.locator(selector).boundingBox();
       return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
@@ -182,6 +182,115 @@ for (const swapped of [false, true]) {
     await session.detach(); expect(errors).toEqual([]);
   });
 }
+
+for (const swapped of [false, true]) {
+  test(`expanded circular d-pad sectors accept touches beyond the visible buttons, swapped=${swapped}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); if (swapped) await page.locator('#control-mode').click();
+    const pad = await page.locator('.dpad').boundingBox(), draw = await page.locator('#touch-draw').boundingBox();
+    const cx = pad!.x + pad!.width / 2, cy = pad!.y + pad!.height / 2;
+    const session = await page.context().newCDPSession(page);
+    await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    const points = (dx: number, dy: number) => [{ id: 1, x: cx + dx, y: cy + dy, radiusX: 4, radiusY: 4, force: 1 }, { id: 2, x: draw!.x + draw!.width / 2, y: draw!.y + draw!.height / 2, radiusX: 4, radiusY: 4, force: 1 }];
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(80, 0) });
+    await expect(page.locator('[data-dir="right"]')).toHaveClass(/is-held/); await page.waitForTimeout(100);
+    expect((await probe(page)).player.x).toBeGreaterThan(36);
+    for (const step of [{ dir: 'down', dx: 15, dy: 80, ms: 250 }, { dir: 'left', dx: -72, dy: 30, ms: 80 }, { dir: 'up', dx: -15, dy: -80, ms: 100 }]) {
+      await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(step.dx, step.dy) });
+      await expect(page.locator(`[data-dir="${step.dir}"]`)).toHaveClass(/is-held/);
+      await page.waitForTimeout(step.ms);
+    }
+    const anchor = (await probe(page)).trail[0]; expect(anchor).toBeDefined();
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(2, 2) });
+    await page.waitForTimeout(40); const stopped = (await probe(page)).player;
+    await page.waitForTimeout(80); expect((await probe(page)).player).toEqual(stopped);
+    await expect(page.locator('.dpad .is-held')).toHaveCount(0);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(120, 0) });
+    await page.waitForTimeout(80); expect((await probe(page)).player).toEqual(stopped);
+    await expect(page.locator('#touch-draw')).toHaveAttribute('aria-pressed', 'true');
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(async () => (await probe(page)).player).toEqual(anchor);
+    await session.detach();
+  });
+}
+
+async function singleHand(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#control-mode').click(); await page.locator('#control-mode').click();
+  await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'one-hand');
+  await expect(page.locator('.dpad-side')).toBeHidden(); await expect(page.locator('.draw-side')).toBeHidden();
+  await expect(page.locator('#joystick')).toBeVisible();
+}
+async function touchJoystick(page: Page) {
+  const box = await page.locator('#joystick').boundingBox(), x = box!.x + box!.width / 2, y = box!.y + box!.height / 2;
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const point = (dx = 0, dy = 0) => ({ id: 1, x: x + dx, y: y + dy, radiusX: 4, radiusY: 4, force: 1 });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
+  return { session, move: (dx: number, dy: number) => session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(dx, dy)] }) };
+}
+
+test('one-handed joystick draws while held, turns continuously, clamps the knob and retracts on release', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message)); await singleHand(page);
+  const { session, move } = await touchJoystick(page);
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(100); expect((await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await move(0, 45); await page.waitForTimeout(300); const down = (await probe(page)).player;
+  expect(down.y).toBeGreaterThan(0); expect((await probe(page)).trail.length).toBeGreaterThan(1);
+  await move(120, 10); await page.waitForTimeout(120); const right = (await probe(page)).player;
+  expect(right.x).toBeGreaterThan(down.x);
+  const knob = await page.locator('#joystick').evaluate(element => Number.parseFloat((element as HTMLElement).style.getPropertyValue('--stick-x')));
+  expect(knob).toBeGreaterThan(0); expect(knob).toBeLessThan(60);
+  await move(0, -45); await page.waitForTimeout(100); const up = (await probe(page)).player; expect(up.y).toBeLessThan(right.y);
+  await move(2, 2); await page.waitForTimeout(40); const stopped = (await probe(page)).player;
+  await page.waitForTimeout(100); expect((await probe(page)).player).toEqual(stopped);
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
+  await move(-45, 0); await page.waitForTimeout(70); expect((await probe(page)).player.x).toBeLessThan(stopped.x);
+  await page.screenshot({ path: 'test-results/single-hand-joystick.png', fullPage: true });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); expect((await probe(page)).trail).toHaveLength(0);
+  expect(await page.locator('#joystick').evaluate(element => (element as HTMLElement).style.getPropertyValue('--stick-x'))).toBe('');
+  await session.detach(); expect(errors).toEqual([]);
+});
+
+test('mode switching, touch cancellation and wide layout discard active joystick input', async ({ page }) => {
+  await singleHand(page); const first = await touchJoystick(page);
+  await first.move(0, 45); await page.waitForTimeout(200); expect((await probe(page)).player.y).toBeGreaterThan(0);
+  await page.locator('#control-mode').click();
+  await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'two-left'); await expect(page.locator('#joystick')).toBeHidden();
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await first.move(45, 0); await page.waitForTimeout(100); expect((await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await first.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await first.session.detach();
+  await singleHand(page); const cancelled = await touchJoystick(page); await cancelled.move(0, 45); await page.waitForTimeout(200);
+  await cancelled.session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false'); await cancelled.session.detach();
+  const wide = await touchJoystick(page); await wide.move(0, 45); await page.waitForTimeout(200);
+  await page.setViewportSize({ width: 1000, height: 800 }); await expect(page.locator('.touch-controls')).toBeHidden();
+  await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await wide.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await wide.session.detach();
+  await page.setViewportSize({ width: 320, height: 568 }); await expect(page.locator('#joystick')).toBeVisible();
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false');
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/single-hand-small.png', fullPage: true });
+});
+
+test('single-hand control retains a keyboard equivalent and clears on restart', async ({ page }) => {
+  await singleHand(page); await page.locator('#joystick').focus();
+  await page.keyboard.down('Space'); await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, 'ArrowDown', 200); expect((await probe(page)).player.y).toBeGreaterThan(0);
+  await page.keyboard.up('Space'); await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#joystick').focus(); await page.keyboard.down('Space'); await hold(page, 'ArrowDown', 120);
+  await page.keyboard.press('Tab'); await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.up('Space'); await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  const finger = await touchJoystick(page); await finger.move(0, 45); await page.waitForTimeout(200);
+  await page.keyboard.press('KeyR'); await expect.poll(async () => (await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'one-hand');
+  await expect(page.locator('#joystick')).toHaveAttribute('aria-pressed', 'false');
+  await finger.move(45, 0); await page.waitForTimeout(100); expect((await probe(page)).player).toEqual({ x: 36, y: 0 });
+  await finger.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await finger.session.detach();
+});
 
 test('long press cannot select game text or open menus, while controls remain focusable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -358,7 +467,7 @@ test('portrait controller swaps sides, stays within the screen and is hidden on 
   await expect(page.locator('.touch-controls')).toBeVisible();
   const before = await page.locator('.dpad-side').boundingBox(), drawBefore = await page.locator('.draw-side').boundingBox();
   expect(before!.x).toBeLessThan(drawBefore!.x);
-  await page.locator('#swap-controls').click(); await expect(page.locator('#swap-controls')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#control-mode').click(); await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'two-right');
   const after = await page.locator('.dpad-side').boundingBox(), drawAfter = await page.locator('.draw-side').boundingBox();
   expect(after!.x).toBeGreaterThan(drawAfter!.x);
   const session = await touchController(page);
@@ -369,7 +478,7 @@ test('portrait controller swaps sides, stays within the screen and is hidden on 
   for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
     await page.setViewportSize(viewport);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
-    const box = await page.locator('#swap-controls').boundingBox(); expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+    const box = await page.locator('#control-mode').boundingBox(); expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
   }
   await page.goto('/'); await expect(page.getByRole('button', { name: '开始探索' })).toBeVisible();
   await page.getByRole('button', { name: '开始探索' }).click(); await expect(page.locator('#overlay')).toBeHidden();

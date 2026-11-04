@@ -30,7 +30,7 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
  .dpad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:3px;position:relative}.dpad:after{content:'';grid-column:2;grid-row:2;align-self:center;justify-self:center;width:9px;height:9px;border-radius:50%;background:#426362}
  .touch-controls .dpad button{width:44px;height:44px;font-size:20px;border-radius:10px;color:#b0d2cb;border-color:#365754;background:linear-gradient(#233e43,#192d36);box-shadow:0 3px 0 #09151d}.dpad [data-dir=up]{grid-column:2;grid-row:1}.dpad [data-dir=left]{grid-column:1;grid-row:2}.dpad [data-dir=right]{grid-column:3;grid-row:2}.dpad [data-dir=down]{grid-column:2;grid-row:3}
  .touch-controls #touch-draw{width:88px;height:88px;border-radius:50%;border:1px solid #5f9d88;padding:0;background:radial-gradient(circle at 40% 32%,#365d59,#19383c);box-shadow:0 6px 0 #08191e,0 0 18px #79edc90c;display:flex;align-items:center;justify-content:center}.draw-button{touch-action:none}#touch-draw i{display:block;width:20px;height:20px;border-radius:50%;background:#94f8d8;box-shadow:0 0 16px #79edc94d}.touch-controls #touch-draw[aria-pressed=true]{background:#695633;border-color:#ffcf75;box-shadow:0 2px 0 #08191e;transform:translateY(4px)}#touch-draw[aria-pressed=true] i{background:#ffe0a0}
- .touch-controls #swap-controls{grid-column:1/-1;grid-row:2;justify-self:center;border:0;background:transparent;box-shadow:none;color:#7faaa6;font-size:10px;height:28px;padding:3px 18px}
+ .touch-controls #control-mode{grid-column:1/-1;grid-row:2;justify-self:center;border:0;background:transparent;box-shadow:none;color:#7faaa6;font-size:10px;height:28px;padding:3px 18px}
 }
 @media(max-width:620px) and (orientation:portrait) and (max-height:700px){.site-header{height:40px;min-height:40px}.intro{padding:7px 2px}.intro h1{font-size:16px}.hud{padding:10px 12px}.board-footer{height:22px}.touch-controls{min-height:170px;padding-top:4px;padding-bottom:5px}.dpad{grid-template-columns:repeat(3,37px);grid-template-rows:repeat(3,37px)}.touch-controls .dpad button{width:37px;height:37px;border-radius:8px}.touch-controls #touch-draw{height:76px;width:76px}.controller-side{gap:6px}.mobile-game-status{min-height:28px}}
 
@@ -39,3 +39,15 @@ main{max-width:1320px;margin:auto;padding:0 48px}.intro{display:flex;justify-con
 .touch-controls .dpad button.is-held{background:#365b50;border-color:#79edc9;color:#d9fff1;box-shadow:0 1px 0 #09151d,inset 0 0 12px #79edc914}
 
 .game-main,.game-main *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+.controller-side[hidden]{display:none}.joystick-side{display:none}
+@media(max-width:620px) and (orientation:portrait){
+ .touch-controls.single .joystick-side{display:flex;grid-column:1/-1;grid-row:1}.touch-controls #control-mode{height:36px;line-height:1.4}#control-mode-name{display:block;font-size:8px;color:#587b83;margin-top:3px}
+ .touch-controls #joystick{display:block;position:relative;width:144px;height:144px;padding:0;border-radius:50%;border:1px solid #4b7f79;background:radial-gradient(circle,#1e3f43,#132b35);box-shadow:inset 0 0 24px #0a1d24,0 5px 0 #08171e;touch-action:none;transform:none}
+ #joystick:before{content:'';position:absolute;inset:13px;border:1px solid #5c8c7a55;border-radius:50%}.joystick-guides{font-size:87px;font-weight:200;line-height:1;color:#345952;position:absolute;inset:19px;pointer-events:none}
+ .joystick-knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border:1px solid #91edcc;border-radius:50%;background:radial-gradient(circle at 38% 30%,#8bf2d0,#4c998d);box-shadow:0 4px 15px #0005;transform:translate(-50%,-50%) translate(var(--stick-x,0px),var(--stick-y,0px));pointer-events:none}
+ .touch-controls #joystick[aria-pressed=true]{border-color:#d8ba7a;background:radial-gradient(circle,#3b3b2e,#172b32)}#joystick[aria-pressed=true] .joystick-knob{background:radial-gradient(circle at 38% 30%,#ffe0a0,#b6975d);border-color:#ffe0a0}
+}
+@media(max-width:620px) and (orientation:portrait) and (max-height:700px){.touch-controls #joystick{width:108px;height:108px}.joystick-knob{width:42px;height:42px}.joystick-guides{inset:15px;font-size:62px}.touch-controls #control-mode{height:32px}}
+
+.dpad-hit-area{position:absolute;inset:-18px;border-radius:50%;z-index:2;touch-action:none;background:transparent}

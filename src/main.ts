@@ -38,7 +38,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span class="footer-note">保持连接，发现更多</span></div>
         <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
-        <div class="touch-controls" aria-label="手机手柄"><div class="controller-side dpad-side"><div class="dpad"><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side"><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><button id="swap-controls" aria-pressed="false">⇄ 交换左右</button></div>
+        <div class="touch-controls" aria-label="手机手柄" data-mode="two-left"><div class="controller-side dpad-side"><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side"><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side" hidden><button id="joystick" aria-label="单手摇杆，按住拖动画线，松开收线" aria-pressed="false"><span class="joystick-guides" aria-hidden="true">＋</span><i class="joystick-knob" aria-hidden="true"></i></button><span>按住拖动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">双手 · 方向在左</span></button></div>
       </div>
       <aside>
         <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已占领区域的边缘移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>接回安全区，收下较小的一侧。<br>圈住普通访客可击败并得分，<br>圈住守卫可削减一格生命。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
@@ -70,6 +70,12 @@ const keyboardHeld = new Set<Direction>();
 const pointerDirections = new Map<number, Direction>();
 const directionPointers = new Set<number>();
 const drawPointers = new Set<number>();
+const controlModes = ['two-left', 'two-right', 'one-hand'] as const;
+let controlModeIndex = 0;
+let joystickPointer: number | undefined;
+let joystickCenter = { x: 0, y: 0 };
+let joystickRadius = 0;
+const joystickKeys = new Set<string>();
 const image = new Image();
 image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 
@@ -90,7 +96,7 @@ function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorTyp
 
 function clearInput() {
   held.clear(); keyboardHeld.clear(); pointerDirections.clear(); directionPointers.clear(); drawPointers.clear(); drawHeld = false; touchDraw = false;
-  $('#touch-draw').setAttribute('aria-pressed', 'false');
+  joystickPointer = undefined; joystickKeys.clear(); resetJoystick(); syncTouchDrawing();
   syncDirectionButtons();
 }
 function restart() {
@@ -116,9 +122,13 @@ $('#mobile-restart').addEventListener('click', restart);
 const interactionArea = $('.game-main');
 interactionArea.addEventListener('contextmenu', e => e.preventDefault());
 interactionArea.addEventListener('selectstart', e => e.preventDefault());
-$('#swap-controls').addEventListener('click', () => {
-  clearInput(); const swapped = $('.touch-controls').classList.toggle('swapped');
-  $('#swap-controls').setAttribute('aria-pressed', String(swapped));
+$('#control-mode').addEventListener('click', () => {
+  clearInput(); controlModeIndex = (controlModeIndex + 1) % controlModes.length;
+  const mode = controlModes[controlModeIndex], single = mode === 'one-hand', panel = $('.touch-controls');
+  panel.dataset.mode = mode; panel.classList.toggle('swapped', mode === 'two-right'); panel.classList.toggle('single', single);
+  $('.dpad-side').hidden = single; $('.draw-side').hidden = single; $('.joystick-side').hidden = !single;
+  const label = single ? '单手 · 拖动摇杆' : mode === 'two-right' ? '双手 · 方向在右' : '双手 · 方向在左';
+  $('#control-mode-name').textContent = label; $('#control-mode').setAttribute('aria-label', `切换操作方式，当前${label}`);
 });
 $('#sound').addEventListener('click', () => {
   soundEnabled = !soundEnabled;
@@ -172,22 +182,26 @@ function syncDirectionButtons() {
 }
 function updatePointerDirection(e: PointerEvent) {
   if (!directionPointers.has(e.pointerId)) return;
-  // Pointer capture keeps the gesture alive outside the pad. Hit-test the real
-  // screen position instead of e.target, which stays retargeted to the pad.
-  const button = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLButtonElement>('[data-dir]');
-  const direction = button && dpad.contains(button) ? button.dataset.dir as Direction : undefined;
-  const previous = pointerDirections.get(e.pointerId);
+  // Four 90-degree sectors cover the visual pad plus its invisible margin.
+  // Coordinates remain valid under pointer capture and after layout changes.
+  const box = dpad.getBoundingClientRect();
+  const dx = e.clientX - box.x - box.width / 2, dy = e.clientY - box.y - box.height / 2;
+  const radius = Math.max(box.width, box.height) / 2 + 18;
+  const direction = Math.hypot(dx, dy) > radius ? undefined : cardinalDirection(dx, dy);
+  setPointerDirection(e.pointerId, direction);
+}
+function setPointerDirection(pointerId: number, direction: Direction | undefined) {
+  const previous = pointerDirections.get(pointerId);
   if (direction === previous) return;
-  pointerDirections.delete(e.pointerId);
+  pointerDirections.delete(pointerId);
   if (previous) releaseDirection(previous);
   if (direction) {
-    pointerDirections.set(e.pointerId, direction); held.delete(direction); held.add(direction);
+    pointerDirections.set(pointerId, direction); held.delete(direction); held.add(direction);
   }
   syncDirectionButtons();
 }
 dpad.addEventListener('pointerdown', e => {
-  const button = (e.target as Element).closest<HTMLButtonElement>('[data-dir]');
-  if (!button || !dpad.contains(button) || game.phase !== 'playing') return;
+  if (game.phase !== 'playing' || controlModes[controlModeIndex] === 'one-hand') return;
   e.preventDefault(); directionPointers.add(e.pointerId); dpad.setPointerCapture(e.pointerId);
   updatePointerDirection(e);
 });
@@ -206,16 +220,68 @@ dpad.addEventListener('pointerup', releaseDirectionPointer); dpad.addEventListen
 const drawButton = $<HTMLButtonElement>('#touch-draw');
 drawButton.addEventListener('pointerdown', e => {
   e.preventDefault();
-  if (game.phase !== 'playing') return;
-  drawButton.setPointerCapture(e.pointerId); drawPointers.add(e.pointerId); touchDraw = true;
-  drawButton.setAttribute('aria-pressed', 'true');
+  if (game.phase !== 'playing' || controlModes[controlModeIndex] === 'one-hand') return;
+  drawButton.setPointerCapture(e.pointerId); drawPointers.add(e.pointerId); syncTouchDrawing();
 });
 function releaseDrawPointer(e: PointerEvent) {
   if (!drawPointers.delete(e.pointerId)) return;
-  touchDraw = drawPointers.size > 0; drawButton.setAttribute('aria-pressed', String(touchDraw));
+  syncTouchDrawing();
   if (!touchDraw && !drawHeld) game.beginRetraction();
 }
 drawButton.addEventListener('pointerup', releaseDrawPointer); drawButton.addEventListener('pointercancel', releaseDrawPointer); drawButton.addEventListener('lostpointercapture', releaseDrawPointer);
+const joystick = $<HTMLButtonElement>('#joystick');
+function syncTouchDrawing() {
+  touchDraw = drawPointers.size > 0 || joystickKeys.size > 0;
+  $('#touch-draw').setAttribute('aria-pressed', String(touchDraw));
+  $('#joystick').setAttribute('aria-pressed', String(joystickPointer !== undefined || joystickKeys.size > 0));
+}
+function resetJoystick() {
+  $('#joystick').style.removeProperty('--stick-x'); $('#joystick').style.removeProperty('--stick-y');
+}
+function cardinalDirection(dx: number, dy: number): Direction | undefined {
+  if (Math.hypot(dx, dy) < 12) return undefined;
+  return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
+}
+function updateJoystick(e: PointerEvent) {
+  if (e.pointerId !== joystickPointer) return;
+  const dx = e.clientX - joystickCenter.x, dy = e.clientY - joystickCenter.y;
+  const length = Math.hypot(dx, dy), ratio = Math.min(1, joystickRadius / (length || 1));
+  joystick.style.setProperty('--stick-x', `${dx * ratio}px`); joystick.style.setProperty('--stick-y', `${dy * ratio}px`);
+  const direction = cardinalDirection(dx, dy);
+  setPointerDirection(e.pointerId, direction);
+}
+joystick.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (game.phase !== 'playing' || controlModes[controlModeIndex] !== 'one-hand' || joystickPointer !== undefined) return;
+  const box = joystick.getBoundingClientRect(), knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
+  joystickCenter = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  joystickRadius = Math.max(0, (box.width - knob.offsetWidth) / 2 - 10);
+  joystickPointer = e.pointerId; drawPointers.add(e.pointerId); joystick.setPointerCapture(e.pointerId);
+  syncTouchDrawing(); updateJoystick(e);
+});
+joystick.addEventListener('pointermove', e => {
+  if (e.pointerId !== joystickPointer) return;
+  e.preventDefault(); updateJoystick(e);
+});
+function releaseJoystick(e: PointerEvent) {
+  if (e.pointerId !== joystickPointer) return;
+  setPointerDirection(e.pointerId, undefined); joystickPointer = undefined; resetJoystick(); releaseDrawPointer(e);
+}
+joystick.addEventListener('pointerup', releaseJoystick); joystick.addEventListener('pointercancel', releaseJoystick); joystick.addEventListener('lostpointercapture', releaseJoystick);
+joystick.addEventListener('keydown', e => {
+  if (!['Space', 'Enter'].includes(e.code) || game.phase !== 'playing') return;
+  e.preventDefault(); e.stopPropagation(); joystickKeys.add(e.code); syncTouchDrawing();
+});
+joystick.addEventListener('keyup', e => {
+  if (!joystickKeys.delete(e.code)) return;
+  e.preventDefault(); e.stopPropagation(); syncTouchDrawing();
+  if (!touchDraw && !drawHeld) game.beginRetraction();
+});
+joystick.addEventListener('blur', () => {
+  if (!joystickKeys.size) return;
+  joystickKeys.clear(); syncTouchDrawing();
+  if (!touchDraw && !drawHeld) game.beginRetraction();
+});
 window.matchMedia('(max-width: 620px) and (orientation: portrait)').addEventListener('change', () => { clearInput(); });
 
 function notify(message: string) {
