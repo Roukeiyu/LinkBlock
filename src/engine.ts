@@ -1,4 +1,5 @@
 import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, type Point, type Polygon } from './geometry';
+import { SHORE_CONTACT_TOLERANCE, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
 import { Island } from './island';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
@@ -36,6 +37,7 @@ export class Game {
   private cutRegion = -1;
   private island: Island | undefined;
   private boundaryRelocated = false;
+  private playerPath: Point[] = [];
   private resumePhase: 'playing' | 'opening' = 'playing';
   opening: Opening | undefined;
   actorsReady = false;
@@ -123,29 +125,17 @@ export class Game {
   }
   // Distance is continuous world-space distance, never a cell count.
   move(direction: Direction, drawing: boolean, amount: number) {
+    this.playerPath = [{ ...this.player }];
     if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
     const v = vectors[direction]; let p = this.player;
     if (this.trail.length && !drawing) return false;
     if (!this.trail.length) {
-      if (!this.isBoundary(p.x, p.y)) return false;
-      if (this.island) p = this.player = this.island.project(p)!;
-      // Merge touching collinear edges so a capture junction never causes a hitch.
-      let reach = 0;
-      const segments = this.boundarySegments;
-      for (let pass = 0; pass <= segments.length; pass++) {
-        const before = reach;
-        for (const [a, b] of segments) {
-          const axis = v.x ? 'x' : 'y', cross = v.x ? 'y' : 'x', sign = v.x || v.y;
-          if (Math.abs(a[cross] - p[cross]) > EPS || Math.abs(b[cross] - p[cross]) > EPS) continue;
-          const ds = [sign * (a[axis] - p[axis]), sign * (b[axis] - p[axis])].sort((x, y) => x - y);
-          if (ds[0] <= reach + EPS && ds[1] > reach) reach = ds[1];
-        }
-        if (reach === before) break;
-      }
-      if (reach > EPS) {
-        const travel = Math.min(amount, reach);
-        const next = { x: p.x + v.x * travel, y: p.y + v.y * travel };
-        this.player = this.island?.project(next) ?? next;
+      const shore = this.island ? this.island.project(p, SHORE_CONTACT_TOLERANCE) : this.isBoundary(p.x, p.y) ? p : undefined;
+      if (!shore) return false;
+      p = this.player = shore; this.playerPath.push({ ...p });
+      const route = walkCoast(p, v, amount, this.boundarySegments);
+      if (route.length > 1) {
+        this.playerPath.push(...route.slice(1)); this.player = route.at(-1)!;
         return false;
       }
       if (!drawing || this.protection > 0) return false;
@@ -182,7 +172,7 @@ export class Game {
     }
     if (travel <= EPS) return false;
     this.trail = simplify([...this.trail, next]);
-    this.player = next;
+    this.player = next; this.playerPath.push({ ...next });
     const bodyHit = this.collidesWithTrail(), attackHit = this.hazardsHit(p, next);
     if (bodyHit || attackHit) { this.hit(); return false; }
     if (wall <= travel + EPS) { this.capture(); return true; }
@@ -212,6 +202,7 @@ export class Game {
         this.trail[this.trail.length - 1] = { ...this.player };
         amount = 0;
       }
+      this.playerPath.push({ ...this.player });
     }
     if (this.trail.length > 1) return false;
     this.trail = []; this.cutRegion = -1; this.retracting = false; this.player = { ...this.anchor };
@@ -402,11 +393,28 @@ export class Game {
       if (bodyHit || attackHit) this.hit();
       if (lives !== this.lives) gestureEnded = true;
       if (!gestureEnded) {
+        this.playerPath = [playerBefore];
+        let boundaryChanged = false;
         if (this.retracting) gestureEnded = this.retract(RETRACT_SPEED * dt);
-        else if (direction) gestureEnded = this.move(direction, drawing, PLAYER_SPEED * dt);
-        if (this.hazardsHit(this.boundaryRelocated ? this.player : playerBefore, this.player)) this.hit();
+        else if (direction) {
+          let remaining = PLAYER_SPEED * dt;
+          const route = [playerBefore];
+          for (let pass = 0; pass < 8 && remaining > EPS; pass++) {
+            const closed = this.move(direction, drawing, remaining);
+            const travelled = this.playerPath.slice(1).reduce((sum, p, j) => sum + Math.hypot(p.x - this.playerPath[j].x, p.y - this.playerPath[j].y), 0);
+            route.push(...this.playerPath.slice(1)); boundaryChanged ||= closed;
+            // A normal closure keeps both the direction and the unused travel
+            // budget. Relocation, recovery and defeat still end the gesture.
+            gestureEnded = closed && (this.boundaryRelocated || this.retracting || this.phase !== 'playing');
+            remaining = Math.max(0, remaining - travelled);
+            if (!closed || gestureEnded || travelled <= EPS) break;
+          }
+          this.playerPath = route;
+        }
+        const path = this.boundaryRelocated ? [this.player, this.player] : this.playerPath.length > 1 ? this.playerPath : [playerBefore, this.player];
+        if (path.slice(1).some((p, i) => this.hazardsHit(path[i], p))) this.hit();
         if (lives !== this.lives) gestureEnded = true;
-        if (gestureEnded) {
+        if (boundaryChanged || gestureEnded) {
           walls = this.territories.map(wallEdges);
           bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
         }

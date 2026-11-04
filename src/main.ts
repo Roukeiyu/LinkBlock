@@ -292,7 +292,7 @@ function updateJoystick(e: PointerEvent) {
     joystickPoint = { x: point.clientX, y: point.clientY };
   }
   sampleJoystick();
-  // A fresh swipe can continue after a completed loop, even in the same direction.
+  // A fresh swipe can re-arm movement after a hit or completed retraction.
   if (changed && joystickInput.direction) { held.delete(joystickInput.direction); held.add(joystickInput.direction); }
 }
 function sampleJoystick() {

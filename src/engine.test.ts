@@ -123,10 +123,10 @@ describe('continuous territory rules', () => {
     game.spawnHazard(new Projectile({ ...game.player }, { x: 0, y: 0 })); game.update(0.01);
     expect(game.lives).toBe(2); expect(game.isBoundary(game.anchor.x, game.anchor.y)).toBe(true);
   });
-  it('stops the current gesture at a closure', () => {
+  it('keeps the gesture after closure while the arena still blocks outward travel', () => {
     const game = fixture();
     game.move('down', true, 10); game.move('right', false, 2);
-    expect(game.update(1, 'up', true)).toBe(true);
+    expect(game.update(1, 'up', true)).toBe(false);
     expect(game.player).toEqual({ x: 6, y: 0 });
     expect(game.percent).toBeCloseTo(60);
   });
