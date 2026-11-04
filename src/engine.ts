@@ -1,12 +1,13 @@
-import { area, closestPoint, distance, edges, EPS, inside, onSegment, rayDistance, segmentDistance, same, simplify, split, type Point, type Polygon } from './geometry';
+import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, withHole, type Point, type Polygon } from './geometry';
+import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
-export type Phase = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
+export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
-export interface GameOptions { enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number }
+export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
@@ -32,12 +33,15 @@ export class Game {
   territories: Polygon[];
   private cutRegion = -1;
   private boundaryRelocated = false;
+  private resumePhase: 'playing' | 'opening' = 'playing';
+  opening: Opening | undefined;
+  actorsReady = false;
   lastCapture: Polygon[] = [];
   lastDefeats: DefeatedEnemy[] = [];
   captured: Polygon[] = [];
   player: Point;
   anchor: Point;
-  enemies: Enemy[];
+  enemies: Enemy[] = [];
   boss: Enemy | undefined;
   bossAttack: BossAttack | undefined;
   hazards: AttackHazard[] = [];
@@ -50,7 +54,7 @@ export class Game {
   protection = 0;
   events: GameEvent[] = [];
 
-  constructor(readonly width = 72, readonly height = 48, options: GameOptions = {}) {
+  constructor(readonly width = 72, readonly height = 48, private readonly options: GameOptions = {}) {
     this.target = options.victory?.territoryPercent ?? 75;
     this.bossMaxHealth = options.bossConfig?.maxHealth ?? 5; this.bossHealth = this.bossMaxHealth;
     this.bossSettings = { maxHealth: this.bossMaxHealth, jumpDuration: options.bossConfig?.jumpDuration ?? 0.9, phases: options.bossConfig?.phases ?? [] };
@@ -71,9 +75,14 @@ export class Game {
     this.territories = [this.outline.map(p => ({ ...p }))];
     this.player = { x: width / 2, y: 0 };
     this.anchor = { ...this.player };
-    this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(width, height);
-    this.enemies = options.enemies ?? defaultEnemies(width, height, this.boss, this.random);
-    if (!this.boss && !this.territoryVictory) throw new Error('Boss-only victory needs a boss');
+    if (options.boss === null && !this.territoryVictory) throw new Error('Boss-only victory needs a boss');
+    if (!(options.opening ?? false)) this.spawnActors();
+  }
+  private spawnActors() {
+    this.actorsReady = true;
+    const options = this.options;
+    this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(this.width, this.height);
+    this.enemies = options.enemies ?? defaultEnemies(this.width, this.height, this.boss, this.random, this.opening ? { regions: this.territories, player: this.player } : undefined);
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();
   }
@@ -82,14 +91,29 @@ export class Game {
   get reinforcementTarget() { return this.reinforcementRule?.targetCount; }
   // Rendering and walking use the same current perimeter. The immutable arena
   // outline still defines size/score but never keeps an already claimed edge alive.
-  get boundarySegments() { return this.territories.flatMap(edges); }
+  get boundarySegments() { return this.territories.flatMap(wallEdges); }
   isBoundary(x: number, y: number) {
     return this.boundarySegments.some(([a, b]) => onSegment({ x, y }, a, b));
   }
-  start() { if (this.phase === 'ready') { this.phase = 'playing'; this.events.push('start'); } }
+  start() {
+    if (this.phase !== 'ready') return;
+    if (this.options.opening) {
+      const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined);
+      if (region) { this.opening = { region, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return; }
+      this.spawnActors();
+    }
+    this.phase = 'playing'; this.events.push('start');
+  }
+  confirmOpening() {
+    if (this.phase !== 'opening' || !this.opening) return false;
+    const region = this.opening.region;
+    this.territories = [withHole(this.outline, region)]; this.captured = [region];
+    this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
+    this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.checkWin(); return true;
+  }
   togglePause() {
-    if (this.phase === 'playing') this.phase = 'paused';
-    else if (this.phase === 'paused') this.phase = 'playing';
+    if (this.phase === 'playing' || this.phase === 'opening') { this.resumePhase = this.phase; this.phase = 'paused'; }
+    else if (this.phase === 'paused') this.phase = this.resumePhase;
   }
   // Distance is continuous world-space distance, never a cell count.
   move(direction: Direction, drawing: boolean, amount: number) {
@@ -127,7 +151,7 @@ export class Game {
     // Reversing would retrace the live line.
     if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) return false;
     let wall = Infinity;
-    for (const [a, b] of edges(this.territories[this.cutRegion])) wall = Math.min(wall, rayDistance(p, v, a, b));
+    for (const [a, b] of wallEdges(this.territories[this.cutRegion])) wall = Math.min(wall, rayDistance(p, v, a, b));
     const travel = Math.min(amount, wall);
     // A live line may neither cross nor touch itself, including at a corner.
     for (let i = 0; i < this.trail.length - 1; i++) {
@@ -166,7 +190,13 @@ export class Game {
     return true;
   }
   private capture() {
-    const parts = split(this.territories[this.cutRegion], this.trail);
+    const parts = partitionRegion(this.territories[this.cutRegion], this.trail);
+    if (parts.length === 1) {
+      this.territories.splice(this.cutRegion, 1, parts[0]);
+      this.score += Math.round(this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0) * 5);
+      this.cutRegion = -1; this.trail = []; this.anchor = { ...this.player };
+      this.lastCapture = []; this.lastDefeats = []; this.events.push('partition'); return;
+    }
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
     const difference = area(parts[0]) - area(parts[1]);
@@ -293,6 +323,17 @@ export class Game {
     return hits.length > 0;
   }
   update(seconds: number, direction?: Direction, drawing = false) {
+    if (this.phase === 'opening' && this.opening && Number.isFinite(seconds) && seconds > 0) {
+      const next = Math.min(OPENING_SECONDS, this.opening.elapsed + seconds);
+      while (this.opening.nextAt <= next + EPS && this.opening.nextAt < OPENING_SECONDS - EPS) {
+        const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined);
+        if (region) this.opening.region = region;
+        this.opening.nextAt += 1 / OPENING_HZ; this.opening.candidates++;
+      }
+      this.opening.elapsed = next;
+      if (next >= OPENING_SECONDS - EPS) { this.confirmOpening(); return true; }
+      return false;
+    }
     if (this.phase !== 'playing' || !Number.isFinite(seconds) || seconds <= 0) return false;
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
@@ -300,7 +341,7 @@ export class Game {
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
     let gestureEnded = false;
-    let walls = this.territories.map(edges);
+    let walls = this.territories.map(wallEdges);
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
       this.updateBossJump(dt);
@@ -321,7 +362,7 @@ export class Game {
         if (this.hazardsHit(this.boundaryRelocated ? this.player : playerBefore, this.player)) this.hit();
         if (lives !== this.lives) gestureEnded = true;
         if (gestureEnded) {
-          walls = this.territories.map(edges);
+          walls = this.territories.map(wallEdges);
           bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
         }
       }

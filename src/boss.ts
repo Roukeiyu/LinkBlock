@@ -1,4 +1,4 @@
-import { distance, edges, EPS, inside, type Point, type Polygon } from './geometry';
+import { distance, wallEdges, EPS, inside, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
 import { EightWayAttack, RadialAttack, type BossAttackFactory } from './attacks';
 
@@ -39,7 +39,7 @@ export function jumpPose(jump: BossJump, reducedMotion = false) {
 export function safeLanding(point: Point, regions: Polygon[], boss: Enemy, enemies: Enemy[], player: Point, trail: Polygon) {
   const clearance = boss.visualRadius + 0.16;
   const region = regions.find(region => inside(point, region));
-  return Boolean(region && edges(region).every(([a, b]) => distance(point, a, b) >= clearance - EPS)
+  return Boolean(region && wallEdges(region).every(([a, b]) => distance(point, a, b) >= clearance - EPS)
     && enemies.every(enemy => Math.hypot(point.x - enemy.x, point.y - enemy.y) >= boss.visualRadius + enemy.visualRadius + 0.16)
     && Math.hypot(point.x - player.x, point.y - player.y) >= boss.visualRadius + 0.5
     && trail.slice(1).every((p, i) => distance(point, trail[i], p) >= clearance));
@@ -62,7 +62,7 @@ export function findLanding(regions: Polygon[], boss: Enemy, enemies: Enemy[], p
     const candidates = [(minY + maxY) / 2, ...ys.flatMap(y => [y - r, y + r]), ...ys.slice(1).map((y, i) => (y + ys[i]) / 2)];
     for (const y of candidates) {
       if (y <= minY || y >= maxY) continue;
-      const xs = edges(region).filter(([a, b]) => (a.y > y) !== (b.y > y))
+      const xs = wallEdges(region).filter(([a, b]) => (a.y > y) !== (b.y > y))
         .map(([a, b]) => a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y)).sort((a, b) => a - b);
       for (let i = 0; i + 1 < xs.length; i += 2) {
         if (xs[i + 1] - xs[i] < r * 2 - EPS) continue;

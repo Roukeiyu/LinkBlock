@@ -1,4 +1,4 @@
-import { distance, EPS, inside, type Point, type Polygon } from './geometry';
+import { distance, EPS, inside, wallEdges, type Point, type Polygon } from './geometry';
 
 export type EnemyKind = 'straight' | 'orbit' | 'zigzag' | 'boss';
 export interface DefeatedEnemy extends Point { kind: EnemyKind; points: number }
@@ -33,12 +33,13 @@ export function createEnemy(kind: EnemyKind, position: Point, velocity?: Point):
 export function defaultBoss(width: number, height: number) {
   return createEnemy('boss', { x: width / 2, y: height / 2 });
 }
-export function defaultEnemies(width: number, height: number, boss?: Enemy, random = Math.random) {
+export function defaultEnemies(width: number, height: number, boss?: Enemy, random = Math.random, spawnArea?: { regions: Polygon[]; player: Point }) {
   const kinds = ['straight', 'orbit', 'zigzag'] as const;
   const placed: Enemy[] = [];
   const safe = (p: Point, r: number) => p.x >= r + 0.16 && p.x <= width - r - 0.16
     && p.y >= r + 0.16 && p.y <= height - r - 0.16
-    && Math.hypot(p.x - width / 2, p.y) >= r + 0.34 + 3
+    && Math.hypot(p.x - (spawnArea?.player.x ?? width / 2), p.y - (spawnArea?.player.y ?? 0)) >= r + 0.34 + 3
+    && (!spawnArea || spawnArea.regions.some(region => inside(p, region) && wallEdges(region).every(([a, b]) => distance(p, a, b) >= r + 0.16 - EPS)))
     && (!boss || Math.hypot(p.x - boss.x, p.y - boss.y) >= r + boss.visualRadius + 0.25)
     && placed.every(other => Math.hypot(p.x - other.x, p.y - other.y) >= r + other.visualRadius + 0.25 - EPS);
   for (const kind of kinds) {
@@ -83,7 +84,7 @@ function rotate(enemy: Enemy, angle: number) {
 export type Walls = [Point, Point][];
 export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], walls: Walls[]) {
   enemy.previous = { x: enemy.x, y: enemy.y };
-  const region = regions.findIndex(polygon => inside(enemy, polygon));
+  const region = regions.findIndex((polygon, i) => inside(enemy, polygon, walls[i]));
   if (region < 0) return;
   if (enemy.kind === 'orbit') rotate(enemy, seconds * 0.85 * enemy.turnSign);
   if (enemy.kind === 'zigzag') {
@@ -93,7 +94,7 @@ export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], 
       rotate(enemy, enemy.turnSign * Math.PI * 0.4); enemy.turnSign *= -1;
     }
   }
-  const blocked = (p: Point) => !inside(p, regions[region]) || walls[region].some(([a, b]) => distance(p, a, b) < enemy.radius);
+  const blocked = (p: Point) => !inside(p, regions[region], walls[region]) || walls[region].some(([a, b]) => distance(p, a, b) < enemy.radius);
   const nx = { x: enemy.x + enemy.vx * seconds, y: enemy.y };
   if (blocked(nx)) { enemy.vx *= -1; if (enemy.kind === 'orbit') enemy.turnSign *= -1; }
   else enemy.x = nx.x;

@@ -2,6 +2,7 @@ import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
 import { ENEMY_STYLES } from './enemies';
 import { renderEnemy } from './render-enemies';
+import { OPENING_SECONDS, openingPercent } from './opening';
 import { lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
@@ -32,9 +33,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。方向键或 WASD 移动，按住空格画线，松开空格快速收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">从边界出发，画线围住未知区域。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
           <div id="toast" class="toast" role="status" aria-live="polite"></div>
+          <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span class="footer-note">保持连接，发现更多</span></div>
         <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
@@ -55,7 +57,7 @@ const ctx = canvas.getContext('2d')!;
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;
-let game = new Game(72, 48, { createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig });
+let game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig });
 let lastPhase = '';
 let soundEnabled = false;
 let audio: AudioContext | undefined;
@@ -65,6 +67,7 @@ const effects: CaptureEffect[] = [];
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let hitFlash = 0;
 let toastUntil = 0;
+let openingFrameAt = performance.now();
 const held = new Set<Direction>();
 const keyboardHeld = new Set<Direction>();
 const pointerDirections = new Map<number, Direction>();
@@ -100,20 +103,32 @@ function clearInput() {
   syncDirectionButtons();
 }
 function restart() {
-  clearInput(); game = new Game(72, 48, { createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); game.start(); effects.length = 0; hitFlash = 0;
+  clearInput(); game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
-  sync(); canvas.focus({ preventScroll: true });
+  openingFrameAt = performance.now();
+  sync(); canvas.focus({ preventScroll: true }); render(performance.now());
+}
+function accountOpeningTime() {
+  if (game.phase !== 'opening') return;
+  const at = performance.now(); game.update(Math.max(0, (at - openingFrameAt) / 1000)); openingFrameAt = at;
 }
 function togglePause() {
+  accountOpeningTime();
   game.togglePause(); clearInput(); sync();
-  if (game.phase === 'playing') canvas.focus({ preventScroll: true });
+  openingFrameAt = performance.now();
+  if (game.phase === 'playing' || game.phase === 'opening') canvas.focus({ preventScroll: true });
+}
+function confirmOpening() {
+  if (!game.confirmOpening()) return false;
+  clearInput(); sync(); canvas.focus({ preventScroll: true }); render(performance.now()); return true;
 }
 
 $('#primary').addEventListener('click', () => {
   if (game.phase === 'paused') togglePause();
   else if (game.phase === 'ready') game.start();
   else restart();
-  sync(); canvas.focus({ preventScroll: true });
+  openingFrameAt = performance.now();
+  sync(); canvas.focus({ preventScroll: true }); render(performance.now());
 });
 pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
@@ -143,6 +158,10 @@ const keyDirections: Record<string, Direction> = {
 };
 window.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'Space' && game.phase === 'opening') {
+    if (e.target instanceof HTMLButtonElement && !e.target.matches('#touch-draw, #joystick')) return;
+    e.preventDefault(); if (!e.repeat) confirmOpening(); return;
+  }
   if (keyDirections[e.code] || e.code === 'Space') {
     // Buttons retain normal Space activation; drawing starts from the board.
     if (e.code === 'Space' && e.target instanceof HTMLButtonElement) return;
@@ -166,7 +185,8 @@ window.addEventListener('keyup', e => {
   if (direction) { keyboardHeld.delete(direction); releaseDirection(direction); }
 });
 function backgroundPause() {
-  if (game.phase === 'playing') game.togglePause();
+  accountOpeningTime();
+  if (game.phase === 'playing' || game.phase === 'opening') game.togglePause();
   clearInput(); sync();
 }
 window.addEventListener('blur', backgroundPause);
@@ -220,9 +240,11 @@ dpad.addEventListener('pointerup', releaseDirectionPointer); dpad.addEventListen
 const drawButton = $<HTMLButtonElement>('#touch-draw');
 drawButton.addEventListener('pointerdown', e => {
   e.preventDefault();
+  if (game.phase === 'opening') { confirmOpening(); return; }
   if (game.phase !== 'playing' || controlModes[controlModeIndex] === 'one-hand') return;
   drawButton.setPointerCapture(e.pointerId); drawPointers.add(e.pointerId); syncTouchDrawing();
 });
+drawButton.addEventListener('click', () => { if (game.phase === 'opening') confirmOpening(); });
 function releaseDrawPointer(e: PointerEvent) {
   if (!drawPointers.delete(e.pointerId)) return;
   syncTouchDrawing();
@@ -252,6 +274,7 @@ function updateJoystick(e: PointerEvent) {
 }
 joystick.addEventListener('pointerdown', e => {
   e.preventDefault();
+  if (game.phase === 'opening') { confirmOpening(); return; }
   if (game.phase !== 'playing' || controlModes[controlModeIndex] !== 'one-hand' || joystickPointer !== undefined) return;
   const box = joystick.getBoundingClientRect(), knob = joystick.querySelector<HTMLElement>('.joystick-knob')!;
   joystickCenter = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -259,6 +282,7 @@ joystick.addEventListener('pointerdown', e => {
   joystickPointer = e.pointerId; drawPointers.add(e.pointerId); joystick.setPointerCapture(e.pointerId);
   syncTouchDrawing(); updateJoystick(e);
 });
+joystick.addEventListener('click', () => { if (game.phase === 'opening') confirmOpening(); });
 joystick.addEventListener('pointermove', e => {
   if (e.pointerId !== joystickPointer) return;
   e.preventDefault(); updateJoystick(e);
@@ -304,7 +328,7 @@ function handleEvent(event: GameEvent) {
     notify('连接成功 · 新的领地已揭开');
     tone(523); tone(784, 0.18, 0.08);
   } else if (event === 'partition') {
-    notify('连接完成 · 两侧仍有访客，继续圈出空白区域'); tone(440);
+    notify('通路已连接 · 继续围出闭合区域'); tone(440);
   } else if (event === 'bossAttack') {
     tone(180, 0.15, 0, 'triangle');
   } else if (event === 'hit') {
@@ -316,6 +340,13 @@ function handleEvent(event: GameEvent) {
 }
 
 function sync() {
+  const selecting = game.phase === 'opening', waiting = !game.actorsReady;
+  $('#opening-hint').hidden = !selecting;
+  if (selecting && game.opening) $('#opening-hint').textContent = `${openingPercent(game.opening, game.width, game.height).toFixed(1)}% · 空格 / 动作键确认 · ${Math.max(0, OPENING_SECONDS - game.opening.elapsed).toFixed(1)}s`;
+  drawButton.setAttribute('aria-label', selecting ? '确认起点' : '按住画线，松开收线');
+  joystick.setAttribute('aria-label', selecting ? '确认起点' : '单手摇杆，按住拖动画线，松开收线');
+  $('.draw-side > span').textContent = selecting ? '点击确认起点' : '按住画线 · 松开收线';
+  $('.joystick-side > span').textContent = selecting ? '点击确认起点' : '按住拖动画线 · 松开收线';
   const percent = game.percent;
   $('#percent').innerHTML = `${percent.toFixed(1)}<span>%</span>`;
   $('#progress-fill').style.width = `${Math.min(percent / game.target * 100, 100)}%`;
@@ -327,24 +358,24 @@ function sync() {
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   for (const kind of ['straight', 'orbit', 'zigzag', 'boss'] as const) {
     const remaining = kind === 'boss' ? Number(Boolean(game.boss)) : game.enemies.filter(enemy => enemy.kind === kind).length;
-    const row = $(`[data-kind="${kind}"]`); row.classList.toggle('defeated', remaining === 0);
-    if (kind !== 'boss') row.querySelector('em')!.textContent = remaining === 0 ? '已击败' : `${kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'} ×${remaining}`;
+    const row = $(`[data-kind="${kind}"]`); row.classList.toggle('defeated', !waiting && remaining === 0);
+    if (kind !== 'boss') row.querySelector('em')!.textContent = waiting ? '等待入场' : remaining === 0 ? '已击败' : `${kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'} ×${remaining}`;
   }
-  $('#boss-status').textContent = !game.boss ? '已击败' : game.bossJump ? (game.bossJump.to ? '跃迁中' : '寻找落点') : game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
+  $('#boss-status').textContent = waiting ? '等待入场' : !game.boss ? '已击败' : game.bossJump ? (game.bossJump.to ? '跃迁中' : '寻找落点') : game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
   $('#boss-status').classList.toggle('warning', Boolean(game.boss && !game.bossJump && game.bossAttack && game.bossAttack.warning > 0));
-  const hp = game.boss ? game.bossHealth : 0;
+  const hp = game.boss || waiting ? game.bossHealth : 0;
   $('#boss-hearts').innerHTML = Array.from({ length: game.bossMaxHealth }, (_, i) => `<i class="${i < hp ? 'filled' : ''}"></i>`).join('');
   $('#boss-hp-text').textContent = `${hp} / ${game.bossMaxHealth}`;
   $('#mobile-boss-hp').textContent = `${hp} / ${game.bossMaxHealth}`;
   $('#mobile-pause').textContent = game.phase === 'paused' ? '继续' : '暂停';
-  ($('#mobile-pause') as HTMLButtonElement).disabled = !['playing', 'paused'].includes(game.phase);
+  ($('#mobile-pause') as HTMLButtonElement).disabled = !['playing', 'opening', 'paused'].includes(game.phase);
   $('.boss-health').setAttribute('aria-valuenow', String(hp)); $('.boss-health').setAttribute('aria-valuemax', String(game.bossMaxHealth));
   $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.reinforcementTarget === undefined ? game.bossPhase : `${game.bossPhase} · 访客 ${game.enemies.length}/${game.reinforcementTarget}`;
-  pauseButton.disabled = !['playing', 'paused'].includes(game.phase);
-  overlay.hidden = game.phase === 'playing' || (game.phase === 'won' && effects.length > 0);
+  pauseButton.disabled = !['playing', 'opening', 'paused'].includes(game.phase);
+  overlay.hidden = game.phase === 'playing' || selecting || (game.phase === 'won' && effects.length > 0);
   if (lastPhase === game.phase) return;
   lastPhase = game.phase;
-  const labels = { ready: '准备就绪', playing: '探索中', paused: '已暂停', won: '探索完成', lost: '本次探索结束' };
+  const labels = { ready: '准备就绪', opening: '选择起点', playing: '探索中', paused: '已暂停', won: '探索完成', lost: '本次探索结束' };
   $('#state-label').textContent = labels[game.phase];
   $('#state-dot').classList.toggle('active', game.phase === 'playing');
   $('#pause span').textContent = game.phase === 'paused' ? '继续' : '暂停';
@@ -366,7 +397,7 @@ function sync() {
     $('#overlay-copy').textContent = `你已揭开 ${percent.toFixed(1)}% 的风景，获得 ${game.score.toLocaleString()} 分。再试一次？`;
     $('#primary').innerHTML = `重新挑战 ${icon('reset')}`;
   }
-  if (game.phase !== 'playing' && game.phase !== 'ready') {
+  if (!['playing', 'ready', 'opening'].includes(game.phase)) {
     clearInput();
     $('#primary').focus({ preventScroll: true });
   }
@@ -386,6 +417,13 @@ function render(now: number) {
     for (const region of game.territories) { polygonPath(ctx, region); ctx.fill(); }
   }
   for (const effect of effects) effect.render(ctx);
+  if (game.phase === 'opening' && game.opening) {
+    ctx.save(); polygonPath(ctx, game.opening.region); ctx.clip();
+    if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
+    ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(0, 0, game.width, game.height); ctx.restore();
+    ctx.save(); ctx.strokeStyle = '#ffcf75'; ctx.lineWidth = 0.18; ctx.shadowColor = '#ffcf75'; ctx.shadowBlur = 12;
+    polygonPath(ctx, game.opening.region); ctx.stroke(); ctx.restore();
+  }
   ctx.save();
   ctx.lineWidth = 1.4 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = theme.boundary; ctx.shadowColor = theme.boundary; ctx.shadowBlur = 5;
@@ -406,7 +444,7 @@ function render(now: number) {
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
     if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions);
     for (const hazard of game.hazards) hazard.render(ctx);
-    if (!game.protection || Math.floor(now / 100) % 2) {
+    if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
       const { x, y } = game.player;
       ctx.shadowBlur = 18; ctx.shadowColor = theme.boundary;
@@ -426,16 +464,21 @@ function render(now: number) {
 let previous = performance.now();
 let uiClock = 0;
 function frame(now: number) {
-  const dt = Math.min((now - previous) / 1000, 0.05);
+  const at = performance.now(), rawDt = Math.max(0, (now - previous) / 1000);
+  const dt = game.phase === 'opening' ? Math.max(0, (at - openingFrameAt) / 1000) : Math.min(rawDt, 0.05);
+  openingFrameAt = at;
   previous = now;
+  const wasOpening = game.phase === 'opening';
+  const candidateBefore = game.opening?.candidates;
   if (game.update(dt, [...held].at(-1), drawHeld || touchDraw)) held.clear();
+  if (wasOpening && game.phase === 'playing') clearInput();
   for (const effect of effects) effect.update(game.phase === 'paused' ? 0 : dt);
   for (let i = effects.length - 1; i >= 0; i--) if (effects[i].finished) effects.splice(i, 1);
   for (const event of game.events.splice(0)) handleEvent(event);
   hitFlash = Math.max(0, hitFlash - dt);
   if (now > toastUntil) $('#toast').classList.remove('visible');
   uiClock += dt;
-  if (uiClock >= 0.1 || lastPhase !== game.phase) { sync(); uiClock = 0; }
+  if (uiClock >= 0.1 || lastPhase !== game.phase || (game.phase === 'opening' && candidateBefore !== game.opening?.candidates)) { sync(); uiClock = 0; }
   render(now);
   requestAnimationFrame(frame);
 }
