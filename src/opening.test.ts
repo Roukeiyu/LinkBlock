@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './engine';
 import { advanceEnemy, createEnemy } from './enemies';
-import { area, distance, inside, partitionRegion, wallEdges, type Polygon } from './geometry';
+import { area, distance, inside, wallEdges, type Polygon } from './geometry';
 import { openingFraction, openingRectangle, OPENING_SECONDS } from './opening';
 import { lakeBossConfig, safeLanding } from './boss';
-import { MAX_HAZARDS } from './attacks';
+import { MAX_HAZARDS, Projectile } from './attacks';
 
 function seeded(seed = 13) { return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
 function openingGame(seed = 13) { return new Game(72, 48, { opening: true, random: seeded(seed) }); }
@@ -71,7 +71,7 @@ describe('rectangle selection and deferred entry', () => {
     }
     const maximal = [0.5, 0.5, 0.5, 0, 0, 0, 0, 0, 0];
     expect(area(openingRectangle(72, 48, () => maximal.shift() ?? 0.5)!)).toBeCloseTo(72 * 48 * 0.3);
-    const small = new Game(6, 6, { opening: true, random: () => 0.5 }); small.start(); expect(small.phase).toBe('playing');
+    const small = new Game(6, 6, { opening: true, random: () => 0.5 }); small.start(); expect(small.phase).toBe('opening'); small.confirmOpening(); expect(small.isBoundary(0, 3)).toBe(false); expect(small.claimed).toBeGreaterThan(0);
     const highQueue = [0.5, 0.5, 0.5, 0, 0, 0, 0, 0, 0];
     const high = new Game(72, 48, { opening: true, random: () => highQueue.shift() ?? 0.5 }); high.start(); high.confirmOpening();
     expect(high.percent).toBeCloseTo(30); expect(high.enemies).toHaveLength(9);
@@ -80,7 +80,7 @@ describe('rectangle selection and deferred entry', () => {
   });
 });
 
-describe('continuous territory around the starting hole', () => {
+describe('expanding the only initial island', () => {
   it('has exact area and no invisible bridge wall for walking, enemies or safe landings', () => {
     const game = ringGame(); expect(game.claimed).toBe(56); expect(area(game.territories[0])).toBe(1544);
     expect(game.isBoundary(2, 8)).toBe(false); expect(inside({ x: 2, y: 8 }, game.territories[0])).toBe(true);
@@ -92,7 +92,7 @@ describe('continuous territory around the starting hole', () => {
   });
   it('claims an inner-to-inner pocket without counting the initial rectangle twice', () => {
     const game = ringGame(); place(game, 8, 8); game.move('up', true, 4); game.move('right', true, 3); game.move('down', true, 4);
-    expect(game.claimed).toBe(68); expect(game.lastCapture.map(area)).toEqual([12]); expect(game.territories[0].hole).toBeDefined();
+    expect(game.claimed).toBe(68); expect(game.lastCapture.map(area)).toEqual([12]); expect(game.territories[0].rings).toHaveLength(2);
     expect(inside({ x: 9, y: 6 }, game.territories[0])).toBe(false); expect(inside({ x: 9, y: 2 }, game.territories[0])).toBe(true);
   });
   it.each([false, true])('reveals the large loop around the opening, never its smaller complement, reversed=%s', reversed => {
@@ -137,32 +137,45 @@ describe('continuous territory around the starting hole', () => {
     { start: { x: 12, y: 12 }, dir: 'right' as const, length: 28 },
     { start: { x: 8, y: 8 }, dir: 'up' as const, length: 8 },
     { start: { x: 8, y: 16 }, dir: 'down' as const, length: 24 },
-  ])('connects inner and outer loops through $dir without falsely claiming area', ({ start, dir, length }) => {
+  ])('stops at the $dir frame without landing, scoring or closing, then retracts safely', ({ start, dir, length }) => {
     const game = ringGame(); place(game, start.x, start.y);
-    expect(game.move(dir, true, length)).toBe(true); expect(game.claimed).toBe(56); expect(game.lastCapture).toEqual([]);
-    expect(game.territories).toHaveLength(1); expect(game.territories[0].hole).toBeUndefined();
-    expect(area(game.territories[0])).toBe(1544); expect(game.events).toContain('partition');
-    expect(inside({ x: 8, y: 12 }, game.territories[0])).toBe(false);
+    expect(game.move(dir, true, length + 10)).toBe(false);
+    const edge = { ...game.player }; expect(game.isBoundary(edge.x, edge.y)).toBe(false);
+    for (let i = 0; i < 20; i++) game.move(dir, true, 100);
+    expect(game.player).toEqual(edge); expect(game.claimed).toBe(56); expect(game.score).toBe(0);
+    expect(game.trail).toHaveLength(2); expect(game.lastCapture).toEqual([]); expect(game.events).not.toContain('partition');
+    game.beginRetraction(); game.update(1); expect(game.player).toEqual(start); expect(game.trail).toHaveLength(0);
+    expect(game.isBoundary(start.x, start.y)).toBe(true); expect(game.lives).toBe(3);
   });
-  it('draws, retracts and captures from either bank of a completed bridge', () => {
-    for (const dir of ['up', 'down'] as const) {
-      const game = ringGame(); place(game, 5, 12); game.move('left', true, 5); game.move('right', false, 2.5);
-      game.move(dir, true, 3); game.update(1); expect(game.player).toEqual({ x: 2.5, y: 12 }); expect(game.claimed).toBe(56);
-      game.move(dir, true, 40); expect(game.claimed).toBe(dir === 'up' ? 86 : 126);
-      expect(game.lives).toBe(3); expect(game.trail).toHaveLength(0);
-    }
+  it('can turn along the frame and return to the island, without making the frame walkable', () => {
+    const game = ringGame(); place(game, 8, 8);
+    game.move('up', true, 100); expect(game.player).toEqual({ x: 8, y: 0 }); expect(game.claimed).toBe(56);
+    game.move('right', true, 4); expect(game.trail.length).toBeGreaterThan(1); expect(game.score).toBe(0);
+    game.move('down', true, 100); expect(game.claimed).toBe(88); expect(game.lastCapture.map(area)).toEqual([32]);
+    expect(game.isBoundary(10, 0)).toBe(false); expect(game.isBoundary(12, 4)).toBe(true);
+    game.move('up', false, 100); expect(game.player).toEqual({ x: 12, y: 0 });
+    game.move('left', false, 10); game.move('up', true, 10); expect(game.player).toEqual({ x: 12, y: 0 });
+    game.move('down', false, 4); expect(game.player).toEqual({ x: 12, y: 4 });
   });
-  it('can capture a whole outer pocket containing the original hole without rewarding its area twice', () => {
-    const game = ringGame(); game.enemies.push(createEnemy('orbit', { x: 3, y: 30 }, { x: 0, y: 0 })); place(game, 15, 0);
-    game.move('down', true, 40); expect(game.claimed).toBe(600); expect(game.lastCapture.map(area)).toEqual([544]);
-    expect(game.lastDefeats).toHaveLength(1); expect(game.enemies).toHaveLength(1); expect(game.isBoundary(5, 12)).toBe(false);
+  it('allows a loop to return to its exact starting point without treating it as a self-crossing', () => {
+    const game = ringGame(); place(game, 12, 8);
+    game.move('right', true, 4); game.move('up', true, 4); game.move('left', true, 4); game.move('down', true, 4);
+    expect(game.claimed).toBe(72); expect(game.lastCapture.map(area)).toEqual([16]); expect(game.trail).toHaveLength(0);
+    expect(game.isBoundary(game.player.x, game.player.y)).toBe(true); expect(game.lives).toBe(3);
   });
-  it('handles a concave expanded hole and a later real bridge without leaving the old virtual seam', () => {
+  it('cannot start, walk or draw from the outer frame even if manually placed there', () => {
+    const game = ringGame(); place(game, 15, 0);
+    for (const dir of ['up', 'down', 'left', 'right'] as const) game.move(dir, true, 40);
+    expect(game.player).toEqual({ x: 15, y: 0 }); expect(game.claimed).toBe(56); expect(game.trail).toHaveLength(0);
+    for (const point of [{ x: 0, y: 20 }, { x: 40, y: 20 }, { x: 20, y: 40 }]) expect(game.isBoundary(point.x, point.y)).toBe(false);
+  });
+  it('continues expanding a concave island and removes internal old shores', () => {
     const game = ringGame(); place(game, 5, 10);
     game.move('left', true, 2); game.move('down', true, 10); game.move('right', true, 5); game.move('up', true, 4);
     expect(game.claimed).toBe(88); expect(game.isBoundary(6, 16)).toBe(false); expect(game.isBoundary(3, 15)).toBe(true);
-    expect(game.isBoundary(1, 10)).toBe(false); place(game, 3, 15); game.move('left', true, 3);
-    game.move('right', false, 1.5); game.move('up', true, 15); expect(game.claimed).toBe(110.5);
+    expect(game.isBoundary(1, 10)).toBe(false); place(game, 3, 15); game.move('left', true, 1);
+    game.move('up', true, 10); game.move('right', true, 6); game.move('down', true, 3);
+    expect(game.claimed).toBe(117); expect(game.isBoundary(3, 12)).toBe(false); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
   });
   it('damages and relocates a boss enclosed next to the starting hole', () => {
     const game = new Game(40, 40, { opening: true, boss: createEnemy('boss', { x: 20, y: 20 }, { x: 0, y: 0 }), enemies: [createEnemy('orbit', { x: 3, y: 30 }, { x: 0, y: 0 })], random: seeded(), victory: { territoryPercent: 100 } });
@@ -172,20 +185,38 @@ describe('continuous territory around the starting hole', () => {
     game.update(1); expect(game.bossJump).toBeUndefined();
     expect(safeLanding(game.boss!, game.territories, game.boss!, game.enemies, game.player, [])).toBe(true); expect(game.lives).toBe(3);
   });
-  it('preserves exact coverage when cutting either bank of a slit in all four bridge directions', () => {
-    for (const [start, dir, length] of [[{ x: 5, y: 12 }, 'left', 5], [{ x: 12, y: 12 }, 'right', 28], [{ x: 8, y: 8 }, 'up', 8], [{ x: 8, y: 16 }, 'down', 24]] as const) {
-      const game = ringGame(); place(game, start.x, start.y); game.move(dir, true, length);
-      const region = game.territories[0], mid = { x: (start.x + game.player.x) / 2, y: (start.y + game.player.y) / 2 };
-      const ends = dir === 'left' || dir === 'right' ? [{ x: mid.x, y: 0 }, { x: mid.x, y: 40 }] : [{ x: 0, y: mid.y }, { x: 40, y: mid.y }];
-      for (const end of ends) {
-        const parts = partitionRegion(region, [mid, end]); expect(parts).toHaveLength(2);
-        expect(parts.reduce((sum, p) => sum + area(p), 0)).toBeCloseTo(area(region), 8);
-        for (let x = 1.1; x < 40; x += 2) for (let y = 1.3; y < 40; y += 2) {
-          const p = { x, y }; if (parts.some(part => wallEdges(part).some(([a, b]) => distance(p, a, b) < 1e-7))) continue;
-          expect(parts.filter(part => inside(p, part)).length).toBe(Number(inside(p, region)));
-        }
-      }
+  it('traces two frame sides and a corner, but only claims on returning to the island', () => {
+    const game = ringGame(); place(game, 8, 8);
+    game.move('up', true, 100); game.move('right', true, 100); game.move('down', true, 20); game.move('left', true, 28);
+    expect(game.claimed).toBe(56); expect(game.score).toBe(0); expect(game.trail.length).toBeGreaterThan(1);
+    game.move('up', true, 4); expect(game.claimed).toBe(648); expect(game.lastCapture.map(area)).toEqual([592]);
+    expect(game.captured.reduce((n, p) => n + area(p), 0) + game.territories.reduce((n, p) => n + area(p), 0)).toBe(1600);
+    for (let x = 0.7; x < 40; x += 2) for (let y = 0.9; y < 40; y += 2) {
+      const point = { x, y }, regions = [...game.captured, ...game.territories];
+      if (regions.some(p => wallEdges(p).some(([a, b]) => distance(point, a, b) < 1e-7))) continue;
+      expect(regions.filter(p => inside(point, p))).toHaveLength(1);
     }
+    expect(game.isBoundary(20, 0)).toBe(false); expect(game.isBoundary(40, 10)).toBe(false);
+  });
+  it('keeps frame-touching and retracting lines vulnerable to bullets and restores the island anchor on hit', () => {
+    const game = ringGame(); place(game, 8, 8); game.move('up', true, 100);
+    game.beginRetraction(); game.spawnHazard(new Projectile({ x: 8, y: 4 }, { x: 0, y: 0 })); game.update(0.01, undefined, true);
+    expect(game.lives).toBe(2); expect(game.player).toEqual({ x: 8, y: 8 }); expect(game.trail).toHaveLength(0);
+    expect(game.claimed).toBe(56); expect(game.score).toBe(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
+  });
+  it('preserves other water regions and their enemies after the island reaches opposite frame sides', () => {
+    const game = ringGame(), left = createEnemy('straight', { x: 2, y: 25 }, { x: 0, y: 0 }), target = createEnemy('orbit', { x: 14, y: 26 }, { x: 0, y: 0 });
+    game.enemies = [left, target]; place(game, 8, 8);
+    game.move('up', true, 8); game.move('right', true, 4); game.move('down', true, 8);
+    place(game, 8, 16); game.move('down', true, 24); game.move('right', true, 4); game.move('up', true, 24);
+    expect(game.territories).toHaveLength(2); expect(game.claimed).toBe(184);
+    const other = game.territories.find(region => inside(left, region))!; expect(area(other)).toBe(296);
+    const score = game.score; place(game, 12, 24);
+    game.move('right', true, 4); game.move('down', true, 4); game.move('left', true, 4);
+    expect(game.claimed).toBe(200); expect(game.score - score).toBe(720);
+    expect(game.enemies).toEqual([left]); expect(game.lastDefeats.map(body => body.kind)).toEqual(['orbit']);
+    expect(game.territories.find(region => inside(left, region))).toEqual(other);
+    expect(game.isBoundary(10, 0)).toBe(false); expect(game.isBoundary(10, 40)).toBe(false);
   });
   it('sustains final-stage motion around the real hole for two minutes with bounded storage', () => {
     const game = new Game(72, 48, { opening: true, random: seeded(), bossConfig: { phases: [{ ...lakeBossConfig.phases![2], id: '压力测试', when: { healthAtMost: 5 } }] } });

@@ -1,5 +1,5 @@
 export interface Point { x: number; y: number }
-export type Polygon = Point[] & { hole?: { outer: Polygon; interior: Polygon; seam: [Point, Point] } };
+export type Polygon = Point[] & { hole?: { outer: Polygon; interior: Polygon; seam: [Point, Point] }; rings?: Polygon[] };
 export type Partition = Polygon[] & { enclosed?: number };
 export const EPS = 1e-7;
 export const same = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y) < EPS;
@@ -8,6 +8,7 @@ export const edges = (points: Polygon): [Point, Point][] => points.map((p, i) =>
 // That bridge is not a gameplay wall. A player-drawn bridge has no metadata and
 // remains a real, visible wall after connecting the inner and outer loops.
 export function wallEdges(points: Polygon): [Point, Point][] {
+  if (points.rings) return points.rings.flatMap(edges).filter(([a, b]) => !same(a, b));
   const seam = points.hole?.seam;
   return edges(points).filter(([a, b]) => !same(a, b) && (!seam || !onSegment(a, ...seam) || !onSegment(b, ...seam)));
 }

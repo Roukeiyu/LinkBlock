@@ -1,5 +1,6 @@
-import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, withHole, type Point, type Polygon } from './geometry';
+import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, type Point, type Polygon } from './geometry';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
+import { Island } from './island';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
@@ -33,6 +34,7 @@ export class Game {
   readonly outline: Polygon;
   territories: Polygon[];
   private cutRegion = -1;
+  private island: Island | undefined;
   private boundaryRelocated = false;
   private resumePhase: 'playing' | 'opening' = 'playing';
   opening: Opening | undefined;
@@ -93,7 +95,7 @@ export class Game {
   get reinforcementTarget() { return this.reinforcementRule?.targetCount; }
   // Rendering and walking use the same current perimeter. The immutable arena
   // outline still defines size/score but never keeps an already claimed edge alive.
-  get boundarySegments() { return this.territories.flatMap(wallEdges); }
+  get boundarySegments() { return this.island ? this.island.coast : this.options.opening ? [] : this.territories.flatMap(wallEdges); }
   isBoundary(x: number, y: number) {
     return this.boundarySegments.some(([a, b]) => onSegment({ x, y }, a, b));
   }
@@ -101,15 +103,16 @@ export class Game {
     if (this.phase !== 'ready') return;
     if (this.options.opening) {
       const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined);
-      if (region) { this.opening = { region, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return; }
-      this.spawnActors();
+      const side = Math.min(this.width, this.height) * 0.08;
+      const starting = region ?? [{ x: 0.5, y: 0.5 }, { x: 0.5 + side, y: 0.5 }, { x: 0.5 + side, y: 0.5 + side }, { x: 0.5, y: 0.5 + side }];
+      this.opening = { region: starting, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return;
     }
     this.phase = 'playing'; this.events.push('start');
   }
   confirmOpening() {
     if (this.phase !== 'opening' || !this.opening) return false;
     const region = this.opening.region;
-    this.territories = [withHole(this.outline, region)]; this.captured = [region];
+    this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region];
     this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
     this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.checkWin(); return true;
   }
@@ -153,21 +156,23 @@ export class Game {
     // Reversing would retrace the live line.
     if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) return false;
     let wall = Infinity;
-    for (const [a, b] of wallEdges(this.territories[this.cutRegion])) wall = Math.min(wall, rayDistance(p, v, a, b));
-    const travel = Math.min(amount, wall);
+    for (const [a, b] of (this.island ? this.boundarySegments : wallEdges(this.territories[this.cutRegion]))) wall = Math.min(wall, rayDistance(p, v, a, b));
+    const arenaReach = v.x > 0 ? this.width - p.x : v.x < 0 ? p.x : v.y > 0 ? this.height - p.y : p.y;
+    const travel = Math.min(amount, wall, Math.max(0, arenaReach));
+    const next = { x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) };
     // A live line may neither cross nor touch itself, including at a corner.
     for (let i = 0; i < this.trail.length - 1; i++) {
       const a = this.trail[i], b = this.trail[i + 1];
       if (onSegment(p, a, b)) continue;
-      if (rayDistance(p, v, a, b) <= travel + EPS) return false;
+      if (rayDistance(p, v, a, b) <= travel + EPS
+        && !(this.island && i === 0 && same(next, this.anchor) && !onSegment(b, p, next))) return false;
     }
     if (travel <= EPS) return false;
-    const next = { x: p.x + v.x * travel, y: p.y + v.y * travel };
     this.trail = simplify([...this.trail, next]);
     this.player = next;
     const bodyHit = this.collidesWithTrail(), attackHit = this.hazardsHit(p, next);
     if (bodyHit || attackHit) { this.hit(); return false; }
-    if (wall <= amount + EPS) { this.capture(); return true; }
+    if (wall <= travel + EPS) { this.capture(); return true; }
     return false;
   }
   beginRetraction() {
@@ -192,29 +197,39 @@ export class Game {
     return true;
   }
   private capture() {
-    const parts = partitionRegion(this.territories[this.cutRegion], this.trail);
-    if (parts.length === 1) {
-      this.territories.splice(this.cutRegion, 1, parts[0]);
-      this.score += Math.round(this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0) * 5);
-      this.cutRegion = -1; this.trail = []; this.anchor = { ...this.player };
-      this.lastCapture = []; this.lastDefeats = []; this.events.push('partition'); return;
+    let bossEnclosed = false;
+    let remaining: Polygon[] = [];
+    if (this.island) {
+      let captured: Polygon[] | undefined;
+      try { captured = this.island.close(this.trail, this.territories[this.cutRegion]); } catch { /* Keep the path recoverable if a degenerate loop cannot be resolved. */ }
+      if (!captured) { this.beginRetraction(); return; }
+      this.lastCapture = captured; this.territories = this.island.regions;
+      bossEnclosed = Boolean(this.boss && captured.some(region => inside(this.boss!, region)));
+    } else {
+      const parts = partitionRegion(this.territories[this.cutRegion], this.trail);
+      if (parts.length === 1) {
+        this.territories.splice(this.cutRegion, 1, parts[0]);
+        this.score += Math.round(this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0) * 5);
+        this.cutRegion = -1; this.trail = []; this.anchor = { ...this.player };
+        this.lastCapture = []; this.lastDefeats = []; this.events.push('partition'); return;
+      }
+      const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
+      const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
+      const difference = area(parts[0]) - area(parts[1]);
+      // An explicit return loop owns its interior, even when that is the larger
+      // face. Through-cuts retain the existing smaller-side/equal-split rule;
+      // an empty exterior never expands an explicit loop beyond what was drawn.
+      const pocket = parts.enclosed ?? (Math.abs(difference) <= EPS ? -1 : difference < 0 ? 0 : 1);
+      bossEnclosed = Boolean(this.boss && pocket >= 0 && inside(this.boss, parts[pocket as 0 | 1]));
+      const keepRoomForLanding = bossEnclosed && (this.bossJump || this.bossHealth > 1);
+      this.lastCapture = parts.filter((_, i) => i === pocket || (parts.enclosed === undefined && !keepRoomForLanding && !occupants[i].length));
+      remaining = parts.filter(part => !this.lastCapture.includes(part));
     }
-    const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
-    const difference = area(parts[0]) - area(parts[1]);
-    // An explicit return loop owns its interior, even when that is the larger
-    // face. Through-cuts retain the existing smaller-side/equal-split rule;
-    // an empty exterior never expands an explicit loop beyond what was drawn.
-    const pocket = parts.enclosed ?? (Math.abs(difference) <= EPS ? -1 : difference < 0 ? 0 : 1);
-    const bossEnclosed = Boolean(this.boss && pocket >= 0 && inside(this.boss, parts[pocket as 0 | 1]));
-    const keepRoomForLanding = bossEnclosed && (this.bossJump || this.bossHealth > 1);
-    this.lastCapture = parts.filter((_, i) => i === pocket || (parts.enclosed === undefined && !keepRoomForLanding && !occupants[i].length));
-    const remaining = parts.filter(part => !this.lastCapture.includes(part));
     const defeated = new Set(this.enemies.filter(body => this.lastCapture.some(part => inside(body, part))));
     this.lastDefeats = [...defeated].map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));
     this.enemies = this.enemies.filter(enemy => !defeated.has(enemy));
     const length = this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0);
-    this.territories.splice(this.cutRegion, 1, ...remaining);
+    if (!this.island) this.territories.splice(this.cutRegion, 1, ...remaining);
     this.cutRegion = -1;
     this.captured.push(...this.lastCapture);
     this.trail = [];

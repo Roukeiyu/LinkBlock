@@ -34,19 +34,23 @@ async function encloseRoster(page: Page) {
   await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space'); await page.clock.runFor(250);
 }
 test.beforeEach(async ({ page }, info) => {
-  const randomOpening = info.title.includes('random opening');
-  if ((randomOpening || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
+  const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
+  if ((randomOpening || islandPlay || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   const phasePreview = /configured phase ([23])/.exec(info.title)?.[1];
-  const controlled = randomOpening || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X') || info.title.includes('enclosed image');
+  const controlled = randomOpening || islandPlay || info.title.includes('boss damage jump') || info.title.includes('enclosing a normal') || Boolean(phasePreview) || info.title.includes('cross and X') || info.title.includes('enclosed image');
   if (!randomOpening) {
     // Fixed scene fixtures keep input/capture/effect regressions independent of
     // random hazards. Dedicated opening tests below use the unchanged real app.
     await page.route('**/src/engine.ts', async route => {
       const response = await route.fetch();
-      let body = (await response.text())
-        .replace('options.opening ?? false', 'false').replace('if (this.options.opening)', 'if (false)')
-        .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })")
-        .replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
+      let body = await response.text();
+      if (islandPlay) body = body
+        .replace('const region = this.opening.region;', 'const region = [{x:18,y:18},{x:30,y:18},{x:30,y:30},{x:18,y:30}];')
+        .replace('this.player = openingSpawn(region, this.random);', 'this.player = {x:24,y:18};')
+        .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)');
+      else body = body.replace('options.opening ?? false', 'false').replaceAll('this.options.opening', 'false')
+        .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })");
+      body = body.replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
       body += "\nfunction fixtureEnemies(width, height) { return ['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width*x, y: height*[0.25,0.51,0.76][row] }))); }";
       if (info.title.includes('enclosed image')) body = body
         .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
@@ -591,6 +595,55 @@ for (const phone of [false, true]) test(`enclosed image reveals a large loop and
   expect(await worldPixel(page, 30, 46)).toEqual([14, 32, 43]);
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await page.screenshot({ path: `test-results/enclosed-image-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
+for (const phone of [false, true]) test(`island coast is the only shore, frame contact retracts and consecutive island loops reveal images on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.keyboard.press('Space'); await page.clock.runFor(32);
+  const initial = Number(await page.locator('.progress-track').getAttribute('aria-valuenow'));
+  expect(initial).toBeCloseTo(144 / (72 * 48) * 100);
+  expect((await probe(page)).boundary.every(p => p.x >= 18 && p.x <= 30 && p.y >= 18 && p.y <= 30)).toBe(true);
+  expect(await worldPixel(page, 26, 22)).not.toEqual([14, 32, 43]);
+  let session: Awaited<ReturnType<ReturnType<typeof page.context>['newCDPSession']>> | undefined;
+  if (phone) {
+    session = await page.context().newCDPSession(page);
+    const up = (await page.locator('[data-dir=up]').boundingBox())!, action = (await page.locator('#touch-draw').boundingBox())!;
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [
+      { id: 1, x: up.x + up.width / 2, y: up.y + up.height / 2 }, { id: 2, x: action.x + action.width / 2, y: action.y + action.height / 2 },
+    ] });
+  } else { await page.keyboard.down('Space'); await page.keyboard.down('ArrowUp'); }
+  await page.clock.runFor(1000);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 0 }); expect((await probe(page)).trail.length).toBeGreaterThan(1);
+  await page.clock.runFor(500); expect((await probe(page)).player).toEqual({ x: 24, y: 0 });
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(initial, 8);
+  await expect(page.locator('#score')).toHaveText('000000');
+  await page.screenshot({ path: `test-results/island-frame-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+  if (session) { await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await session.detach(); }
+  else { await page.keyboard.up('ArrowUp'); await page.keyboard.up('Space'); }
+  await page.clock.runFor(400);
+  expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0);
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 10);
+  const top = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowRight', p => p.x >= 28); const right = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  const first = initial + (right - 24) * (18 - top) / (72 * 48) * 100;
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(first, 7);
+  expect(await worldPixel(page, 26, 14)).not.toEqual([14, 32, 43]);
+  const before = (await probe(page)).player; await page.keyboard.down('ArrowLeft'); await page.clock.runFor(100); await page.keyboard.up('ArrowLeft');
+  expect((await probe(page)).player).toEqual(before); // Removed old shore inside the enlarged island.
+  await moveClock(page, 'ArrowRight', p => Math.abs(p.x - 30) < 1e-6);
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowRight', p => p.x >= 34); const end = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowUp', p => p.y <= 14); const y = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowLeft', p => Math.abs(p.x - right) < 1e-6); await page.keyboard.up('Space');
+  await page.clock.runFor(1300);
+  const total = first + (end - right) * (18 - y) / (72 * 48) * 100;
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(total, 7);
+  expect(await worldPixel(page, 32, 16)).not.toEqual([14, 32, 43]);
+  expect(await worldPixel(page, 60, 4)).toEqual([14, 32, 43]);
+  await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '5'); expect(errors).toEqual([]);
+  await page.screenshot({ path: `test-results/island-growth-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
 });
 
 test('pause, sound, restart and background pause', async ({ page }) => {
