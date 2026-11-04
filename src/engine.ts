@@ -123,10 +123,11 @@ export class Game {
   // Distance is continuous world-space distance, never a cell count.
   move(direction: Direction, drawing: boolean, amount: number) {
     if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
-    const v = vectors[direction], p = this.player;
+    const v = vectors[direction]; let p = this.player;
     if (this.trail.length && !drawing) return false;
     if (!this.trail.length) {
       if (!this.isBoundary(p.x, p.y)) return false;
+      if (this.island) p = this.player = this.island.project(p)!;
       // Merge touching collinear edges so a capture junction never causes a hitch.
       let reach = 0;
       const segments = this.boundarySegments;
@@ -142,11 +143,21 @@ export class Game {
       }
       if (reach > EPS) {
         const travel = Math.min(amount, reach);
-        this.player = { x: p.x + v.x * travel, y: p.y + v.y * travel };
+        const next = { x: p.x + v.x * travel, y: p.y + v.y * travel };
+        this.player = this.island?.project(next) ?? next;
         return false;
       }
       if (!drawing || this.protection > 0) return false;
-      this.cutRegion = this.territories.findIndex(region => inside({ x: p.x + v.x * 1e-5, y: p.y + v.y * 1e-5 }, region));
+      const entry = { x: p.x + v.x * 1e-5, y: p.y + v.y * 1e-5 };
+      if (this.island) {
+        if (entry.x < 0 || entry.x > this.width || entry.y < 0 || entry.y > this.height) return false;
+        // A tangent departure from a true shore may run along the arena limit.
+        // Probe just inside the arena to find its water region; this does not
+        // make bare frame walkable or move the player's actual line inward.
+        entry.x = Math.max(1e-5, Math.min(this.width - 1e-5, entry.x));
+        entry.y = Math.max(1e-5, Math.min(this.height - 1e-5, entry.y));
+      }
+      this.cutRegion = this.territories.findIndex(region => inside(entry, region));
       if (this.cutRegion < 0) return false;
       this.anchor = { ...p };
       this.trail = [{ ...p }];
@@ -159,7 +170,8 @@ export class Game {
     for (const [a, b] of (this.island ? this.boundarySegments : wallEdges(this.territories[this.cutRegion]))) wall = Math.min(wall, rayDistance(p, v, a, b));
     const arenaReach = v.x > 0 ? this.width - p.x : v.x < 0 ? p.x : v.y > 0 ? this.height - p.y : p.y;
     const travel = Math.min(amount, wall, Math.max(0, arenaReach));
-    const next = { x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) };
+    let next = { x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) };
+    if (this.island && wall <= travel + EPS) next = this.island.project(next) ?? next;
     // A live line may neither cross nor touch itself, including at a corner.
     for (let i = 0; i < this.trail.length - 1; i++) {
       const a = this.trail[i], b = this.trail[i + 1];

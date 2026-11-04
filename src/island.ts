@@ -1,5 +1,5 @@
 import clipping, { type MultiPolygon, type Ring } from 'polygon-clipping';
-import { area, edges, EPS, onSegment, same, signedArea, simplify, split, wallEdges, type Point, type Polygon } from './geometry';
+import { area, closestPoint, edges, EPS, onSegment, same, signedArea, simplify, split, wallEdges, type Point, type Polygon } from './geometry';
 
 const ring = (points: Polygon): Ring => points.map(p => [p.x, p.y]);
 const { difference, intersection, union } = clipping;
@@ -33,10 +33,18 @@ export class Island {
     const coast = islandPolygons(land).flatMap(wallEdges);
     this.land = land; this.regions = regions; this.coast = coast;
   }
+  project(point: Point): Point | undefined {
+    // Contact tolerance must not create a second, slightly displaced shore.
+    // Project to the actual continuous edge/vertex; never to a coordinate grid.
+    const candidates = this.coast.filter(([a, b]) => onSegment(point, a, b)).map(([a, b]) =>
+      same(point, a) ? { ...a } : same(point, b) ? { ...b } : closestPoint(point, a, b));
+    return candidates.sort((a, b) => Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y))[0];
+  }
   close(trail: Polygon, water?: Polygon): Polygon[] | undefined {
     if (trail.length < 2) return undefined;
-    const start = trail[0], end = trail.at(-1)!;
-    if (![start, end].every(p => this.coast.some(([a, b]) => onSegment(p, a, b)))) return undefined;
+    const start = this.project(trail[0]), end = this.project(trail.at(-1)!);
+    if (!start || !end) return undefined;
+    trail = [{ ...start }, ...trail.slice(1, -1), { ...end }];
     const loops: Polygon[] = [];
     if (same(start, end)) loops.push(simplify(trail, true));
     else for (const polygon of this.land) for (const source of polygon) {

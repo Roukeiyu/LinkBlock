@@ -52,6 +52,12 @@ test.beforeEach(async ({ page }, info) => {
         .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })");
       body = body.replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
       body += "\nfunction fixtureEnemies(width, height) { return ['straight', 'orbit', 'zigzag'].flatMap((kind, row) => [0.58, 0.73, 0.88].map(x => createEnemy(kind, { x: width*x, y: height*[0.25,0.51,0.76][row] }))); }";
+      if (info.title.includes('internal seam')) {
+        // Reproduce a sub-tolerance contact with the real geometry. Browser
+        // frame timing cannot reliably land within 2.5e-8 world units of shore.
+        body += '\nconst confirmForSeam = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForSeam.call(this); if (selected) { this.player={x:30,y:22}; this.anchor={...this.player}; this.move("right",true,4); this.move("down",true,4); this.move("left",true,4-2.5e-8); } return selected; };';
+      }
+      if (info.title.includes('frame departure')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
       if (info.title.includes('enclosed image')) body = body
         .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
         .replace('this.boss = options.boss === null ?', 'this.boss = true ?');
@@ -692,6 +698,59 @@ for (const phone of [false, true]) test(`island coast stays visible and walkable
   expect((await worldPixel(page, 26, 0))[1]).toBeGreaterThan(180);
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await page.screenshot({ path: `test-results/continuous-frame-shore-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
+for (const phone of [false, true]) test(`island coast has no internal seam after near-shore closure on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  await page.keyboard.press('Space'); await page.clock.runFor(1400);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(160 / (72 * 48) * 100, 8);
+  const internal = (await probe(page)).boundary.some((a, i, points) => i % 2 === 0 && a.x === 30 && points[i + 1].x === 30 && Math.min(a.y, points[i + 1].y) < 24 && Math.max(a.y, points[i + 1].y) > 24);
+  expect(internal).toBe(false); expect((await worldPixel(page, 30, 24))[1]).toBeLessThan(140);
+  expect((await worldPixel(page, 34, 24))[1]).toBeGreaterThan(150);
+  const before = (await probe(page)).player;
+  await page.keyboard.down('ArrowUp'); await page.clock.runFor(150); await page.keyboard.up('ArrowUp');
+  expect((await probe(page)).player).toEqual(before);
+  await page.keyboard.down('Space'); await page.keyboard.down('ArrowUp'); await page.clock.runFor(150);
+  await page.keyboard.up('ArrowUp'); await page.keyboard.up('Space');
+  expect((await probe(page)).player).toEqual(before); expect((await probe(page)).trail).toHaveLength(0);
+  await page.screenshot({ path: `test-results/no-internal-shore-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
+});
+
+for (const input of ['keyboard', 'mouse', 'touch']) test(`island coast permits frame departure and retraction with ${input}${input === 'keyboard' ? '' : ' on phone'}`, async ({ page }) => {
+  await page.keyboard.press('Space'); await page.clock.runFor(32);
+  await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6);
+  await moveClock(page, 'ArrowRight', p => p.x >= 28); const right = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6); await page.keyboard.up('Space'); await page.clock.runFor(1300);
+  await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6);
+  const progress = await page.locator('#percent').textContent(), score = await page.locator('#score').textContent();
+  const claimedBefore = Number(await page.locator('.progress-track').getAttribute('aria-valuenow'));
+  let session: Awaited<ReturnType<ReturnType<typeof page.context>['newCDPSession']>> | undefined;
+  if (input === 'touch') {
+    session = await page.context().newCDPSession(page);
+    const dir = (await page.locator('[data-dir=right]').boundingBox())!, action = (await page.locator('#touch-draw').boundingBox())!;
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [
+      { id: 1, x: dir.x + dir.width / 2, y: dir.y + dir.height / 2 }, { id: 2, x: action.x + action.width / 2, y: action.y + action.height / 2 },
+    ] });
+  } else {
+    if (input === 'mouse') { const box = (await page.locator('#touch-draw').boundingBox())!; await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); }
+    else await page.keyboard.down('Space');
+    await page.keyboard.down('ArrowRight');
+  }
+  await page.clock.runFor(100);
+  expect((await probe(page)).player.x).toBeGreaterThan(right + 1); expect((await probe(page)).player.y).toBe(0);
+  expect((await probe(page)).trail.length).toBeGreaterThan(1);
+  await expect(page.locator('#percent')).toHaveText(progress!); await expect(page.locator('#score')).toHaveText(score!);
+  if (session) { await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await session.detach(); }
+  else { await page.keyboard.up('ArrowRight'); if (input === 'mouse') await page.mouse.up(); else await page.keyboard.up('Space'); }
+  await page.clock.runFor(400); expect((await probe(page)).player).toEqual({ x: right, y: 0 }); expect((await probe(page)).trail).toHaveLength(0);
+  await page.locator('#board').focus(); await page.keyboard.down('Space');
+  await moveClock(page, 'ArrowRight', p => p.x >= right + 4); const x = (await probe(page)).player.x;
+  await moveClock(page, 'ArrowDown', p => p.y >= 4); const y = (await probe(page)).player.y;
+  await moveClock(page, 'ArrowLeft', p => Math.abs(p.x - right) < 1e-6); await page.keyboard.up('Space'); await page.clock.runFor(1300);
+  expect((await probe(page)).trail).toHaveLength(0);
+  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(claimedBefore + (x - right) * y / (72 * 48) * 100, 7);
+  const ghost = (await probe(page)).boundary.some((a, i, points) => i % 2 === 0 && a.x === right && points[i + 1].x === right && Math.min(a.y, points[i + 1].y) < 2 && Math.max(a.y, points[i + 1].y) > 2);
+  expect(ghost).toBe(false); await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
+  await page.screenshot({ path: `test-results/frame-departure-${input}.png`, fullPage: true });
 });
 
 test('pause, sound, restart and background pause', async ({ page }) => {

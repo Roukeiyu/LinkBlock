@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Island, islandPolygons } from './island';
-import { area, inside, wallEdges, type Polygon } from './geometry';
+import { area, distance, inside, wallEdges, type Polygon } from './geometry';
 import { Game, type Direction } from './engine';
 
 const frame: Polygon = [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 40 }, { x: 0, y: 40 }];
@@ -46,6 +46,13 @@ describe('continuous island geometry', () => {
         expect(game.trail).toHaveLength(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
         expect(game.captured.reduce((n, p) => n + area(p), 0)).toBeCloseTo(game.claimed, 7);
         expect(game.territories.reduce((n, p) => n + area(p), 0) + game.claimed).toBeCloseTo(1600, 7);
+        for (const [a, b] of game.boundarySegments) {
+          const length = Math.hypot(b.x - a.x, b.y - a.y); if (length < 1e-5) continue;
+          const midpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, offset = 1e-5;
+          const samples = [-1, 1].map(side => ({ x: midpoint.x + side * (b.y - a.y) / length * offset, y: midpoint.y - side * (b.x - a.x) / length * offset }));
+          if (samples.some(p => game.captured.some(region => wallEdges(region).some(([c, d]) => distance(p, c, d) < 1e-7)))) continue;
+          expect(samples.map(p => game.captured.some(region => inside(p, region))).filter(Boolean), `internal coast seed=${seed}, step=${i}, edge=${JSON.stringify([a,b])}`).toHaveLength(1);
+        }
       }
     }
   });
