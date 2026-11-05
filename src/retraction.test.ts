@@ -177,14 +177,31 @@ describe('directional trail backtracking while drawing is held', () => {
     expect(game.claimed).toBe(112); expect(game.score).toBe(score);
   });
 
-  it('rewinds un-erased older segments instead of crossing them, until a fresh draw press', () => {
+  it('rewinds a self-touch to the stroke start, then draws again in the held direction', () => {
     const { game, move } = bent(); move('up', 1); const tip = { ...game.player };
     move('left', 10); expect(game.player).toEqual(tip); expect(game.retracting).toBe(true);
     expect(game.claimed).toBe(64); expect(game.score).toBe(0);
-    game.update(0.5, 'down', true); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
-    game.update(0.05, 'right', true); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
-    game.resumeDrawing(); game.update(0.05, 'up', true);
-    expect(game.retracting).toBe(false); expect(game.player.y).toBeCloseTo(game.anchor.y - PLAYER_SPEED * 0.05, 8);
+    const start = { ...game.anchor };
+    game.update(0.5, 'up', true);
+    expect(game.retracting).toBe(false); expect(game.player.x).toBeCloseTo(start.x, 5);
+    expect(game.player.y).toBeLessThan(start.y); expect(game.trail.length).toBeGreaterThan(1);
+    expect(game.trail[0]).toEqual(start); expect(game.claimed).toBe(64);
+  });
+  it('waits at the stroke start when no direction is held, then leaves without another draw press', () => {
+    const { game, move } = bent(); move('left', 10); expect(game.retracting).toBe(true);
+    game.update(0.5); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
+    game.update(0.05, 'up', true);
+    expect(game.player.y).toBeLessThan(game.anchor.y); expect(game.trail[0]).toEqual(game.anchor); expect(game.retracting).toBe(false);
+  });
+  it('respawns at the live stroke start after walking away from the previous anchor', () => {
+    const { game, move } = fixture();
+    const spawn = { ...game.anchor };
+    move('right', 4); expect(game.trail).toHaveLength(0); expect(game.player.x).toBeGreaterThan(spawn.x);
+    const started = { ...game.player };
+    move('up', 5); expect(game.trail[0]).toEqual(started); expect(started).not.toEqual(spawn);
+    game.enemies.push(createEnemy('straight', { x: started.x, y: started.y - 2 }, { x: 0, y: 0 }));
+    game.protection = 0; game.update(0.05, undefined, true);
+    expect(game.lives).toBe(2); expect(game.player).toEqual(started); expect(game.trail).toHaveLength(0);
   });
 
   it.each(['straight', 'boss', 'projectile'] as const)('keeps the remaining path vulnerable to %s and deducts one life', kind => {

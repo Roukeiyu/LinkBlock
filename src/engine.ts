@@ -371,8 +371,12 @@ export class Game {
     return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= body.radius + 0.12));
   }
   private hit() {
+    // The live stroke starts at trail[0]. Anchor can still be an older shore
+    // point until that stroke is created, so a death uses the stroke itself.
+    const home = this.trail.length ? { ...this.trail[0] } : { ...this.anchor };
     this.shoreStep = undefined;
-    this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
+    this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false;
+    this.player = home; this.anchor = { ...home }; this.lives--; this.protection = 1.5;
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
   }
@@ -424,8 +428,15 @@ export class Game {
       if (!gestureEnded) {
         this.playerPath = [playerBefore];
         let boundaryChanged = false;
-        if (this.retracting) gestureEnded = this.retract(RETRACT_SPEED * dt);
-        else if (direction) {
+        if (this.retracting) {
+          const finished = this.retract(RETRACT_SPEED * dt);
+          // Back at the stroke's start. A direction still held while drawing
+          // leaves immediately; the press that started the rewind does not
+          // have to be repeated. Later substeps of this update perform it.
+          const depart = finished && this.trailRewind && !!direction && drawing;
+          if (finished && this.trailRewind) this.trailRewind = false;
+          gestureEnded = finished && !depart;
+        } else if (direction && !this.trailRewind) {
           let remaining = PLAYER_SPEED * dt;
           const route = [playerBefore];
           for (let pass = 0; pass < 8 && remaining > EPS; pass++) {
