@@ -8,9 +8,11 @@ export interface CaptureEffect {
   update(seconds: number): void;
   render(context: CanvasRenderingContext2D): void;
 }
+
 export interface GameTheme {
   id: string;
   landscape: string;
+  ruinedLandscape?: string;
   danger: string;
   arenaBorder: string;
   boundary: string;
@@ -19,25 +21,23 @@ export interface GameTheme {
   bossConfig?: BossConfig;
   createBossHitEffect?(hit: BossHitVisual, reducedMotion: boolean): CaptureEffect;
   createDefeatEffect?(enemy: DefeatedEnemy, reducedMotion: boolean): CaptureEffect;
-  createCaptureEffect(region: Polygon, reducedMotion: boolean): CaptureEffect;
+  createCaptureEffect?(region: Polygon, reducedMotion: boolean): CaptureEffect;
 }
+
 export function polygonPath(ctx: CanvasRenderingContext2D, polygon: Polygon) {
   ctx.beginPath();
   polygon.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
   ctx.closePath();
 }
 
-// The theme owns the entire effect, so future themes can replace its particles,
-// palette and timing without changing input, capture rules, or the game loop.
 export function lakeDissolve(region: Polygon, reducedMotion: boolean, random = Math.random): CaptureEffect {
   const minX = Math.min(...region.map(p => p.x)), maxX = Math.max(...region.map(p => p.x));
   const minY = Math.min(...region.map(p => p.y)), maxY = Math.max(...region.map(p => p.y));
-  const particles: { x: number; y: number; vx: number; vy: number; size: number; phase: number }[] = [];
+  const particles: { x: number; y: number; vx: number; vy: number; size: number; phase: number; warm: boolean }[] = [];
   const count = reducedMotion ? 0 : Math.min(180, Math.max(16, Math.round(area(region) / 8)));
-  // Bounded rejection sampling works for concave and very thin regions too.
   for (let attempt = 0; attempt < count * 30 && particles.length < count; attempt++) {
     const x = minX + random() * (maxX - minX), y = minY + random() * (maxY - minY);
-    if (inside({ x, y }, region)) particles.push({ x, y, vx: (random() - 0.5) * 1.8, vy: -0.8 - random() * 1.7, size: 0.05 + random() * 0.12, phase: random() * Math.PI * 2 });
+    if (inside({ x, y }, region)) particles.push({ x, y, vx: (random() - 0.5) * 1.8, vy: -0.9 - random() * 1.9, size: 0.06 + random() * 0.13, phase: random() * Math.PI * 2, warm: random() > 0.45 });
   }
   let age = 0;
   return {
@@ -45,25 +45,28 @@ export function lakeDissolve(region: Polygon, reducedMotion: boolean, random = M
     update(seconds) { age += seconds; },
     render(ctx) {
       ctx.save();
-      const white = Math.max(0, 1 - age / (reducedMotion ? 0.24 : 0.23));
+      const white = Math.max(0, 1 - age / (reducedMotion ? 0.24 : 0.26));
       if (white > 0) {
-        ctx.globalAlpha = white * (reducedMotion ? 0.28 : 0.96);
-        ctx.fillStyle = '#ffffff'; polygonPath(ctx, region); ctx.fill();
+        ctx.globalAlpha = white * (reducedMotion ? 0.28 : 0.88);
+        ctx.fillStyle = '#d9fff1'; polygonPath(ctx, region); ctx.fill();
+        ctx.strokeStyle = '#ffe799'; ctx.lineWidth = 0.16; ctx.stroke();
       }
-      if (age > 0.08 && !reducedMotion) {
-        const progress = Math.min(1, (age - 0.08) / 1.02);
+      if (age > 0.06 && !reducedMotion) {
+        const progress = Math.min(1, (age - 0.06) / 1.04);
         ctx.globalAlpha = Math.sin(Math.PI * progress) * (1 - progress);
-        ctx.fillStyle = '#d9fff1'; ctx.shadowColor = '#79edc9'; ctx.shadowBlur = 8;
+        ctx.shadowColor = '#79edc9'; ctx.shadowBlur = 9;
         for (const p of particles) {
+          ctx.fillStyle = p.warm ? '#ffe799' : '#b8ffdf';
           const x = p.x + p.vx * progress + Math.sin(p.phase + progress * 5) * 0.28;
           const y = p.y + p.vy * progress;
-          ctx.beginPath(); ctx.ellipse(x, y, p.size * (1 - progress * 0.6), p.size * 0.55, -0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x, y, p.size * (1 - progress * 0.55), p.size * 0.6, -0.5, 0, Math.PI * 2); ctx.fill();
         }
       }
       ctx.restore();
     },
   };
 }
+
 export function enemyCelebration(enemy: DefeatedEnemy, reducedMotion: boolean, random = Math.random): CaptureEffect {
   const { x, y, kind, points } = enemy;
   const color = ENEMY_STYLES[kind].color;
@@ -111,13 +114,13 @@ export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): Captur
       ctx.strokeStyle = '#ffa56e'; ctx.lineWidth = 0.14;
       ctx.beginPath(); ctx.arc(0, 0, reducedMotion ? 1.4 : 1 + age * 4, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = '#ffd7b9'; ctx.font = '1.4px system-ui, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(`−1 HP · +${hit.points}`, 0, -1.8); ctx.restore();
+      ctx.fillText(`-1 HP · +${hit.points}`, 0, -1.8); ctx.restore();
     },
   };
 }
 
 export const lakeTheme: GameTheme = {
-  id: 'quiet-lake', landscape: 'landscape.svg', danger: '#0e202b', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
+  id: 'quiet-lake', landscape: 'landscape.svg', ruinedLandscape: 'landscape-ruined.svg', danger: '#09131c', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new AlternatingCrossAttack(),
   bossConfig: lakeBossConfig,
 };
