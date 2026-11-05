@@ -1,12 +1,12 @@
 import { jumpPose, type BossJump } from './boss';
 import { ENEMY_STYLES, type Enemy } from './enemies';
 
-export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 8, angleOffset = 0) {
+export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 4, angleOffset = 0) {
   const color = ENEMY_STYLES[enemy.kind].color;
   const r = enemy.visualRadius;
   ctx.save();
   if (!reducedMotion && !jump && enemy.trace.length > 1) {
-    ctx.strokeStyle = color; ctx.globalAlpha = 0.22; ctx.lineWidth = 0.12; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = color; ctx.globalAlpha = 0.26; ctx.lineWidth = 0.14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); enemy.trace.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
   }
   const pose = jump ? jumpPose(jump, reducedMotion) : undefined;
@@ -18,8 +18,8 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
   }
   ctx.globalAlpha = 1; ctx.translate(pose?.x ?? enemy.x, pose?.y ?? enemy.y);
   if (pose) ctx.scale(pose.scale, pose.scale);
-  ctx.shadowColor = color; ctx.shadowBlur = enemy.kind === 'boss' ? 20 : 10;
-  ctx.strokeStyle = color; ctx.fillStyle = hurt > 0 ? '#ffe8d1' : '#14232e'; ctx.lineWidth = 0.1;
+  ctx.shadowColor = color; ctx.shadowBlur = enemy.kind === 'boss' ? 22 : 12;
+  ctx.strokeStyle = color; ctx.fillStyle = hurt > 0 ? '#ffe8d1' : '#101c26'; ctx.lineWidth = 0.1;
   if (enemy.kind === 'boss') {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
@@ -27,7 +27,14 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
       if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
     }
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = i * Math.PI / 3, x = Math.cos(angle) * r * 0.68, y = Math.sin(angle) * r * 0.68;
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    }
+    ctx.closePath(); ctx.stroke();
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, r * 0.36, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff5eb'; ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0; ctx.lineWidth = 0.065;
     ctx.beginPath(); ctx.arc(0, 0, r * 1.27, 0, Math.PI * 2); ctx.stroke();
     if (warning > 0) {
@@ -45,14 +52,17 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
     ctx.scale(r / baseRadius, r / baseRadius);
     if (enemy.kind === 'straight') {
       ctx.rotate(Math.atan2(enemy.vy, enemy.vx));
-      ctx.beginPath(); ctx.moveTo(0.85, 0); ctx.lineTo(-0.5, -0.55); ctx.lineTo(-0.23, 0); ctx.lineTo(-0.5, 0.55); ctx.closePath();
+      ctx.beginPath(); ctx.moveTo(0.88, 0); ctx.lineTo(-0.5, -0.56); ctx.lineTo(-0.22, 0); ctx.lineTo(-0.5, 0.56); ctx.closePath();
     } else if (enemy.kind === 'orbit') {
       ctx.beginPath(); ctx.arc(0, 0, 0.67, 0, Math.PI * 2);
     } else {
       ctx.beginPath(); ctx.moveTo(0, -0.78); ctx.lineTo(0.7, 0); ctx.lineTo(0, 0.78); ctx.lineTo(-0.7, 0); ctx.closePath();
     }
     ctx.fill(); ctx.stroke();
-    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 0.2, 0, Math.PI * 2); ctx.fill();
+    if (enemy.kind === 'orbit') {
+      ctx.beginPath(); ctx.arc(0, 0, 0.42, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 0.22, 0, Math.PI * 2); ctx.fill();
     if (enemy.kind === 'zigzag') {
       ctx.shadowBlur = 0; ctx.beginPath(); ctx.moveTo(-0.3, -0.1); ctx.lineTo(0.1, -0.3); ctx.lineTo(-0.1, 0.3); ctx.lineTo(0.3, 0.1); ctx.stroke();
     }
