@@ -9,6 +9,10 @@ async function worldPixel(page: Page, x: number, y: number) {
     return [...canvas.getContext('2d')!.getImageData(Math.round((canvas.width - 72 * scale) / 2 + p.x * scale), Math.round((canvas.height - 48 * scale) / 2 + p.y * scale), 1, 1).data].slice(0, 3);
   }, { x, y });
 }
+function expectRuined(pixel: number[]) {
+  const luma = 0.2126 * pixel[0] + 0.7152 * pixel[1] + 0.0722 * pixel[2];
+  expect(luma, `ruined plate ${JSON.stringify(pixel)}`).toBeLessThan(150);
+}
 async function moveClock(page: Page, key: string, done: (p: Probe['player']) => boolean) {
   await page.keyboard.down(key);
   for (let i = 0; i < 200 && !done((await probe(page)).player); i++) await page.clock.runFor(16);
@@ -930,7 +934,7 @@ test('closure flashes only the captured region white, dissolves and keeps player
     return { captured: at(394), danger: at(470) };
   }, flash);
   expect(Math.min(...flashPixels.captured)).toBeGreaterThan(230);
-  expect(flashPixels.danger).toEqual([14, 32, 43]);
+  expectRuined(flashPixels.danger);
   await expect.poll(async () => (await probe(page)).particles).toBeGreaterThan(0);
   await expect(page.locator('#percent')).toHaveText('50.0%');
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
@@ -948,14 +952,14 @@ test('closure flashes only the captured region white, dissolves and keeps player
   await page.keyboard.down('Space'); await hold(page, 'ArrowLeft', 100); await page.keyboard.up('Space');
   expect((await probe(page)).player).toEqual(edge);
   // A pixel on the line above the player is mint; equal distances on each side
-  // lie in the revealed landscape and dark field respectively.
+  // lie in the restored forest and the ruined plate respectively.
   const pixels = await page.locator('#board').evaluate((canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext('2d')!;
     const at = (x: number, y: number) => [...ctx.getImageData(x, y, 1, 1).data].slice(0, 3);
     return { line: at(432, 480), danger: at(470, 480), revealed: at(394, 480) };
   });
   expect(pixels.line[1]).toBeGreaterThan(pixels.danger[1] + 80);
-  expect(pixels.danger).toEqual([14, 32, 43]);
+  expectRuined(pixels.danger);
   expect(pixels.revealed).not.toEqual(pixels.danger);
   await page.waitForTimeout(1300); const settled = await probe(page);
   await page.waitForTimeout(120); const later = await probe(page);
@@ -986,8 +990,8 @@ for (const phone of [false, true]) test(`enclosed image reveals a large loop and
   expect(expected).toBeGreaterThan(70);
   expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(expected, 6);
   expect(await worldPixel(page, 30, 20)).not.toEqual([14, 32, 43]);
-  expect(await worldPixel(page, 70, 20)).toEqual([14, 32, 43]);
-  expect(await worldPixel(page, 30, 46)).toEqual([14, 32, 43]);
+  expectRuined(await worldPixel(page, 70, 20));
+  expectRuined(await worldPixel(page, 30, 46));
   expect((await probe(page)).enemyColors).toHaveLength(0);
   // Follow the new perimeter, then grow a second small pocket outward from it.
   await moveClock(page, 'ArrowDown', p => p.y >= bottom - 1e-6);
@@ -1004,7 +1008,7 @@ for (const phone of [false, true]) test(`enclosed image reveals a large loop and
   expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(next, 6);
   expect(await worldPixel(page, 52, 42)).not.toEqual([14, 32, 43]);
   expect(await worldPixel(page, 30, 20)).not.toEqual([14, 32, 43]);
-  expect(await worldPixel(page, 30, 46)).toEqual([14, 32, 43]);
+  expectRuined(await worldPixel(page, 30, 46));
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await page.screenshot({ path: `test-results/enclosed-image-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
 });
@@ -1052,7 +1056,7 @@ for (const phone of [false, true]) test(`island coast is the only shore, frame c
   const total = first + (end - right) * (18 - y) / (72 * 48) * 100;
   expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(total, 7);
   expect(await worldPixel(page, 32, 16)).not.toEqual([14, 32, 43]);
-  expect(await worldPixel(page, 60, 4)).toEqual([14, 32, 43]);
+  expectRuined(await worldPixel(page, 60, 4));
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await expect(page.locator('.boss-health')).toHaveAttribute('aria-valuenow', '5'); expect(errors).toEqual([]);
   await page.screenshot({ path: `test-results/island-growth-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
@@ -1094,7 +1098,7 @@ for (const phone of [false, true]) test(`island coast stays visible and walkable
   expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0);
   expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(areaBefore, 7);
   await expect(page.locator('#score')).toHaveText(scoreBefore!);
-  expect(await worldPixel(page, 50, 0)).toEqual([14, 32, 43]);
+  expectRuined(await worldPixel(page, 50, 0));
   // A second enlargement preserves the same continuous edge at the arena.
   await moveClock(page, 'ArrowLeft', p => p.x <= 22); const x = (await probe(page)).player.x;
   await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 12); const y = (await probe(page)).player.y;

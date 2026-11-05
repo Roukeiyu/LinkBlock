@@ -52,10 +52,10 @@ export class Projectile implements AttackHazard {
   render(ctx: CanvasRenderingContext2D) {
     ctx.save();
     const speed = Math.hypot(this.velocity.x, this.velocity.y) || 1;
-    ctx.strokeStyle = 'rgba(255,162,175,.6)'; ctx.lineWidth = 0.15; ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(168, 214, 156, .55)'; ctx.lineWidth = 0.15; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(this.position.x - this.velocity.x / speed * 0.8, this.position.y - this.velocity.y / speed * 0.8);
     ctx.lineTo(this.position.x, this.position.y); ctx.stroke();
-    ctx.fillStyle = '#ffabb9'; ctx.shadowColor = '#ff727d'; ctx.shadowBlur = 9;
+    ctx.fillStyle = '#d7ffc2'; ctx.shadowColor = '#8dbe6a'; ctx.shadowBlur = 9;
     ctx.beginPath(); ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }

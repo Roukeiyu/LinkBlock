@@ -4,7 +4,7 @@ import { ENEMY_STYLES } from './enemies';
 import { renderEnemy } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
-import { lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
+import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
 
 const icon = (name: string) => {
   const paths: Record<string, string> = {
@@ -22,7 +22,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span></div>
   </header>
   <main>
-    <section class="intro"><div><p class="eyebrow">A LITTLE COURAGE. A NEW TERRITORY.</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">越过边界，连接起点。让未知的风景，一点点显现。</p></div><div class="chapter"><span>01 / 01</span><p>初见 · 静谧之湖</p></div></section>
+    <section class="intro"><div><p class="eyebrow">A GUARDIAN SPIRIT. A CORRUPTED WOOD.</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">沿岸画线，圈住腐蚀。被净化的林地，会从灰烬里重新亮起来。</p></div><div class="chapter"><span>01 / 01</span><p>初见 · 腐林与守护灵</p></div></section>
     <section class="game-layout" aria-label="LinkBlock 游戏">
       <div class="game-main">
         <div class="hud">
@@ -34,16 +34,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">EXPLORE THE UNKNOWN</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，揭开完整风景。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">PURIFY THE WOOD</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，让腐林重新发芽。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
-        <div class="mobile-game-status"><span>守卫 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
+        <div class="mobile-game-status"><span>蚀根 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
         <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
       <aside>
-        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已揭示小岛的岸线移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>回到小岛岸线，揭开圈内风景。<br>圈住普通访客可击败并得分，<br>圈住守卫可削减一格生命。<br>裸露外框不能靠岸；碰边可转向。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察访客的轨迹</h3><p>敌人会击断未闭合的线。<br>Boss 子弹能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
+        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已揭示小岛的岸线移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>回到小岛岸线，净化圈内腐林。<br>圈住普通腐蚀者可击败并得分，<br>圈住蚀根可削减一格生命。<br>裸露外框不能靠岸；碰边可转向。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察腐蚀者的轨迹</h3><p>腐蚀者会击断未闭合的线。<br>蚀根的孢子能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
         <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="sound" aria-pressed="false">${icon('sound')}<span>音效关闭</span><span class="toggle"></span></button></div>
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
@@ -80,8 +80,14 @@ let joystickPoint: { x: number; y: number } | undefined;
 let joystickOrigin: { x: number; y: number } | undefined;
 const joystickInput = new DragJoystick();
 const joystickKeys = new Set<string>();
-const image = new Image();
-image.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
+const restored = new Image();
+const ruined = new Image();
+restored.decoding = 'async';
+ruined.decoding = 'async';
+restored.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
+if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruinedLandscape}`;
+function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
+syncScene();
 
 function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorType = 'sine') {
   if (!soundEnabled) return;
@@ -104,7 +110,7 @@ function clearInput() {
   syncDirectionButtons();
 }
 function restart() {
-  clearInput(); game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); game.start(); effects.length = 0; hitFlash = 0;
+  clearInput(); game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
   openingFrameAt = performance.now();
   sync(); canvas.focus({ preventScroll: true }); render(performance.now());
@@ -343,7 +349,7 @@ function handleEvent(event: GameEvent) {
   if (typeof event === 'object') {
     if (event.type === 'bossHit') {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
-      notify(`守卫受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `守卫 ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
+      notify(`蚀根受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `蚀根 ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
       const names = event.enemies.map(enemy => ENEMY_STYLES[enemy.kind].name).join('、');
@@ -351,7 +357,7 @@ function handleEvent(event: GameEvent) {
       notify(`圈敌成功 · ${names} +${points}`, `击败${event.enemies.length}敌 · +${points}`); tone(660); tone(990, 0.2, 0.08);
     }
   } else if (event === 'capture') {
-    for (const region of game.lastCapture) effects.push(theme.createCaptureEffect(region, reducedMotion.matches));
+    for (const region of game.lastCapture) effects.push((theme.createCaptureEffect ?? lakeDissolve)(region, reducedMotion.matches));
     notify('连接成功 · 新的领地已揭开', '领地已扩大');
     tone(523); tone(784, 0.18, 0.08);
   } else if (event === 'partition') {
@@ -417,7 +423,7 @@ function sync() {
     $('#overlay-title').textContent = '这片风景，属于你。';
     $('#overlay-copy').textContent = `已占领 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
     $('#primary').innerHTML = `再探索一次 ${icon('reset')}`;
-    $('#overlay-hint').textContent = game.winReason === 'boss' ? '静谧之湖 · 守卫已击败' : '静谧之湖 · 已解锁完整风景';
+    $('#overlay-hint').textContent = game.winReason === 'boss' ? '腐林 · 蚀根已净化' : '腐林 · 已恢复完整风景';
   } else if (game.phase === 'lost') {
     $('#overlay-kicker').textContent = 'EVERY TRY IS A NEW BEGINNING';
     $('#overlay-title').textContent = '下一次，再远一点。';
@@ -438,10 +444,19 @@ function render(now: number) {
   ctx.save();
   ctx.translate((width - game.width * scale) / 2, (height - game.height * scale) / 2);
   ctx.scale(scale, scale);
-  if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
-  if (game.phase !== 'won') {
-    ctx.fillStyle = theme.danger;
-    for (const region of game.territories) { polygonPath(ctx, region); ctx.fill(); }
+  // Restored forest underneath, ruined forest clipped to land that is still corrupted.
+  // Both plates use the same world rectangle so a capture reveals the matching pixels.
+  ctx.shadowBlur = 0;
+  if (!drawLandscape(ctx, restored, game.width, game.height)) {
+    ctx.fillStyle = '#12343a'; ctx.fillRect(0, 0, game.width, game.height);
+  }
+  if (game.phase !== 'won' && game.territories.length) {
+    ctx.save();
+    clipPolygons(ctx, game.territories);
+    if (!drawLandscape(ctx, ruined, game.width, game.height)) {
+      ctx.fillStyle = theme.danger; ctx.fillRect(0, 0, game.width, game.height);
+    }
+    ctx.restore();
   }
   // A separate, unlit frame marks the arena limit without looking like a shore.
   // The small exterior gap keeps a frame-touching mint island edge legible.
@@ -450,7 +465,7 @@ function render(now: number) {
   for (const effect of effects) effect.render(ctx);
   if (game.phase === 'opening' && game.opening) {
     ctx.save(); polygonPath(ctx, game.opening.region); ctx.clip();
-    if (image.complete && image.naturalWidth) ctx.drawImage(image, 0, 0, game.width, game.height);
+    drawLandscape(ctx, restored, game.width, game.height);
     ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(0, 0, game.width, game.height); ctx.restore();
     ctx.save(); ctx.strokeStyle = '#ffcf75'; ctx.lineWidth = 0.18; ctx.shadowColor = '#ffcf75'; ctx.shadowBlur = 12;
     polygonPath(ctx, game.opening.region); ctx.stroke(); ctx.restore();
@@ -478,12 +493,16 @@ function render(now: number) {
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
       const { x, y } = game.player;
+      const wing = reducedMotion.matches ? 0.35 : 0.28 + Math.sin(now / 220) * 0.1;
+      ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(150, 255, 214, .42)';
+      ctx.beginPath(); ctx.moveTo(x, y - 0.05); ctx.quadraticCurveTo(x - 0.85, y - wing, x - 0.12, y - 0.95); ctx.quadraticCurveTo(x - 0.02, y - 0.35, x, y - 0.05); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x, y - 0.05); ctx.quadraticCurveTo(x + 0.85, y - wing, x + 0.12, y - 0.95); ctx.quadraticCurveTo(x + 0.02, y - 0.35, x, y - 0.05); ctx.fill();
       ctx.shadowBlur = 18; ctx.shadowColor = theme.boundary;
-      ctx.strokeStyle = 'rgba(118,241,206,.4)'; ctx.lineWidth = 1 / scale;
+      ctx.strokeStyle = 'rgba(118,241,206,.55)'; ctx.lineWidth = 1 / scale;
       ctx.beginPath(); ctx.arc(x, y, 0.75, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = game.trail.length ? theme.trail : theme.boundary;
       ctx.beginPath(); ctx.arc(x, y, 0.34, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#f0fff9';
+      ctx.shadowBlur = 0; ctx.fillStyle = '#f4fff8';
       ctx.beginPath(); ctx.arc(x, y, 0.14, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
