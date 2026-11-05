@@ -54,6 +54,9 @@ export class Game {
   hazards: AttackHazard[] = [];
   trail: Polygon = [];
   retracting = false;
+  // A self-touch rewind keeps running after the line is gone until a new draw
+  // press. The press that was already held does not count.
+  private trailRewind = false;
   private drawingHeld = false;
   phase: Phase = 'ready';
   lives = 3;
@@ -129,7 +132,7 @@ export class Game {
   move(direction: Direction, drawing: boolean, amount: number) {
     this.backtrackEnded = false;
     this.playerPath = [{ ...this.player }];
-    if (this.phase !== 'playing' || this.retracting || !Number.isFinite(amount) || amount <= EPS) return false;
+    if (this.phase !== 'playing' || this.retracting || this.trailRewind || !Number.isFinite(amount) || amount <= EPS) return false;
     const previousStep = this.shoreStep; this.shoreStep = undefined;
     const v = vectors[direction]; let p = this.player;
     if (this.trail.length && !drawing) return false;
@@ -178,12 +181,16 @@ export class Game {
     const travel = Math.min(amount, wall, Math.max(0, arenaReach));
     let next = { x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) };
     if (this.island && wall <= travel + EPS) next = this.island.project(next) ?? next;
-    // A live line may neither cross nor touch itself, including at a corner.
+    // Touching the live line bounces back along it. Returning to the departure
+    // shore is a real closure, not a bounce.
     for (let i = 0; i < this.trail.length - 1; i++) {
       const a = this.trail[i], b = this.trail[i + 1];
       if (onSegment(p, a, b)) continue;
       if (rayDistance(p, v, a, b) <= travel + EPS
-        && !(this.island && i === 0 && same(next, this.anchor) && !onSegment(b, p, next))) return false;
+        && !(this.island && i === 0 && same(next, this.anchor) && !onSegment(b, p, next))) {
+        this.rewindAlongTrail();
+        return false;
+      }
     }
     if (travel <= EPS) return false;
     this.trail = simplify([...this.trail, next]);
@@ -199,7 +206,12 @@ export class Game {
   }
   resumeDrawing() {
     if (this.phase !== 'playing') return;
-    this.drawingHeld = true; this.retracting = false;
+    this.drawingHeld = true; this.retracting = false; this.trailRewind = false;
+  }
+  private rewindAlongTrail() {
+    // Keep drawingHeld set so the key or finger that is already down does not
+    // immediately cancel. Releasing and pressing again calls resumeDrawing.
+    this.drawingHeld = true; this.trailRewind = true; this.startRetraction();
   }
   private startRetraction() {
     if (this.phase === 'playing' && this.trail.length > 1) this.retracting = true;
@@ -233,7 +245,7 @@ export class Game {
       if (!captured) {
         // A failed geometric closure must still recover while the same press is
         // held. Only a fresh press may interrupt that recovery.
-        this.drawingHeld = true; this.startRetraction(); return;
+        this.rewindAlongTrail(); return;
       }
       this.lastCapture = captured; this.territories = this.island.regions;
       bossEnclosed = Boolean(this.boss && captured.some(region => inside(this.boss!, region)));
@@ -360,7 +372,7 @@ export class Game {
   }
   private hit() {
     this.shoreStep = undefined;
-    this.trail = []; this.cutRegion = -1; this.retracting = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
+    this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false; this.player = { ...this.anchor }; this.lives--; this.protection = 1.5;
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
   }

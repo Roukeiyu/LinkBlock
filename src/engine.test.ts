@@ -35,9 +35,14 @@ describe('continuous territory rules', () => {
     game.move('up', true, 1); game.move('left', false, 1);
     expect(game.player).toEqual({ x: 4, y: 2.2 });
     game.move('right', true, 2); game.move('up', true, 1);
-    game.move('left', true, 3); // crosses the first segment
+    game.move('left', true, 3); // meets the first segment and rewinds along the line
     expect(game.player.x).toBe(6); expect(game.player.y).toBeCloseTo(1.2, 10);
-    expect(game.claimed).toBe(0);
+    expect(game.retracting).toBe(true); expect(game.claimed).toBe(0);
+    game.update(0.2, 'left', true);
+    expect(game.player).toEqual({ x: 4, y: 0 }); expect(game.trail).toHaveLength(0); expect(game.claimed).toBe(0);
+    game.update(0.05, 'down', true); expect(game.player).toEqual({ x: 4, y: 0 }); expect(game.trail).toHaveLength(0);
+    game.resumeDrawing(); game.update(0.05, 'down', true);
+    expect(game.player.y).toBeCloseTo(PLAYER_SPEED * 0.05, 8); expect(game.retracting).toBe(false);
   });
   it('splits exact fractional areas and preserves the enemy side', () => {
     const game = fixture(); game.move('right', false, 0.125);

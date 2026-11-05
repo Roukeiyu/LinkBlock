@@ -72,11 +72,19 @@ describe('interruptible retraction on the real island', () => {
     expect(game.trail).toHaveLength(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
   });
 
-  it('allows reverse trimming after stopping retraction and still blocks self-crossings', () => {
+  it('allows reverse trimming after stopping retraction and rewinds when the live line is touched', () => {
     const { game, move } = fixture(); move('up', 6); move('right', 8); game.update(1 / RETRACT_SPEED); game.resumeDrawing();
     move('left', 2); expect(game.player.x).toBeCloseTo(21); expect(game.player.y).toBeCloseTo(6);
     move('down', 2); move('left', 10);
     expect(game.player.x).toBeCloseTo(21); expect(game.player.y).toBeCloseTo(8); expect(game.claimed).toBe(64);
+    expect(game.retracting).toBe(true); expect(game.score).toBe(0);
+    game.update(1 / RETRACT_SPEED, 'left', true);
+    expect(game.retracting).toBe(true); expect(game.player.x).toBeCloseTo(21); expect(game.player.y).toBeCloseTo(7);
+    const tip = { ...game.player }; game.resumeDrawing(); game.update(0.05, 'right', true);
+    expect(game.retracting).toBe(false);
+    expect(game.player.x).toBeCloseTo(tip.x + PLAYER_SPEED * 0.05, 8);
+    expect(game.player.y).toBeCloseTo(tip.y, 8);
+    expect(game.claimed).toBe(64); expect(game.score).toBe(0);
   });
 
   it.each(['straight', 'boss', 'projectile'] as const)('still hits a stationary resumed tip once with %s', kind => {
@@ -169,9 +177,14 @@ describe('directional trail backtracking while drawing is held', () => {
     expect(game.claimed).toBe(112); expect(game.score).toBe(score);
   });
 
-  it('still rejects crossings of un-erased older segments', () => {
+  it('rewinds un-erased older segments instead of crossing them, until a fresh draw press', () => {
     const { game, move } = bent(); move('up', 1); const tip = { ...game.player };
-    move('left', 10); expect(game.player).toEqual(tip); expect(game.claimed).toBe(64); expect(game.score).toBe(0);
+    move('left', 10); expect(game.player).toEqual(tip); expect(game.retracting).toBe(true);
+    expect(game.claimed).toBe(64); expect(game.score).toBe(0);
+    game.update(0.5, 'down', true); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+    game.update(0.05, 'right', true); expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+    game.resumeDrawing(); game.update(0.05, 'up', true);
+    expect(game.retracting).toBe(false); expect(game.player.y).toBeCloseTo(game.anchor.y - PLAYER_SPEED * 0.05, 8);
   });
 
   it.each(['straight', 'boss', 'projectile'] as const)('keeps the remaining path vulnerable to %s and deducts one life', kind => {
