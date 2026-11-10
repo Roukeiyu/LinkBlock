@@ -33,9 +33,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <button id="portrait" class="portrait" type="button" aria-label="阿澈"><img id="portrait-img" class="portrait-face" alt="阿澈闭着眼，仍被荆棘封着" /><img class="portrait-ring" alt="" src="${art('sprites/portrait_ring.png')}" /></button>
           <div class="purity">
             <div class="purity-bar progress-track" role="progressbar" aria-label="净化进度" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0">
-              <img class="bar-moon" alt="" src="${art('sprites/ornament_moon.png')}" />
+              <div class="bar-channel">
+                <div id="progress-fill" class="bar-fill-window"></div>
+                <i class="bar-goal" aria-hidden="true"></i>
+              </div>
               <img class="bar-frame" alt="" src="${art('sprites/bar_frame.png')}" />
-              <div class="bar-track"><div id="progress-fill" class="bar-fill-window"><img class="bar-fill" alt="" src="${art('sprites/bar_fill.png')}" /></div></div>
+              <img class="bar-moon" alt="" src="${art('sprites/ornament_moon.png')}" />
               <strong id="percent" class="bar-readout">0.0<span>%</span></strong>
             </div>
             <span class="stat-label purity-caption">净化 <span class="muted">/ 75%</span></span>
