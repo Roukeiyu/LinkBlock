@@ -9,7 +9,7 @@ export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
-export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number }
+export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
@@ -94,7 +94,9 @@ export class Game {
     this.actorsReady = true;
     const options = this.options;
     this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(this.width, this.height);
-    this.enemies = options.enemies ?? defaultEnemies(this.width, this.height, this.boss, this.random, this.opening ? { regions: this.territories, player: this.player } : undefined);
+    this.enemies = options.enemies ?? defaultEnemies(this.width, this.height, this.boss, this.random, this.opening ? { regions: this.territories, player: this.player } : undefined, options.squad);
+    if (options.speedScale && options.speedScale !== 1) for (const enemy of this.enemies) { enemy.vx *= options.speedScale; enemy.vy *= options.speedScale; }
+    if (options.bossSpeedScale && options.bossSpeedScale !== 1 && this.boss) { this.boss.vx *= options.bossSpeedScale; this.boss.vy *= options.bossSpeedScale; }
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();
   }

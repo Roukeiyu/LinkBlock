@@ -33,7 +33,7 @@ export function createEnemy(kind: EnemyKind, position: Point, velocity?: Point):
 export function defaultBoss(width: number, height: number) {
   return createEnemy('boss', { x: width / 2, y: height / 2 });
 }
-export function defaultEnemies(width: number, height: number, boss?: Enemy, random = Math.random, spawnArea?: { regions: Polygon[]; player: Point }) {
+export function defaultEnemies(width: number, height: number, boss?: Enemy, random = Math.random, spawnArea?: { regions: Polygon[]; player: Point }, counts?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>) {
   const kinds = ['straight', 'orbit', 'zigzag'] as const;
   const placed: Enemy[] = [];
   const safe = (p: Point, r: number) => p.x >= r + 0.16 && p.x <= width - r - 0.16
@@ -44,7 +44,8 @@ export function defaultEnemies(width: number, height: number, boss?: Enemy, rand
     && placed.every(other => Math.hypot(p.x - other.x, p.y - other.y) >= r + other.visualRadius + 0.25 - EPS);
   for (const kind of kinds) {
     const offset = random() * Math.PI * 2, r = ENEMY_STYLES[kind].visualRadius, edge = r + 0.16;
-    for (let copy = 0; copy < 3; copy++) {
+    const copies = counts?.[kind] ?? 3;
+    for (let copy = 0; copy < copies; copy++) {
       // Separate angular sectors prevent even a constant test RNG from giving
       // all three copies identical headings. Speed and motion rules stay intact.
       const angle = offset + copy * Math.PI * 2 / 3 + (random() - 0.5) * Math.PI / 3;

@@ -3,23 +3,42 @@ import { ENEMY_STYLES, type Enemy } from './enemies';
 
 type Look = 'mist' | 'spore' | 'crow' | 'thorn' | 'ghost' | 'tree';
 
-const spriteFile: Record<Look, string> = {
-  mist: 'enemy_fufeng.png',
-  thorn: 'enemy_jingshi.png',
-  ghost: 'enemy_canhun.png',
-  spore: 'enemy_huibao.png',
-  crow: 'enemy_zhouya.png',
-  tree: 'boss_shigen.png',
+export interface SpriteSheet {
+  mist: string;
+  thorn: string;
+  ghost: string;
+  spore: string;
+  crow: string;
+  tree: string;
+  /** Sprites drawn facing left, so they turn with their velocity. */
+  turn?: Look[];
+}
+
+const wolfSheet: SpriteSheet = {
+  mist: 'sprites/enemy_fufeng.png',
+  thorn: 'sprites/enemy_jingshi.png',
+  ghost: 'sprites/enemy_canhun.png',
+  spore: 'sprites/enemy_huibao.png',
+  crow: 'sprites/enemy_zhouya.png',
+  tree: 'sprites/boss_shigen.png',
+  turn: ['crow'],
 };
 
-const sprites = new Map<Look, HTMLImageElement>();
+let sheet: SpriteSheet = wolfSheet;
+const sprites = new Map<string, HTMLImageElement>();
+
+export function useSpriteSheet(next: SpriteSheet = wolfSheet) {
+  sheet = next;
+}
+
 function sprite(look: Look) {
-  let image = sprites.get(look);
+  const file = sheet[look];
+  let image = sprites.get(file);
   if (!image) {
     image = new Image();
     image.decoding = 'async';
-    image.src = `${import.meta.env.BASE_URL}sprites/${spriteFile[look]}`;
-    sprites.set(look, image);
+    image.src = `${import.meta.env.BASE_URL}${file}`;
+    sprites.set(file, image);
   }
   return image;
 }
@@ -63,7 +82,7 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
   ctx.globalAlpha = 1;
   ctx.translate(pose?.x ?? enemy.x, pose?.y ?? enemy.y);
   if (pose) ctx.scale(pose.scale, pose.scale);
-  if (look === 'crow') ctx.rotate(Math.atan2(enemy.vy, enemy.vx) - Math.PI);
+  if (sheet.turn?.includes(look)) ctx.rotate(Math.atan2(enemy.vy, enemy.vx) - Math.PI);
   if (hurt > 0) ctx.filter = 'brightness(1.85)';
   blit(ctx, sprite(look), r * (look === 'tree' ? 2.7 : 2.45));
   ctx.filter = 'none';
