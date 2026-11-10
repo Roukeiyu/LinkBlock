@@ -1,6 +1,6 @@
 // Sound effects are synthesized in the browser with the Web Audio API (CC0).
-// Background music is the owner's Suno track "月夜森林 Moonlit Grove", loaded
-// on the first gesture from public/audio/. See AUDIO.txt.
+// Background music is the owner's Suno tracks in public/audio/, one loop per
+// level, loaded on the first gesture. See AUDIO.txt.
 
 export type Mood = 'calm' | 'tense' | 'bright';
 
@@ -16,11 +16,11 @@ const DEFAULT_PREFS: AudioPrefs = { music: true, sfx: true, musicVolume: 0.62, s
 
 type AudioCtor = typeof AudioContext;
 
-function musicSrc() {
+function musicSrc(stem: string) {
   const base = import.meta.env.BASE_URL;
   const probe = document.createElement('audio');
   const opus = probe.canPlayType('audio/ogg; codecs="opus"') || probe.canPlayType('audio/ogg; codecs=opus');
-  return `${base}audio/${opus ? 'moonlit-grove.ogg' : 'moonlit-grove.mp3'}`;
+  return `${base}audio/${stem}.${opus ? 'ogg' : 'mp3'}`;
 }
 
 function clamp01(value: number) {
@@ -56,6 +56,7 @@ export class LakeAudio {
   private noise?: AudioBuffer;
   private hum?: { osc: OscillatorNode; gain: GainNode };
   private track?: HTMLAudioElement;
+  private stem = 'moonlit-grove';
   private mood: Mood = 'calm';
   private hidden = false;
   private started = false;
@@ -274,11 +275,22 @@ export class LakeAudio {
     this.sfxGain.gain.value = this.prefs.sfx ? this.prefs.sfxVolume : 0;
   }
 
-  /** Fetch the Suno track only after a gesture, then loop it through the music gain. */
+  /** Remember which level's loop to play. The file is fetched only once playback starts. */
+  useTrack(stem: string) {
+    if (this.stem === stem) return;
+    this.stem = stem;
+    if (!this.track) return;
+    this.track.pause();
+    this.track.src = musicSrc(stem);
+    if (this.started && this.prefs.music && !this.hidden) void this.track.play().catch(() => {});
+  }
+
+  /** Fetch the current level's track only after a gesture, then loop it through the music gain. */
   private startTrack() {
     const ctx = this.ctx;
     const bus = this.musicGain;
     if (!ctx || !bus || !this.prefs.music || this.hidden) return;
+    const src = musicSrc(this.stem);
     if (!this.track) {
       const track = new Audio();
       track.loop = true;
@@ -286,11 +298,14 @@ export class LakeAudio {
       track.setAttribute('playsinline', '');
       track.setAttribute('aria-hidden', 'true');
       track.style.display = 'none';
-      track.src = musicSrc();
+      track.src = src;
       document.body.appendChild(track);
       const source = ctx.createMediaElementSource(track);
       source.connect(bus);
       this.track = track;
+    } else if (!this.track.src.endsWith(src)) {
+      this.track.pause();
+      this.track.src = src;
     }
     void this.track.play().catch(() => {});
   }

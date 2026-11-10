@@ -282,6 +282,7 @@ function beginLevel(id: number) {
   current = levelById(id);
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
+  lakeAudio.useTrack(current.music);
   const first = current.id === 1;
   game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: first ? theme.bossConfig : bossConfigFor(current), ...(first ? {} : { squad: current.squad, speedScale: current.enemySpeed, bossSpeedScale: current.bossSpeed }) });
   syncScene(); game.start(); effects.length = 0; hitFlash = 0;

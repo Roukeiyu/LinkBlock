@@ -14,6 +14,8 @@ export interface LevelDef {
   restored: string;
   sealed: string;
   mask: string;
+  /** File stem in public/audio/, without extension. Opus is preferred, mp3 is the fallback. */
+  music: string;
   portraitSealed: string;
   portraitRescued: string;
   /** Three straight-moving looks, then the orbiter, the zigzag, and the boss. */
@@ -40,7 +42,7 @@ const sheet = (dir: string, files: [string, string, string, string, string, stri
 export const LEVELS: LevelDef[] = [
   {
     id: 1, theme: '狼人', title: '第一关 · 月下封林',
-    restored: 'wolf-restored.webp', sealed: 'wolf-sealed.webp', mask: 'char_mask.png',
+    restored: 'wolf-restored.webp', sealed: 'wolf-sealed.webp', mask: 'char_mask.png', music: 'moonlit-grove',
     portraitSealed: 'sprites/portrait_sealed.png', portraitRescued: 'sprites/portrait_rescued.png',
     names: { straight: ['腐风', '灰孢', '咒鸦'], orbit: '荆蚀', zigzag: '残魂', boss: '蚀根' },
     sprites: { ...sheet('sprites', ['enemy_fufeng.png', 'enemy_jingshi.png', 'enemy_canhun.png', 'enemy_huibao.png', 'enemy_zhouya.png', 'boss_shigen.png']), turn: ['crow'] },
@@ -48,7 +50,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 2, theme: '木乃伊', title: '第二关 · 沙漠神殿',
-    restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png',
+    restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png', music: 'desert-temple',
     portraitSealed: 'levels/2/portrait_sealed.png', portraitRescued: 'levels/2/portrait_rescued.png',
     names: { straight: ['流沙', '缠布', '豺影'], orbit: '圣甲', zigzag: '罐灵', boss: '沙傀王' },
     sprites: sheet('levels/2', ['enemy_liusha.png', 'enemy_shengjia.png', 'enemy_guanling.png', 'enemy_chanbu.png', 'enemy_chaiying.png', 'boss_shakuiwang.png']),
@@ -56,7 +58,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
-    restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png',
+    restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png', music: 'storm-lab',
     portraitSealed: 'levels/3/portrait_sealed.png', portraitRescued: 'levels/3/portrait_rescued.png',
     names: { straight: ['电弧', '齿轮魂', '雷鼠'], orbit: '缝偶', zigzag: '酸雾', boss: '狂电塔' },
     sprites: sheet('levels/3', ['enemy_dianhu.png', 'enemy_fengou.png', 'enemy_suanwu.png', 'enemy_chilunhun.png', 'enemy_leishu.png', 'boss_kuangdianta.png']),
@@ -64,7 +66,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 4, theme: '吸血鬼', title: '第四关 · 玫瑰古堡',
-    restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png',
+    restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png', music: 'rose-waltz',
     portraitSealed: 'levels/4/portrait_sealed.png', portraitRescued: 'levels/4/portrait_rescued.png',
     names: { straight: ['血蝠', '棘玫瑰', '棺鸦'], orbit: '红雾', zigzag: '镜影', boss: '血月石像' },
     sprites: sheet('levels/4', ['enemy_xuefu.png', 'enemy_hongwu.png', 'enemy_jingying.png', 'enemy_jimeigui.png', 'enemy_guanya.png', 'boss_xueyueshixiang.png']),
@@ -72,7 +74,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 5, theme: '无头骑士', title: '第五关 · 秋夜南瓜谷',
-    restored: 'levels/5/horseman-restored.webp', sealed: 'levels/5/horseman_sealed_solid.webp', mask: 'levels/5/char_mask.png',
+    restored: 'levels/5/horseman-restored.webp', sealed: 'levels/5/horseman_sealed_solid.webp', mask: 'levels/5/char_mask.png', music: 'autumn-ride',
     portraitSealed: 'levels/5/portrait_sealed.png', portraitRescued: 'levels/5/portrait_rescued.png',
     names: { straight: ['鬼火', '铁蹄', '断缰'], orbit: '南瓜灵', zigzag: '落叶旋', boss: '秋猎魔骑' },
     sprites: sheet('levels/5', ['enemy_guihuo.png', 'enemy_nangualing.png', 'enemy_luoyexuan.png', 'enemy_tieti.png', 'enemy_duanjiang.png', 'boss_qiuliemoqi.png']),
