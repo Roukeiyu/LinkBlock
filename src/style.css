@@ -114,48 +114,118 @@ body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100
 .viewer img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}
 @media(max-width:620px){.portrait{width:40px;height:40px}.gallery-grid{grid-template-columns:1fr}.board-footer{height:auto;min-height:28px}.charm{width:30px;height:30px;font-size:7px}}
 
-/* Sprite HUD: the wooden card from the 封林 mock. The frame image keeps its own aspect. */
-.game-main{background-color:#1a120e;background-image:var(--wood-panel);background-position:center;background-size:cover;border-color:#6b4630}
-.seal-hud{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px 4px}
-.portrait{position:relative;width:64px;height:64px;border:0;background:transparent;box-shadow:none;overflow:visible;padding:0}
+/* Landscape-first playfield. The frame is assembled from the beam, side and corner
+   slices so the moon clasp and bottom buckle keep their own aspect while the hole
+   stays 3:2 and as large as the viewport. */
+.game-main{background-color:#1a120e;background-image:var(--wood-panel);background-position:center;background-size:cover;border-color:#6b4630;display:flex;flex-direction:column;min-width:0}
+.seal-hud{display:flex;align-items:center;gap:10px;padding:6px 10px 2px;flex:none;min-width:0}
+.portrait{position:relative;width:56px;height:56px;border:0;background:transparent;box-shadow:none;overflow:visible;padding:0;flex:none}
 .portrait-face{position:absolute;left:13%;top:12%;width:74%;height:74%;object-fit:cover;border-radius:50%}
 .portrait-ring{position:relative;width:100%;height:100%;object-fit:contain;pointer-events:none}
-.purity{min-width:0}
-.purity-bar{position:relative;width:100%;max-width:420px}
+.purity{min-width:0;flex:1}
+.purity-bar{position:relative;width:min(100%,280px)}
 .bar-frame{width:100%;height:auto;display:block}
-.bar-moon{position:absolute;left:-6px;top:50%;width:34px;height:auto;transform:translateY(-58%);z-index:2;pointer-events:none}
+.bar-moon{position:absolute;left:-4px;top:50%;width:28px;height:auto;transform:translateY(-58%);z-index:2;pointer-events:none}
 .bar-track{container-type:inline-size;position:absolute;left:12%;right:10%;top:34%;height:30%}
 .bar-fill-window{height:100%;width:0;overflow:hidden}
 .bar-fill{height:100%;width:100cqi;max-width:none;display:block}
-.bar-readout{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2a1708;font-size:13px;letter-spacing:.4px;text-shadow:0 1px 0 #fff3;pointer-events:none}
-.purity-caption{margin:2px 0 0 12%}
-.hud-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.lives{display:flex;gap:3px}
-.life-paw{width:26px;height:28px;object-fit:contain}
-.score{color:#f0d48a;font-family:"SFMono-Regular",Consolas,monospace;font-size:20px;letter-spacing:1px;font-weight:500}
-.board-stage{position:relative;width:min(100%,560px);margin:0 auto}
-.board-frame{position:relative;z-index:2;width:100%;height:auto;display:block;pointer-events:none}
-.board-hole{position:absolute;z-index:1;left:6.3%;top:7.55%;width:87.28%;height:86.28%;display:flex;align-items:center;justify-content:center}
-.board-stage .board-shell{width:100%;height:auto;max-height:100%;aspect-ratio:3/2;margin:0;border:0;box-shadow:none;background:#070605}
-.vine{position:absolute;z-index:3;width:72px;height:auto;pointer-events:none}
-.vine-left{top:4%;left:0}
-.vine-right{top:8%;right:0;transform:scaleX(-1)}
-.badge-row{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:0 8px 8px}
-.side-paw{width:54px;height:auto;pointer-events:none}
+.bar-readout{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2a1708;font-size:12px;letter-spacing:.4px;text-shadow:0 1px 0 #fff3;pointer-events:none}
+.purity-caption{margin:1px 0 0 8%;font-size:9px}
+.hud-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.lives{display:flex;gap:2px}
+.life-paw{width:22px;height:24px;object-fit:contain}
+.score{color:#f0d48a;font-family:"SFMono-Regular",Consolas,monospace;font-size:16px;letter-spacing:1px;font-weight:500}
+.board-stage{container:board / size;flex:1 1 auto;min-height:0;min-width:0;width:100%;display:grid;place-items:center;margin:0}
+.frame-fit{--side:clamp(16px,4cqmin,40px);--top:clamp(22px,7.2cqh,56px);--bot:clamp(18px,6cqh,48px);--board-w:min(calc(100cqw - 2 * var(--side)),calc((100cqh - var(--top) - var(--bot)) * 3 / 2));position:relative;width:calc(var(--board-w) + 2 * var(--side));height:calc(var(--board-w) * 2 / 3 + var(--top) + var(--bot));display:flex;flex-direction:column}
+.frame-row{display:flex;align-items:stretch;min-width:0;position:relative}
+.frame-row.top{height:var(--top);flex:none;z-index:2}
+.frame-row.bot{height:var(--bot);flex:none;z-index:2}
+.frame-row.mid{flex:1 1 auto;min-height:0;z-index:1}
+.edge-fill{container-type:size;flex:1 1 auto;min-width:0;overflow:hidden;position:relative}
+.edge-fill img{position:absolute;left:50%;top:50%;width:100cqh;height:100cqw;max-width:none;object-fit:fill;transform:translate(-50%,-50%) rotate(90deg)}
+.edge-fill.flip img{transform:translate(-50%,-50%) rotate(90deg) scaleY(-1)}
+.frame-beam{height:100%;width:auto;max-width:min(86%,720px);flex:none;margin-inline:-28px;object-fit:contain;pointer-events:none;z-index:3}
+.frame-side{width:var(--side);height:100%;min-height:0;flex:none;object-fit:fill;pointer-events:none}
+.frame-side.right{transform:scaleX(-1)}
+.frame-corner{position:absolute;width:calc(var(--side) * 3.3);height:auto;pointer-events:none;z-index:4}
+.frame-corner.tl{top:0;left:0;transform:scaleY(-1)}
+.frame-corner.tr{top:0;right:0;transform:scale(-1)}
+.frame-corner.bl{bottom:0;left:0}
+.frame-corner.br{bottom:0;right:0;transform:scaleX(-1)}
+.board-hole{flex:1 1 auto;min-width:0;min-height:0;container-type:size;display:flex;align-items:center;justify-content:center;background:#070605}
+.board-stage .board-shell{width:min(100cqw,calc(100cqh * 3 / 2));height:auto;max-height:100cqh;aspect-ratio:3/2;margin:0;border:0;box-shadow:none;background:#070605}
+.vine{position:absolute;z-index:5;width:16%;height:auto;pointer-events:none}
+.vine-left{top:0;left:0}
+.vine-right{top:1%;right:0;transform:scaleX(-1)}
+.badge-row{display:flex;align-items:flex-end;gap:4px;flex:none;padding:0}
+.side-paw{width:40px;height:auto;pointer-events:none}
 .side-paw.flip{transform:scaleX(-1)}
-.charms{display:flex;gap:8px;align-items:flex-end}
-.charm{width:72px;height:auto;border:0;background:transparent;color:#f0d7a0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;font-size:11px}
+.charms{display:flex;gap:4px;align-items:flex-end}
+.charm{width:52px;height:auto;border:0;background:transparent;color:#f0d7a0;display:flex;flex-direction:column;align-items:center;gap:0;padding:0;font-size:10px}
 .charm-img{width:100%;height:auto;display:block}
 .charm.locked{filter:none;opacity:1}
 .board-corner{display:none}
-@media(max-width:620px){
- .seal-hud{grid-template-columns:auto minmax(0,1fr);padding:8px 8px 0}
- .hud-side{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}
- .portrait{width:52px;height:52px}
- .life-paw{width:22px;height:24px}
- .score{font-size:16px}
- .board-stage{width:100%}
- .charm{width:58px}
- .side-paw{width:40px}
- .vine{width:48px}
+.board-footer{flex:none}
+
+/* Desktop and any landscape window: the board fills the viewport, HUD stays one slim row. */
+@media(orientation:landscape){
+ html,body{height:100%;overflow:hidden}
+ #app{height:100dvh;display:flex;flex-direction:column;min-height:0}
+ .site-header{height:40px;min-height:40px;flex:none}
+ .intro{padding:0 0 2px;flex:none}
+ .intro .eyebrow,.intro-copy,.chapter{display:none}
+ .intro h1{font-size:16px;margin:0;line-height:1.2}
+ .purity-caption{margin:0 0 0 8%}
+ .purity-bar{width:min(100%,240px)}
+ main{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;max-width:none;padding:0 16px 8px}
+ .game-layout{flex:1;min-height:0;height:auto;align-items:stretch;grid-template-columns:minmax(0,1fr) 156px;gap:12px}
+ .game-main{min-height:0;height:100%;border-width:4px;border-radius:12px}
+ aside{min-height:0;overflow:auto;align-self:stretch}
+ .field-notes,.side-note{display:none}
+ .controls-panel{margin-top:0}
+ .site-footer{display:none}
+ .seal-hud{padding:4px 8px 0}
+ .portrait{width:48px;height:48px}
+ .charm{width:46px}
+ .side-paw{width:34px}
+}
+/* A short landscape screen (a phone on its side) keeps the HUD in a narrow column so the 3:2 board can use the height. */
+@media(orientation:landscape) and (max-height:560px){
+ .site-header{display:none}
+ .intro{display:none}
+ main{padding:2px 6px 4px}
+ .game-layout{grid-template-columns:minmax(0,1fr)}
+ aside{display:none}
+ .game-main{display:grid;grid-template-columns:112px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 26px;height:100%;border-width:3px}
+ .seal-hud{grid-column:1;grid-row:1;flex-direction:column;align-items:center;justify-content:space-evenly;gap:2px;padding:4px 4px 2px;overflow:hidden}
+ .board-stage{grid-column:2;grid-row:1}
+ .board-footer{grid-column:2;grid-row:2;height:26px;padding:0 8px}
+ .mobile-game-status{display:flex;grid-column:1;grid-row:2;min-height:0;height:26px;padding:0 2px;justify-content:center;align-items:center;gap:4px}
+ .mobile-game-status>span{display:none}
+ .mobile-game-status button{padding:2px 6px;font-size:9px}
+ .purity{width:100%;flex:none}
+ .purity-bar{width:100%}
+ .purity-caption{display:block;margin:0;font-size:8px;text-align:center}
+ .hud-side{flex-direction:column;align-items:center;gap:1px;width:100%}
+ .badge-row{flex-direction:column;align-items:center}
+ .charms{flex-direction:column;align-items:center;gap:1px}
+ .side-paw{display:none}
+ .charm{width:44px;font-size:8px}
+ .portrait{width:40px;height:40px}
+ .score{font-size:12px}
+ .life-paw{width:16px;height:18px}
+ .vine{width:22%}
+}
+@media(max-width:620px) and (orientation:portrait){
+ .seal-hud{flex-wrap:wrap;padding:6px 8px 0}
+ .hud-side{flex-direction:row;align-items:center;justify-content:space-between;width:100%}
+ .badge-row{width:100%;justify-content:center}
+ .portrait{width:44px;height:44px}
+ .life-paw{width:18px;height:20px}
+ .score{font-size:14px}
+ .charm{width:48px}
+ .side-paw{width:32px}
+ .purity-bar{width:min(100%,220px)}
+ .touch-controls{flex:0 0 auto}
+ .board-footer{height:24px}
 }

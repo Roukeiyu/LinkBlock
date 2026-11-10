@@ -43,9 +43,22 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             <strong id="lives" class="lives" aria-label="剩余 3 条生命"></strong>
             <strong id="score" class="score">000000</strong>
           </div>
+          <div class="badge-row">
+            <img class="side-paw" alt="" src="${art('sprites/btn_round.png')}" />
+            <div class="charms" id="charms" aria-label="封林奖励"><button type="button" class="charm" data-reward="clear" aria-label="通关"><img class="charm-img" alt="" /><span>通关</span></button><button type="button" class="charm" data-reward="ninety" aria-label="90%"><img class="charm-img" alt="" /><span>90%</span></button><button type="button" class="charm" data-reward="perfect" aria-label="无伤"><img class="charm-img" alt="" /><span>无伤</span></button></div>
+            <img class="side-paw flip" alt="" src="${art('sprites/btn_round.png')}" />
+          </div>
         </div>
         <div class="board-stage">
-          <div class="board-hole">
+          <div class="frame-fit">
+            <div class="frame-row top">
+              <div class="edge-fill"><img alt="" src="${art('sprites/frame_side.png')}" /></div>
+              <img class="frame-beam top" alt="" src="${art('sprites/frame_top.png')}" />
+              <div class="edge-fill flip"><img alt="" src="${art('sprites/frame_side.png')}" /></div>
+            </div>
+            <div class="frame-row mid">
+              <img class="frame-side left" alt="" src="${art('sprites/frame_side.png')}" />
+              <div class="board-hole">
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
@@ -54,15 +67,21 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
+              </div>
+              <img class="frame-side right" alt="" src="${art('sprites/frame_side.png')}" />
+            </div>
+            <div class="frame-row bot">
+              <div class="edge-fill"><img alt="" src="${art('sprites/frame_side.png')}" /></div>
+              <img class="frame-beam bottom" alt="" src="${art('sprites/frame_bottom.png')}" />
+              <div class="edge-fill flip"><img alt="" src="${art('sprites/frame_side.png')}" /></div>
+            </div>
+            <img class="frame-corner tl" alt="" src="${art('sprites/frame_corner.png')}" />
+            <img class="frame-corner tr" alt="" src="${art('sprites/frame_corner.png')}" />
+            <img class="frame-corner bl" alt="" src="${art('sprites/frame_corner.png')}" />
+            <img class="frame-corner br" alt="" src="${art('sprites/frame_corner.png')}" />
+            <img class="vine vine-left" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
+            <img class="vine vine-right" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
           </div>
-          <img class="board-frame" alt="" src="${art('sprites/frame_9slice.png')}" />
-          <img class="vine vine-left" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
-          <img class="vine vine-right" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
-        </div>
-        <div class="badge-row">
-          <img class="side-paw" alt="" src="${art('sprites/btn_round.png')}" />
-          <div class="charms" id="charms" aria-label="封林奖励"><button type="button" class="charm" data-reward="clear" aria-label="通关"><img class="charm-img" alt="" /><span>通关</span></button><button type="button" class="charm" data-reward="ninety" aria-label="90%"><img class="charm-img" alt="" /><span>90%</span></button><button type="button" class="charm" data-reward="perfect" aria-label="无伤"><img class="charm-img" alt="" /><span>无伤</span></button></div>
-          <img class="side-paw flip" alt="" src="${art('sprites/btn_round.png')}" />
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
         <div class="mobile-game-status"><span>蚀根 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
