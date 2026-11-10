@@ -1,12 +1,14 @@
 import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
 import { ENEMY_STYLES } from './enemies';
-import { renderEnemy } from './render-enemies';
+import { renderEnemy, renderWolfSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { applyUnlocks, readCodex, writeCodex, type Codex, type RewardId } from './rewards';
 
+const art = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+document.documentElement.style.setProperty('--wood-panel', `url('${art('sprites/panel_wood.webp')}')`);
 const icon = (name: string) => {
   const paths: Record<string, string> = {
     sound: '<path d="m11 5-6 4H2v6h3l6 4V5Zm4 3a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
@@ -26,12 +28,24 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="intro"><div><p class="eyebrow">封林 · 把阿澈带回来</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">腐林用黑荆棘把他封在湖边。画线净化领地，揭开被救下的他。</p></div><div class="chapter"><span>01 / 01</span><p>封林 · 阿澈</p></div></section>
     <section class="game-layout" aria-label="LinkBlock 游戏">
       <div class="game-main">
-        <div class="hud">
-          <button id="portrait" class="portrait" type="button" aria-label="阿澈"><img id="portrait-img" alt="阿澈闭着眼，仍被荆棘封着" /></button>
-          <div class="progress-stat"><span class="stat-label">净化 <span class="muted">/ 75%</span></span><div class="progress-row"><strong id="percent">0.0<span>%</span></strong><div class="progress-track" role="progressbar" aria-label="净化进度" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0"><div id="progress-fill"></div><i></i></div></div></div>
-          <div class="hud-stat"><span class="stat-label">SCORE</span><strong id="score">000000</strong></div>
-          <div class="hud-stat life-stat"><span class="stat-label">LIVES</span><strong id="lives" aria-label="剩余 3 条生命"></strong></div>
+        <div class="hud seal-hud">
+          <button id="portrait" class="portrait" type="button" aria-label="阿澈"><img id="portrait-img" class="portrait-face" alt="阿澈闭着眼，仍被荆棘封着" /><img class="portrait-ring" alt="" src="${art('sprites/portrait_ring.png')}" /></button>
+          <div class="purity">
+            <div class="purity-bar progress-track" role="progressbar" aria-label="净化进度" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0">
+              <img class="bar-moon" alt="" src="${art('sprites/ornament_moon.png')}" />
+              <img class="bar-frame" alt="" src="${art('sprites/bar_frame.png')}" />
+              <div class="bar-track"><div id="progress-fill" class="bar-fill-window"><img class="bar-fill" alt="" src="${art('sprites/bar_fill.png')}" /></div></div>
+              <strong id="percent" class="bar-readout">0.0<span>%</span></strong>
+            </div>
+            <span class="stat-label purity-caption">净化 <span class="muted">/ 75%</span></span>
+          </div>
+          <div class="hud-side">
+            <strong id="lives" class="lives" aria-label="剩余 3 条生命"></strong>
+            <strong id="score" class="score">000000</strong>
+          </div>
         </div>
+        <div class="board-stage">
+          <div class="board-hole">
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
@@ -40,7 +54,17 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
-        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span class="charms" id="charms" aria-label="封林奖励"><button type="button" class="charm" data-reward="clear">通关</button><button type="button" class="charm" data-reward="ninety">90%</button><button type="button" class="charm" data-reward="perfect">无伤</button></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
+          </div>
+          <img class="board-frame" alt="" src="${art('sprites/frame_9slice.png')}" />
+          <img class="vine vine-left" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
+          <img class="vine vine-right" alt="" src="${art('sprites/ornament_vine_flower.png')}" />
+        </div>
+        <div class="badge-row">
+          <img class="side-paw" alt="" src="${art('sprites/btn_round.png')}" />
+          <div class="charms" id="charms" aria-label="封林奖励"><button type="button" class="charm" data-reward="clear" aria-label="通关"><img class="charm-img" alt="" /><span>通关</span></button><button type="button" class="charm" data-reward="ninety" aria-label="90%"><img class="charm-img" alt="" /><span>90%</span></button><button type="button" class="charm" data-reward="perfect" aria-label="无伤"><img class="charm-img" alt="" /><span>无伤</span></button></div>
+          <img class="side-paw flip" alt="" src="${art('sprites/btn_round.png')}" />
+        </div>
+        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
         <div class="mobile-game-status"><span>蚀根 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
         <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
@@ -106,6 +130,11 @@ const galleryItems: { id: RewardId; title: string; src: string; blurb: string }[
   { id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%' },
   { id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去' },
 ];
+const charmFile: Record<RewardId, [string, string]> = {
+  clear: ['sprites/badge_clear.png', 'sprites/badge_clear_locked.png'],
+  ninety: ['sprites/badge_90.png', 'sprites/badge_90_locked.png'],
+  perfect: ['sprites/badge_perfect.png', 'sprites/badge_perfect_locked.png'],
+};
 function paintCharms() {
   for (const charm of document.querySelectorAll<HTMLButtonElement>('.charm')) {
     const id = charm.dataset.reward as RewardId;
@@ -114,12 +143,14 @@ function paintCharms() {
     charm.classList.toggle('locked', !open);
     charm.setAttribute('aria-pressed', String(open));
     charm.title = open ? `${rewardNames[id]}已解锁` : `${rewardNames[id]}未解锁`;
+    const image = charm.querySelector('img');
+    if (image) image.src = asset(open ? charmFile[id][0] : charmFile[id][1]);
   }
 }
 function paintPortrait() {
   const portrait = $<HTMLImageElement>('#portrait-img');
   const freed = game.phase === 'won';
-  const src = asset(freed ? 'portrait-restored.webp' : 'portrait-sealed.webp');
+  const src = asset(freed ? 'sprites/portrait_rescued.png' : 'sprites/portrait_sealed.png');
   if (portrait.getAttribute('src') !== src) portrait.src = src;
   portrait.alt = freed ? '阿澈睁开了眼' : '阿澈闭着眼，仍被荆棘封着';
 }
@@ -435,7 +466,7 @@ function sync() {
   $('#progress-fill').style.width = `${Math.min(percent / game.target * 100, 100)}%`;
   $('.progress-track').setAttribute('aria-valuenow', String(Math.min(percent, 75)));
   $('#score').textContent = String(game.score).padStart(6, '0');
-  $('#lives').innerHTML = Array.from({ length: 3 }, (_, i) => `<i class="paw ${i < game.lives ? '' : 'spent'}"></i>`).join('');
+  $('#lives').innerHTML = Array.from({ length: 3 }, (_, i) => `<img class="life-paw" alt="" src="${asset(i < game.lives ? 'sprites/life_paw.png' : 'sprites/life_paw_empty.png')}">`).join('');
   paintCharms(); paintPortrait();
   $('#lives').setAttribute('aria-label', `剩余 ${game.lives} 条生命`);
   const seconds = Math.floor(game.elapsed);
@@ -551,22 +582,8 @@ function render(now: number) {
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
       const { x, y } = game.player;
-      const ear = reducedMotion.matches ? 0.55 : 0.5 + Math.sin(now / 280) * 0.06;
-      ctx.shadowBlur = 12; ctx.shadowColor = '#f0c14a'; ctx.fillStyle = '#e7b84a';
-      ctx.beginPath();
-      ctx.moveTo(x - 0.22, y + 0.12);
-      ctx.quadraticCurveTo(x - 0.55, y - 0.05, x - 0.16, y - 0.28);
-      ctx.lineTo(x - 0.28, y - ear); ctx.lineTo(x - 0.02, y - 0.32);
-      ctx.lineTo(x + 0.02, y - 0.32); ctx.lineTo(x + 0.28, y - ear); ctx.lineTo(x + 0.16, y - 0.28);
-      ctx.quadraticCurveTo(x + 0.55, y - 0.05, x + 0.22, y + 0.12);
-      ctx.closePath(); ctx.fill();
-      ctx.shadowBlur = 18; ctx.shadowColor = '#f0c14a';
-      ctx.strokeStyle = 'rgba(240,193,74,.55)'; ctx.lineWidth = 1 / scale;
-      ctx.beginPath(); ctx.arc(x, y, 0.75, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = game.trail.length ? theme.trail : '#f6d78a';
-      ctx.beginPath(); ctx.arc(x, y, 0.34, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0; ctx.fillStyle = '#fff6d0';
-      ctx.beginPath(); ctx.arc(x, y, 0.14, 0, Math.PI * 2); ctx.fill();
+      const facing = { left: Math.PI, right: 0, up: -Math.PI / 2, down: Math.PI / 2 }[[...held].at(-1) ?? 'left'];
+      renderWolfSpirit(ctx, x, y, facing, game.trail.length > 0);
       ctx.restore();
     }
   }

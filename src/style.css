@@ -113,3 +113,49 @@ body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100
 .viewer{position:fixed;inset:0;z-index:31;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
 .viewer img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}
 @media(max-width:620px){.portrait{width:40px;height:40px}.gallery-grid{grid-template-columns:1fr}.board-footer{height:auto;min-height:28px}.charm{width:30px;height:30px;font-size:7px}}
+
+/* Sprite HUD: the wooden card from the 封林 mock. The frame image keeps its own aspect. */
+.game-main{background-color:#1a120e;background-image:var(--wood-panel);background-position:center;background-size:cover;border-color:#6b4630}
+.seal-hud{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px 4px}
+.portrait{position:relative;width:64px;height:64px;border:0;background:transparent;box-shadow:none;overflow:visible;padding:0}
+.portrait-face{position:absolute;left:13%;top:12%;width:74%;height:74%;object-fit:cover;border-radius:50%}
+.portrait-ring{position:relative;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.purity{min-width:0}
+.purity-bar{position:relative;width:100%;max-width:420px}
+.bar-frame{width:100%;height:auto;display:block}
+.bar-moon{position:absolute;left:-6px;top:50%;width:34px;height:auto;transform:translateY(-58%);z-index:2;pointer-events:none}
+.bar-track{container-type:inline-size;position:absolute;left:12%;right:10%;top:34%;height:30%}
+.bar-fill-window{height:100%;width:0;overflow:hidden}
+.bar-fill{height:100%;width:100cqi;max-width:none;display:block}
+.bar-readout{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2a1708;font-size:13px;letter-spacing:.4px;text-shadow:0 1px 0 #fff3;pointer-events:none}
+.purity-caption{margin:2px 0 0 12%}
+.hud-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.lives{display:flex;gap:3px}
+.life-paw{width:26px;height:28px;object-fit:contain}
+.score{color:#f0d48a;font-family:"SFMono-Regular",Consolas,monospace;font-size:20px;letter-spacing:1px;font-weight:500}
+.board-stage{position:relative;width:min(100%,560px);margin:0 auto}
+.board-frame{position:relative;z-index:2;width:100%;height:auto;display:block;pointer-events:none}
+.board-hole{position:absolute;z-index:1;left:6.3%;top:7.55%;width:87.28%;height:86.28%;display:flex;align-items:center;justify-content:center}
+.board-stage .board-shell{width:100%;height:auto;max-height:100%;aspect-ratio:3/2;margin:0;border:0;box-shadow:none;background:#070605}
+.vine{position:absolute;z-index:3;width:72px;height:auto;pointer-events:none}
+.vine-left{top:4%;left:0}
+.vine-right{top:8%;right:0;transform:scaleX(-1)}
+.badge-row{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:0 8px 8px}
+.side-paw{width:54px;height:auto;pointer-events:none}
+.side-paw.flip{transform:scaleX(-1)}
+.charms{display:flex;gap:8px;align-items:flex-end}
+.charm{width:72px;height:auto;border:0;background:transparent;color:#f0d7a0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;font-size:11px}
+.charm-img{width:100%;height:auto;display:block}
+.charm.locked{filter:none;opacity:1}
+.board-corner{display:none}
+@media(max-width:620px){
+ .seal-hud{grid-template-columns:auto minmax(0,1fr);padding:8px 8px 0}
+ .hud-side{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}
+ .portrait{width:52px;height:52px}
+ .life-paw{width:22px;height:24px}
+ .score{font-size:16px}
+ .board-stage{width:100%}
+ .charm{width:58px}
+ .side-paw{width:40px}
+ .vine{width:48px}
+}
