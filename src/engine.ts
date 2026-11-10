@@ -3,12 +3,13 @@ import { SHORE_CONTACT_TOLERANCE, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
 import { Island } from './island';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
+import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
-export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
+export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
 export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
@@ -65,6 +66,10 @@ export class Game {
   lastCaptureBonus = 0;
   /** True when that capture also restored one life. */
   lastCaptureHeal = false;
+  /** The revealed character covers at least 95% of its mask. */
+  characterComplete = false;
+  private completionMask?: CompletionMask;
+  private completion?: CompletionReading;
   score = 0;
   elapsed = 0;
   protection = 0;
@@ -106,7 +111,19 @@ export class Game {
     this.advanceBossPhase();
   }
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
-  get percent() { return this.claimed / (this.width * this.height) * 100; }
+  get percent() { return this.completion?.percent ?? this.claimed / (this.width * this.height) * 100; }
+  get lineSpeed() { return PLAYER_SPEED * (this.characterComplete ? LINE_SPEED_BOOST : 1); }
+  setCompletionMask(mask: CompletionMask | undefined) {
+    this.completionMask = mask;
+    this.recomputeCompletion();
+  }
+  recomputeCompletion() {
+    const was = this.characterComplete;
+    if (!this.completionMask) { this.completion = undefined; this.characterComplete = false; return; }
+    this.completion = measureCompletion(this.completionMask, this.width, this.height, this.territories);
+    this.characterComplete = this.completion.characterComplete;
+    if (!was && this.characterComplete && this.phase === 'playing') this.events.push('characterComplete');
+  }
   get reinforcementTarget() { return this.reinforcementRule?.targetCount; }
   // Rendering and walking use the same current perimeter. The immutable arena
   // outline still defines size/score but never keeps an already claimed edge alive.
@@ -129,7 +146,7 @@ export class Game {
     const region = this.opening.region;
     this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region];
     this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
-    this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.checkWin(); return true;
+    this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.recomputeCompletion(); this.checkWin(); return true;
   }
   togglePause() {
     if (this.phase === 'playing' || this.phase === 'opening') { this.resumePhase = this.phase; this.phase = 'paused'; }
@@ -317,7 +334,7 @@ export class Game {
       } else this.startBossJump(from);
     }
     if (this.lastDefeats.length) this.events.push({ type: 'defeat', enemies: this.lastDefeats });
-    this.advanceBossPhase(); this.checkWin();
+    this.recomputeCompletion(); this.advanceBossPhase(); this.checkWin();
   }
   private checkWin() {
     if (this.phase !== 'playing') return;
@@ -452,7 +469,7 @@ export class Game {
           if (finished && this.trailRewind) this.trailRewind = false;
           gestureEnded = finished && !depart;
         } else if (direction && !this.trailRewind) {
-          let remaining = PLAYER_SPEED * dt;
+          let remaining = this.lineSpeed * dt;
           const route = [playerBefore];
           for (let pass = 0; pass < 8 && remaining > EPS; pass++) {
             const closed = this.move(direction, drawing, remaining);

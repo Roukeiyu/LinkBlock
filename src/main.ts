@@ -7,6 +7,7 @@ import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { applyUnlocks, readCodex, writeCodex, type Codex, type RewardId } from './rewards';
 import { LEVELS, bossConfigFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
+import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio } from './audio';
 
@@ -254,6 +255,28 @@ function loadLevelArt(level: LevelDef) {
   if (!restored.src.endsWith(level.restored)) restored.src = nextRestored;
   if (!ruined.src.endsWith(level.sealed)) ruined.src = nextSealed;
   useSpriteSheet(level.sprites);
+  loadLevelMask(level);
+}
+let charMaskImage: HTMLImageElement | undefined;
+let maskToken = 0;
+let motes: { x: number; y: number; vy: number; r: number; gold: boolean; phase: number }[] = [];
+function loadLevelMask(level: LevelDef) {
+  const token = ++maskToken;
+  charMaskImage = undefined;
+  motes = [];
+  const image = new Image();
+  image.decoding = 'async';
+  image.onload = () => {
+    if (token !== maskToken || !image.naturalWidth) return;
+    charMaskImage = image;
+    const scratch = document.createElement('canvas');
+    scratch.width = image.naturalWidth; scratch.height = image.naturalHeight;
+    const context = scratch.getContext('2d', { willReadFrequently: true });
+    if (!context) return;
+    context.drawImage(image, 0, 0);
+    game.setCompletionMask(maskFromPixels(scratch.width, scratch.height, context.getImageData(0, 0, scratch.width, scratch.height).data, 4));
+  };
+  image.src = asset(level.mask);
 }
 function beginLevel(id: number) {
   current = levelById(id);
@@ -551,6 +574,9 @@ function handleEvent(event: GameEvent) {
       const points = event.enemies.reduce((sum, enemy) => sum + enemy.points, 0);
       notify(`圈敌成功 · ${names} +${points}`, `击败${event.enemies.length}敌 · +${points}`); lakeAudio.play('defeat');
     }
+  } else if (event === 'characterComplete') {
+    notify('封印松动', '封印松动');
+    lakeAudio.play('milestone');
   } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push((theme.createCaptureEffect ?? lakeDissolve)(region, reducedMotion.matches));
     if (game.lastCaptureBonus > 0) {
@@ -688,6 +714,7 @@ function render(now: number) {
   if (!drawLandscape(ctx, restored, game.width, game.height)) {
     ctx.fillStyle = '#12343a'; ctx.fillRect(0, 0, game.width, game.height);
   }
+  if (game.characterComplete) drawCharacterAura(ctx);
   const rescue = effects.find(effect => effect.seal);
   if (game.phase !== 'won' && game.territories.length) {
     ctx.save();
@@ -721,6 +748,7 @@ function render(now: number) {
     ctx.stroke();
   }
   ctx.restore();
+  if (game.characterComplete) drawSealMotes(ctx, frameDt);
   if (game.phase !== 'won') {
     if (game.trail.length) {
       ctx.save(); ctx.shadowColor = theme.trail; ctx.shadowBlur = 10;
@@ -746,9 +774,41 @@ function render(now: number) {
 
 let previous = performance.now();
 let uiClock = 0;
+let frameDt = 0;
+function drawCharacterAura(ctx: CanvasRenderingContext2D) {
+  if (!charMaskImage?.naturalWidth) return;
+  const pulse = reducedMotion.matches ? 0.2 : 0.16 + 0.07 * Math.sin(performance.now() / 460);
+  ctx.save();
+  ctx.globalAlpha = pulse;
+  ctx.shadowColor = '#e7c56a';
+  ctx.shadowBlur = 16;
+  ctx.drawImage(charMaskImage, 0, 0, game.width, game.height);
+  ctx.shadowColor = '#b48cff';
+  ctx.shadowBlur = 8;
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.drawImage(charMaskImage, 0, 0, game.width, game.height);
+  ctx.restore();
+}
+function drawSealMotes(ctx: CanvasRenderingContext2D, dt: number) {
+  if (reducedMotion.matches) return;
+  while (motes.length < 20) motes.push({ x: Math.random() * game.width, y: Math.random() * game.height, vy: 1.4 + Math.random() * 1.6, r: 0.08 + Math.random() * 0.1, gold: Math.random() < 0.5, phase: Math.random() * Math.PI * 2 });
+  ctx.save();
+  for (const mote of motes) {
+    mote.y -= mote.vy * dt;
+    mote.x += Math.sin(mote.phase + mote.y) * 0.35 * dt;
+    if (mote.y < -0.4) { mote.y = game.height + 0.4; mote.x = Math.random() * game.width; }
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = mote.gold ? '#f0d48a' : '#d2b0ff';
+    ctx.beginPath(); ctx.arc(mote.x, mote.y, mote.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
 function frame(now: number) {
   const at = performance.now(), rawDt = Math.max(0, (now - previous) / 1000);
   const dt = game.phase === 'opening' ? Math.max(0, (at - openingFrameAt) / 1000) : Math.min(rawDt, 0.05);
+  frameDt = dt;
   openingFrameAt = at;
   previous = now;
   const wasOpening = game.phase === 'opening';
@@ -788,5 +848,6 @@ $('#gallery-grid').addEventListener('click', event => {
   const image = $<HTMLImageElement>('#viewer-img');
   image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false;
 });
+loadLevelMask(current);
 sync();
 requestAnimationFrame(frame);
