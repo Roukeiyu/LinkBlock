@@ -17,7 +17,7 @@ export interface Enemy extends Point {
   trace: Point[];
 }
 export const ENEMY_STYLES = {
-  straight: { name: '腐风', motion: '疾速直线', color: '#ff727d', speed: 14.3, radius: 0.55, visualRadius: 0.85 },
+  straight: { name: '腐风', motion: '雾 / 孢 / 鸦', color: '#ff727d', speed: 14.3, radius: 0.55, visualRadius: 0.85 },
   orbit: { name: '荆蚀', motion: '环绕蔓延', color: '#bda4ff', speed: 5.2, radius: 0.55, visualRadius: 0.67 },
   zigzag: { name: '残魂', motion: '折线游魂', color: '#72cfff', speed: 9, radius: 0.55, visualRadius: 0.78 },
   boss: { name: '蚀根', motion: '腐林之主', color: '#ffa56e', speed: 2.3, radius: 1.65, visualRadius: 2 },

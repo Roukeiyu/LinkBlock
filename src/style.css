@@ -75,3 +75,41 @@ html,body,#app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:n
 }
 #opening-hint{position:absolute;top:16px;left:50%;transform:translateX(-50%);max-width:92%;white-space:nowrap;padding:8px 12px;border:1px solid #b69c5e66;border-radius:6px;background:#12222eee;color:#ffe0a0;font-size:11px;letter-spacing:.03em;pointer-events:none}#opening-hint[hidden]{display:none}
 @media(max-width:620px){#opening-hint{top:10px;padding:6px 8px;font-size:9px}}
+
+/* 封林：wood, leather, moon-silver, amber, violet. Canvas shore colors stay as they are. */
+:root{--mint:#e4c27a;--muted:#b5a394;--border:#5a3b28;--wood:#3a2418;--leather:#140e0b;--moon:#d5e2ea;--violet:#b48cff}
+body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100c09}
+.site-header{background:#1a120e;border-bottom-color:#5a3b28}
+.game-main{background:linear-gradient(#2c1c14,#140e0b);border:8px solid #6b4630;border-radius:18px;box-shadow:inset 0 0 0 2px #e4c27a88,0 18px 40px #0008}
+.board-shell{background:#0c0908;border:3px solid #e4c27a;box-shadow:inset 0 0 0 7px #3a2418;border-radius:12px}
+.board-corner{border-color:#e4c27a}
+.hud{gap:16px}
+.portrait{flex:none;width:52px;height:52px;padding:0;border-radius:50%;border:2px solid #e4c27a;background:#1a120e;box-shadow:0 0 0 4px #3a2418,0 0 16px #e4c27a33;overflow:hidden}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.progress-track{background:#2a211c;height:8px;border-radius:8px;border:1px solid #8d6b45}
+.progress-track>div{background:linear-gradient(90deg,#d5e2ea,#e4c27a);box-shadow:0 0 10px #e4c27a66}
+.life-stat>strong{display:flex;gap:5px;align-items:center;letter-spacing:0;color:#e4c27a}
+.paw{position:relative;width:16px;height:16px;display:inline-block;color:#e7c27a}
+.paw:before{content:"";position:absolute;left:3px;bottom:0;width:10px;height:8px;border-radius:50%;background:currentColor}
+.paw:after{content:"";position:absolute;left:0;top:0;width:16px;height:8px;background:radial-gradient(circle at 3px 5px,currentColor 2.2px,transparent 2.4px),radial-gradient(circle at 8px 1px,currentColor 2.2px,transparent 2.4px),radial-gradient(circle at 13px 5px,currentColor 2.2px,transparent 2.4px)}
+.paw.spent{color:#3c332c}
+.board-footer{height:auto;min-height:42px;flex-wrap:wrap;row-gap:6px}
+.charms{display:flex;gap:6px;align-items:center}
+.charm{width:36px;height:36px;border-radius:50%;border:2px solid #8d6a3a;background:#1c140f;color:#e7d3a1;font-size:8px;letter-spacing:0;padding:0}
+.charm.locked{filter:grayscale(1);opacity:.4}
+.charm.unlocked{box-shadow:0 0 10px #e4c27a66;border-color:#e4c27a}
+.ghost-button{display:block;margin:10px auto 0;background:transparent;color:#e7d3a1;border:1px solid #8d6a3a;border-radius:4px;padding:8px 16px;letter-spacing:1px}
+#reward-note{min-height:1.2em;color:#f0d7a0;font-size:12px;margin:0 0 12px}
+.gallery{position:fixed;inset:0;z-index:30;background:#100c09ee;display:flex;align-items:center;justify-content:center;padding:18px}
+.gallery[hidden],.viewer[hidden]{display:none}
+.gallery-card{width:min(920px,100%);max-height:100%;overflow:auto;background:#1c140f;border:2px solid #e4c27a;border-radius:16px;padding:18px;box-shadow:0 20px 60px #000a}
+.gallery-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.gallery-head h2{margin:0;letter-spacing:2px}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.gallery-item{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;border:1px solid #5a3b28;background:#140e0b;color:#e7d3a1;text-align:left}
+.gallery-item img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;background:#000}
+.gallery-item.locked img{filter:brightness(0) contrast(1.2);opacity:.55}
+.gallery-item small{color:#b5a394}
+.viewer{position:fixed;inset:0;z-index:31;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+.viewer img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}
+@media(max-width:620px){.portrait{width:40px;height:40px}.gallery-grid{grid-template-columns:1fr}.board-footer{height:auto;min-height:28px}.charm{width:30px;height:30px;font-size:7px}}

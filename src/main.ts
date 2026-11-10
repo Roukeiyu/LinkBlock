@@ -4,7 +4,8 @@ import { ENEMY_STYLES } from './enemies';
 import { renderEnemy } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
-import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, type CaptureEffect } from './effects';
+import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
+import { applyUnlocks, readCodex, writeCodex, type Codex, type RewardId } from './rewards';
 
 const icon = (name: string) => {
   const paths: Record<string, string> = {
@@ -22,23 +23,24 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span></div>
   </header>
   <main>
-    <section class="intro"><div><p class="eyebrow">A GUARDIAN SPIRIT. A CORRUPTED WOOD.</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">沿岸画线，圈住腐蚀。被净化的林地，会从灰烬里重新亮起来。</p></div><div class="chapter"><span>01 / 01</span><p>初见 · 腐林与守护灵</p></div></section>
+    <section class="intro"><div><p class="eyebrow">封林 · 把阿澈带回来</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">腐林用黑荆棘把他封在湖边。画线净化领地，揭开被救下的他。</p></div><div class="chapter"><span>01 / 01</span><p>封林 · 阿澈</p></div></section>
     <section class="game-layout" aria-label="LinkBlock 游戏">
       <div class="game-main">
         <div class="hud">
-          <div class="progress-stat"><span class="stat-label">领地进度 <span class="muted">/ TARGET 75%</span></span><div class="progress-row"><strong id="percent">0.0<span>%</span></strong><div class="progress-track" role="progressbar" aria-label="占领进度" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0"><div id="progress-fill"></div><i></i></div></div></div>
+          <button id="portrait" class="portrait" type="button" aria-label="阿澈"><img id="portrait-img" alt="阿澈闭着眼，仍被荆棘封着" /></button>
+          <div class="progress-stat"><span class="stat-label">净化 <span class="muted">/ 75%</span></span><div class="progress-row"><strong id="percent">0.0<span>%</span></strong><div class="progress-track" role="progressbar" aria-label="净化进度" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0"><div id="progress-fill"></div><i></i></div></div></div>
           <div class="hud-stat"><span class="stat-label">SCORE</span><strong id="score">000000</strong></div>
-          <div class="hud-stat life-stat"><span class="stat-label">LIVES</span><strong id="lives" aria-label="剩余 3 条生命">♥ ♥ ♥</strong></div>
+          <div class="hud-stat life-stat"><span class="stat-label">LIVES</span><strong id="lives" aria-label="剩余 3 条生命"></strong></div>
         </div>
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">PURIFY THE WOOD</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">每一次连接，<br>都是新的发现。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>占领 75% 的领地，让腐林重新发芽。</p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">封林</p><div class="territory-symbol" aria-hidden="true"><span></span><i></i></div><h2 id="overlay-title">封印还在。<br>他在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75% 的林地，解开封林。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
-        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
+        <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span class="charms" id="charms" aria-label="封林奖励"><button type="button" class="charm" data-reward="clear">通关</button><button type="button" class="charm" data-reward="ninety">90%</button><button type="button" class="charm" data-reward="perfect">无伤</button></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
         <div class="mobile-game-status"><span>蚀根 <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
         <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
@@ -48,8 +50,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
     </section>
-    <footer class="site-footer"><span>LINKBLOCK <span class="muted">/</span> 一场关于边界的小游戏</span><span>无需下载 · 即刻探索 <span class="footer-star">✳</span></span></footer>
-  </main>`;
+    <footer class="site-footer"><span>LINKBLOCK <span class="muted">/</span> 封林 · 阿澈</span><span>无需下载 · 即刻探索 <span class="footer-star">✳</span></span></footer>
+  </main>
+  <div id="gallery" class="gallery" hidden>
+    <div class="gallery-card" role="dialog" aria-labelledby="gallery-title">
+      <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" type="button">返回</button></div>
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </div>
+    <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" type="button">关闭</button></div>
+  </div>`;
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const canvas = $<HTMLCanvasElement>('#board');
@@ -88,6 +97,43 @@ restored.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruinedLandscape}`;
 function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
 syncScene();
+const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+let codex: Codex = readCodex();
+let freshNote = '';
+const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
+const galleryItems: { id: RewardId; title: string; src: string; blurb: string }[] = [
+  { id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像' },
+  { id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%' },
+  { id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去' },
+];
+function paintCharms() {
+  for (const charm of document.querySelectorAll<HTMLButtonElement>('.charm')) {
+    const id = charm.dataset.reward as RewardId;
+    const open = codex[id];
+    charm.classList.toggle('unlocked', open);
+    charm.classList.toggle('locked', !open);
+    charm.setAttribute('aria-pressed', String(open));
+    charm.title = open ? `${rewardNames[id]}已解锁` : `${rewardNames[id]}未解锁`;
+  }
+}
+function paintPortrait() {
+  const portrait = $<HTMLImageElement>('#portrait-img');
+  const freed = game.phase === 'won';
+  const src = asset(freed ? 'portrait-restored.webp' : 'portrait-sealed.webp');
+  if (portrait.getAttribute('src') !== src) portrait.src = src;
+  portrait.alt = freed ? '阿澈睁开了眼' : '阿澈闭着眼，仍被荆棘封着';
+}
+function renderGallery() {
+  $('#gallery-grid').innerHTML = galleryItems.map(item => {
+    const open = codex[item.id];
+    return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img src="${asset(item.src)}" alt="" /><span>${item.title}</span><small>${open ? item.blurb : '尚未解锁'}</small></button>`;
+  }).join('');
+}
+function openGallery() {
+  if (game.phase === 'playing' || game.phase === 'opening') togglePause();
+  renderGallery(); $('#viewer').hidden = true; $('#gallery').hidden = false;
+}
+function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = true; }
 
 function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorType = 'sine') {
   if (!soundEnabled) return;
@@ -110,7 +156,7 @@ function clearInput() {
   syncDirectionButtons();
 }
 function restart() {
-  clearInput(); game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); syncScene(); game.start(); effects.length = 0; hitFlash = 0;
+  closeGallery(); clearInput(); freshNote = ''; game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   $('#toast').classList.remove('visible');
   openingFrameAt = performance.now();
   sync(); canvas.focus({ preventScroll: true }); render(performance.now());
@@ -368,6 +414,10 @@ function handleEvent(event: GameEvent) {
     hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`, `受击 · 剩余${game.lives}命`);
     tone(120, 0.25, 0, 'triangle');
   } else if (event === 'won') {
+    const result = applyUnlocks(codex, game.percent, game.lives);
+    codex = result.codex; writeCodex(codex);
+    freshNote = result.fresh.length ? `新解开：${result.fresh.map(id => rewardNames[id]).join('、')}` : '这些纪念都已经在图鉴里了。';
+    effects.push(sealBreak(reducedMotion.matches));
     tone(523); tone(659, 0.2, 0.15); tone(1046, 0.4, 0.3);
   } else if (event === 'start') tone(440);
 }
@@ -385,7 +435,8 @@ function sync() {
   $('#progress-fill').style.width = `${Math.min(percent / game.target * 100, 100)}%`;
   $('.progress-track').setAttribute('aria-valuenow', String(Math.min(percent, 75)));
   $('#score').textContent = String(game.score).padStart(6, '0');
-  $('#lives').innerHTML = Array.from({ length: 3 }, (_, i) => `<span class="${i < game.lives ? '' : 'spent'}">♥</span>`).join(' ');
+  $('#lives').innerHTML = Array.from({ length: 3 }, (_, i) => `<i class="paw ${i < game.lives ? '' : 'spent'}"></i>`).join('');
+  paintCharms(); paintPortrait();
   $('#lives').setAttribute('aria-label', `剩余 ${game.lives} 条生命`);
   const seconds = Math.floor(game.elapsed);
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -417,17 +468,20 @@ function sync() {
     $('#overlay-kicker').textContent = 'TAKE A BREATH';
     $('#overlay-title').textContent = '风景会等你。';
     $('#overlay-copy').textContent = '休息一下，准备好后继续探索。';
+    $('#reward-note').textContent = '';
     $('#primary').innerHTML = `继续探索 ${icon('arrow')}`;
   } else if (game.phase === 'won') {
-    $('#overlay-kicker').textContent = 'TERRITORY DISCOVERED';
-    $('#overlay-title').textContent = '这片风景，属于你。';
-    $('#overlay-copy').textContent = `已占领 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
+    $('#overlay-kicker').textContent = 'SEAL BROKEN';
+    $('#overlay-title').textContent = '阿澈醒了。';
+    $('#overlay-copy').textContent = `封印碎开。已净化 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
+    $('#reward-note').textContent = freshNote;
     $('#primary').innerHTML = `再探索一次 ${icon('reset')}`;
-    $('#overlay-hint').textContent = game.winReason === 'boss' ? '腐林 · 蚀根已净化' : '腐林 · 已恢复完整风景';
+    $('#overlay-hint').textContent = game.winReason === 'boss' ? '封林 · 蚀根已净化' : '封林 · 阿澈已解开';
   } else if (game.phase === 'lost') {
     $('#overlay-kicker').textContent = 'EVERY TRY IS A NEW BEGINNING';
     $('#overlay-title').textContent = '下一次，再远一点。';
-    $('#overlay-copy').textContent = `你已揭开 ${percent.toFixed(1)}% 的风景，获得 ${game.score.toLocaleString()} 分。再试一次？`;
+    $('#overlay-copy').textContent = `你已揭开 ${percent.toFixed(1)}% 的封林，获得 ${game.score.toLocaleString()} 分。再试一次？`;
+    $('#reward-note').textContent = '';
     $('#primary').innerHTML = `重新挑战 ${icon('reset')}`;
   }
   if (!['playing', 'ready', 'opening'].includes(game.phase)) {
@@ -450,6 +504,7 @@ function render(now: number) {
   if (!drawLandscape(ctx, restored, game.width, game.height)) {
     ctx.fillStyle = '#12343a'; ctx.fillRect(0, 0, game.width, game.height);
   }
+  const rescue = effects.find(effect => effect.seal);
   if (game.phase !== 'won' && game.territories.length) {
     ctx.save();
     clipPolygons(ctx, game.territories);
@@ -457,6 +512,9 @@ function render(now: number) {
       ctx.fillStyle = theme.danger; ctx.fillRect(0, 0, game.width, game.height);
     }
     ctx.restore();
+  } else if (rescue && (rescue.cover ?? 0) > 0) {
+    ctx.save(); ctx.globalAlpha = rescue.cover ?? 0;
+    drawLandscape(ctx, ruined, game.width, game.height); ctx.restore();
   }
   // A separate, unlit frame marks the arena limit without looking like a shore.
   // The small exterior gap keeps a frame-touching mint island edge legible.
@@ -493,16 +551,21 @@ function render(now: number) {
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
       const { x, y } = game.player;
-      const wing = reducedMotion.matches ? 0.35 : 0.28 + Math.sin(now / 220) * 0.1;
-      ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(150, 255, 214, .42)';
-      ctx.beginPath(); ctx.moveTo(x, y - 0.05); ctx.quadraticCurveTo(x - 0.85, y - wing, x - 0.12, y - 0.95); ctx.quadraticCurveTo(x - 0.02, y - 0.35, x, y - 0.05); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(x, y - 0.05); ctx.quadraticCurveTo(x + 0.85, y - wing, x + 0.12, y - 0.95); ctx.quadraticCurveTo(x + 0.02, y - 0.35, x, y - 0.05); ctx.fill();
-      ctx.shadowBlur = 18; ctx.shadowColor = theme.boundary;
-      ctx.strokeStyle = 'rgba(118,241,206,.55)'; ctx.lineWidth = 1 / scale;
+      const ear = reducedMotion.matches ? 0.55 : 0.5 + Math.sin(now / 280) * 0.06;
+      ctx.shadowBlur = 12; ctx.shadowColor = '#f0c14a'; ctx.fillStyle = '#e7b84a';
+      ctx.beginPath();
+      ctx.moveTo(x - 0.22, y + 0.12);
+      ctx.quadraticCurveTo(x - 0.55, y - 0.05, x - 0.16, y - 0.28);
+      ctx.lineTo(x - 0.28, y - ear); ctx.lineTo(x - 0.02, y - 0.32);
+      ctx.lineTo(x + 0.02, y - 0.32); ctx.lineTo(x + 0.28, y - ear); ctx.lineTo(x + 0.16, y - 0.28);
+      ctx.quadraticCurveTo(x + 0.55, y - 0.05, x + 0.22, y + 0.12);
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 18; ctx.shadowColor = '#f0c14a';
+      ctx.strokeStyle = 'rgba(240,193,74,.55)'; ctx.lineWidth = 1 / scale;
       ctx.beginPath(); ctx.arc(x, y, 0.75, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = game.trail.length ? theme.trail : theme.boundary;
+      ctx.fillStyle = game.trail.length ? theme.trail : '#f6d78a';
       ctx.beginPath(); ctx.arc(x, y, 0.34, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0; ctx.fillStyle = '#f4fff8';
+      ctx.shadowBlur = 0; ctx.fillStyle = '#fff6d0';
       ctx.beginPath(); ctx.arc(x, y, 0.14, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
@@ -533,5 +596,18 @@ function frame(now: number) {
   render(now);
   requestAnimationFrame(frame);
 }
+$('#open-gallery').addEventListener('click', openGallery);
+$('#portrait').addEventListener('click', openGallery);
+$('#gallery-close').addEventListener('click', closeGallery);
+$('#viewer-close').addEventListener('click', () => { $('#viewer').hidden = true; });
+$('#charms').addEventListener('click', event => { if ((event.target as Element).closest('.charm')) openGallery(); });
+$('#gallery-grid').addEventListener('click', event => {
+  const item = (event.target as Element).closest<HTMLButtonElement>('.gallery-item');
+  if (!item || item.disabled) return;
+  const reward = galleryItems.find(entry => entry.id === item.dataset.reward);
+  if (!reward) return;
+  const image = $<HTMLImageElement>('#viewer-img');
+  image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false;
+});
 sync();
 requestAnimationFrame(frame);

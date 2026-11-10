@@ -5,6 +5,9 @@ import { area, inside, type Polygon } from './geometry';
 
 export interface CaptureEffect {
   readonly finished: boolean;
+  readonly seal?: boolean;
+  /** Remaining opacity of the sealed plate while the rescue plays. */
+  cover?: number;
   update(seconds: number): void;
   render(context: CanvasRenderingContext2D): void;
 }
@@ -205,8 +208,39 @@ export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): Captur
   };
 }
 
+export function sealBreak(reducedMotion: boolean): CaptureEffect {
+  let age = 0;
+  const duration = reducedMotion ? 0.4 : 1.15;
+  const cracks = reducedMotion ? [] : Array.from({ length: 14 }, (_, i) => {
+    const angle = -Math.PI / 2 + i * 0.45;
+    return { angle, bend: (i % 2 === 0 ? 1 : -1) * 0.35 };
+  });
+  return {
+    seal: true,
+    get cover() { return Math.max(0, 1 - age / (duration * 0.72)); },
+    get finished() { return age >= duration; },
+    update(seconds) { age += seconds; },
+    render(ctx) {
+      if (age >= duration || reducedMotion) return;
+      const t = Math.min(1, age / (duration * 0.7));
+      ctx.save();
+      ctx.translate(36, 22);
+      ctx.globalAlpha = Math.sin(Math.PI * Math.min(1, age / duration)) * 0.9;
+      ctx.strokeStyle = '#f2d48a'; ctx.lineWidth = 0.12; ctx.lineCap = 'round';
+      ctx.shadowColor = '#c9a6ff'; ctx.shadowBlur = 8;
+      for (const crack of cracks) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(Math.cos(crack.angle + crack.bend) * 8 * t, Math.sin(crack.angle + crack.bend) * 6 * t, Math.cos(crack.angle) * 26 * t, Math.sin(crack.angle) * 18 * t);
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+  };
+}
+
 export const lakeTheme: GameTheme = {
-  id: 'quiet-lake', landscape: 'forest-restored.webp', ruinedLandscape: 'forest-ruined.webp', danger: '#09131c', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
+  id: 'quiet-lake', landscape: 'wolf-restored.webp', ruinedLandscape: 'wolf-sealed.webp', danger: '#09131c', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new AlternatingCrossAttack(),
   bossConfig: lakeBossConfig,
 };
