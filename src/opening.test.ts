@@ -111,7 +111,7 @@ describe('expanding the only initial island', () => {
     expect(game.lastDefeats.map(body => body.kind)).toEqual(['orbit']); expect(game.enemies).toEqual([outside]);
     expect(game.captured.some(region => inside(enclosed, region))).toBe(true);
     expect(game.territories.some(region => inside(outside, region))).toBe(true);
-    expect(game.score).toBe(9080 + 117 * 5 + 500); expect(game.phase).toBe('playing');
+    expect(game.score).toBe((9080 + 117 * 5) * 2 + 500); expect(game.phase).toBe('playing');
   });
   it('only reveals the explicit inner loop even if its entire outside has no enemies', () => {
     const game = ringGame(); game.enemies = [];
@@ -125,7 +125,7 @@ describe('expanding the only initial island', () => {
     place(game, 12, 12); game.move('right', true, 26); game.move('down', true, 26);
     game.move('left', true, 36); game.move('up', true, 26); game.move('right', true, 3);
     expect(game.claimed).toBe(964); expect(game.bossHealth).toBe(4); expect(game.bossJump?.to).toBeTruthy();
-    expect(game.score).toBe(9080 + 117 * 5 + 250); expect(game.phase).toBe('playing');
+    expect(game.score).toBe((9080 + 117 * 5) * 2 + 250); expect(game.phase).toBe('playing');
     game.update(1); expect(game.bossJump).toBeUndefined();
     expect(game.territories.some(region => inside(game.boss!, region))).toBe(true);
     expect(game.captured.some(region => inside(game.boss!, region))).toBe(false);

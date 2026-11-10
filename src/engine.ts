@@ -60,6 +60,11 @@ export class Game {
   private drawingHeld = false;
   phase: Phase = 'ready';
   lives = 3;
+  readonly maxLives = 3;
+  /** Extra points from the latest capture when it covered more than 5% of the board. */
+  lastCaptureBonus = 0;
+  /** True when that capture also restored one life. */
+  lastCaptureHeal = false;
   score = 0;
   elapsed = 0;
   protection = 0;
@@ -257,7 +262,7 @@ export class Game {
         this.territories.splice(this.cutRegion, 1, parts[0]);
         this.score += Math.round(this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0) * 5);
         this.cutRegion = -1; this.trail = []; this.anchor = { ...this.player };
-        this.lastCapture = []; this.lastDefeats = []; this.events.push('partition'); return;
+        this.lastCapture = []; this.lastDefeats = []; this.lastCaptureBonus = 0; this.lastCaptureHeal = false; this.events.push('partition'); return;
       }
       const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
       const occupants = parts.map(part => bodies.filter(body => inside(body, part)));
@@ -289,7 +294,15 @@ export class Game {
     }
     this.anchor = { ...this.player };
     const claimed = this.lastCapture.reduce((sum, region) => sum + area(region), 0);
-    this.score += Math.round(claimed * 10 + length * 5) + this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0);
+    const territoryScore = Math.round(claimed * 10 + length * 5);
+    const share = claimed / (this.width * this.height) * 100;
+    // The area score is paid in full first. A single loop over 5% of the board
+    // adds half of that score again; over 10% it adds the whole score again and,
+    // when a life is missing, restores one life up to the run's maximum.
+    this.lastCaptureBonus = share > 10 ? territoryScore : share > 5 ? Math.round(territoryScore * 0.5) : 0;
+    this.lastCaptureHeal = false;
+    if (share > 10 && this.lives < this.maxLives) { this.lives += 1; this.lastCaptureHeal = true; }
+    this.score += territoryScore + this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0) + this.lastCaptureBonus;
     this.events.push(claimed > EPS ? 'capture' : 'partition');
     if (bossEnclosed && this.boss) {
       const from = this.bossJump ? jumpPose(this.bossJump) : { ...this.boss };

@@ -534,6 +534,12 @@ function notify(message: string, compact = message) {
   $('.toast-full').textContent = message; $('.toast-compact').textContent = compact;
   $('#toast').classList.add('visible'); toastUntil = performance.now() + 2200;
 }
+function pulseHud(selector: string) {
+  const element = $(selector);
+  element.classList.remove('hud-pulse');
+  void element.offsetWidth;
+  element.classList.add('hud-pulse');
+}
 function handleEvent(event: GameEvent) {
   if (typeof event === 'object') {
     if (event.type === 'bossHit') {
@@ -547,7 +553,14 @@ function handleEvent(event: GameEvent) {
     }
   } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push((theme.createCaptureEffect ?? lakeDissolve)(region, reducedMotion.matches));
-    notify('连接成功 · 新的领地已揭开', '领地已扩大');
+    if (game.lastCaptureBonus > 0) {
+      const bonus = `大圈加成 +${game.lastCaptureBonus}`;
+      const text = game.lastCaptureHeal ? `${bonus} · 大圈回血` : bonus;
+      notify(text, text);
+      pulseHud('#score');
+      if (game.lastCaptureHeal) { pulseHud('#lives'); lakeAudio.play('respawn'); }
+      lakeAudio.play('reward');
+    } else notify('连接成功 · 新的领地已揭开', '领地已扩大');
     lakeAudio.play('capture', Math.max(0.2, game.percent - audioPercent));
   } else if (event === 'partition') {
     notify('通路已连接 · 继续围出闭合区域', '通路已连接，继续圈地'); lakeAudio.play('partition');

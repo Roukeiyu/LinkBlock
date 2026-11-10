@@ -26,7 +26,7 @@ describe('boss health and escape jump', () => {
     const game = fixture(); enclose(game);
     expect(game.bossHealth).toBe(4); expect(game.bossMaxHealth).toBe(5);
     expect(game.boss).toBeDefined(); expect(game.lastDefeats).toHaveLength(0);
-    expect(game.percent).toBeCloseTo(30); expect(game.score).toBe(1200 + 100 + BOSS_HIT_POINTS);
+    expect(game.percent).toBeCloseTo(30); expect(game.score).toBe((1200 + 100) * 2 + BOSS_HIT_POINTS);
     expect(game.bossJump?.from).toEqual({ x: 17, y: 16 }); expect(game.bossJump?.to).not.toBeNull();
     expect(safeLanding(game.bossJump!.to!, game.territories, game.boss!, game.enemies, game.player, [])).toBe(true);
     expect(game.captured.every(region => !inside(game.bossJump!.to!, region))).toBe(true);

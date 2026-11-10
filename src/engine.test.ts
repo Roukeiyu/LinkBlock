@@ -141,7 +141,7 @@ describe('continuous territory rules', () => {
     const game = fixture(); game.enemies[0].x = 9;
     game.move('right', false, 3.5); game.move('down', true, 10);
     expect(game.phase).toBe('won'); expect(game.percent).toBe(100);
-    expect(game.enemies).toHaveLength(0); expect(game.score).toBe(4550);
+    expect(game.enemies).toHaveLength(0); expect(game.score).toBe((100 * 10 + 10 * 5) * 2 + 500 + 3000);
     expect(game.boundarySegments).toHaveLength(0); expect(game.isBoundary(0, 0)).toBe(false);
     const player = { ...game.player }; game.update(1, 'left', true);
     expect(game.player).toEqual(player); expect(game.events).toContain('won');

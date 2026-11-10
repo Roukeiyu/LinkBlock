@@ -19,7 +19,7 @@ describe('enclosed enemy defeats', () => {
     expect(game.move('right', true, 10)).toBe(true);
     expect(game.percent).toBeCloseTo(70); expect(game.enemies).toEqual([survivor]);
     expect(game.lastDefeats).toEqual([{ kind: 'orbit', x: 17, y: 5, points: DEFEAT_POINTS.orbit }]);
-    expect(game.score - score).toBe(80 * 10 + 10 * 5 + DEFEAT_POINTS.orbit);
+    expect(game.score - score).toBe((80 * 10 + 10 * 5) * 2 + DEFEAT_POINTS.orbit);
     expect(inside(target, game.captured.at(-1)!)).toBe(true);
     expect(game.territories.some(region => inside(survivor, region))).toBe(true);
     const event = game.events.find(event => typeof event === 'object' && event.type === 'defeat');
@@ -52,7 +52,7 @@ describe('enclosed enemy defeats', () => {
     game.start(); game.move('right', false, 9); game.move('down', true, 20);
     expect(game.enemies).toEqual([outside, survivor]); expect(game.boss).toBeUndefined(); expect(game.bossAttack).toBeUndefined();
     expect(game.lastDefeats.map(enemy => enemy.kind)).toEqual(['orbit', 'zigzag', 'boss']);
-    expect(game.score).toBe(120 * 10 + 20 * 5 + 500 + 500 + 2000 + 250);
+    expect(game.score).toBe((120 * 10 + 20 * 5) * 2 + 500 + 500 + 2000 + 250);
     expect(game.territories).toContain(untouched); expect(game.percent).toBeCloseTo(20);
     game.update(0.1);
     for (const enemy of game.enemies) expect(game.territories.filter(region => inside(enemy, region))).toHaveLength(1);
@@ -73,7 +73,7 @@ describe('enclosed enemy defeats', () => {
     game.move('right', false, 4); game.move('down', true, 20);
     expect(game.enemies).toHaveLength(0); expect(game.territories).toHaveLength(0);
     expect(game.phase).toBe('won'); expect(game.percent).toBe(100);
-    expect(game.score).toBe(400 * 10 + 20 * 5 + 500 + 3000);
+    expect(game.score).toBe((400 * 10 + 20 * 5) * 2 + 500 + 3000);
     const score = game.score; game.move('up', true, 20); game.update(1);
     expect(game.score).toBe(score); expect(game.events.filter(event => typeof event === 'object')).toHaveLength(1);
   });
@@ -82,7 +82,7 @@ describe('enclosed enemy defeats', () => {
     const game = new Game(20, 20, { enemies: [enemy], boss: null }); game.start();
     game.move('down', true, 20); game.move('up', false, 10); game.move('right', true, 10);
     expect(game.phase).toBe('won'); expect(game.percent).toBe(75); expect(game.enemies).toEqual([enemy]);
-    expect(game.lastDefeats).toHaveLength(0); expect(game.score).toBe(6150);
+    expect(game.lastDefeats).toHaveLength(0); expect(game.score).toBe(9300);
   });
   it('resolves body contact with the closing line before capture, scoring or defeat', () => {
     const enemy = stationary('straight', 14.5, 8);
