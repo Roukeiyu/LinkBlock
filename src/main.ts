@@ -6,6 +6,7 @@ import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { applyUnlocks, readCodex, writeCodex, type Codex, type RewardId } from './rewards';
+import { lakeAudio } from './audio';
 
 const art = (file: string) => `${import.meta.env.BASE_URL}${file}`;
 document.documentElement.style.setProperty('--wood-panel', `url('${art('sprites/panel_wood.webp')}')`);
@@ -22,7 +23,7 @@ const icon = (name: string) => {
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="site-header">
     <a class="brand" href="./" aria-label="LinkBlock 首页"><span class="brand-icon"><i></i><i></i><i></i></span>LINK<span class="brand-light">BLOCK</span><span class="beta">ARCADE / 01</span></a>
-    <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span></div>
+    <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span><div class="audio-dock" role="group" aria-label="声音"><button id="music-hud" type="button" aria-pressed="true" aria-label="音乐">音乐</button><button id="sfx-hud" type="button" aria-pressed="true" aria-label="音效">音效</button></div></div>
   </header>
   <main>
     <section class="intro"><div><p class="eyebrow">封林 · 把阿澈带回来</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">腐林用黑荆棘把他封在湖边。画线净化领地，揭开被救下的他。</p></div><div class="chapter"><span>01 / 01</span><p>封林 · 阿澈</p></div></section>
@@ -89,7 +90,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
       <aside>
         <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已揭示小岛的岸线移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>回到小岛岸线，净化圈内腐林。<br>碰到自己的线会自动收回，再按画线键可停下；若一直按着方向，回到起点后会立刻再画。<br>圈住普通腐蚀者可击败并得分，<br>圈住蚀根可削减一格生命。<br>裸露外框不能靠岸；碰边可转向。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察腐蚀者的轨迹</h3><p>腐蚀者会击断未闭合的线。<br>蚀根的孢子能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span>${ENEMY_STYLES[kind].name}<small>${ENEMY_STYLES[kind].motion}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
-        <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="sound" aria-pressed="false">${icon('sound')}<span>音效关闭</span><span class="toggle"></span></button></div>
+        <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle"></span></button><button id="sound" type="button" aria-pressed="true">${icon('sound')}<span>音效开启</span><span class="toggle"></span></button><label class="audio-slider">音乐音量 <input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider">音效音量 <input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
         <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
       </aside>
     </section>
@@ -111,8 +112,11 @@ const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;
 let game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig });
 let lastPhase = '';
-let soundEnabled = false;
-let audio: AudioContext | undefined;
+let heardRetract = false;
+let lineMark = 0;
+let hadBoss = false;
+let hadJump = false;
+let audioPercent = 0;
 let touchDraw = false;
 let drawHeld = false;
 const effects: CaptureEffect[] = [];
@@ -185,19 +189,36 @@ function openGallery() {
 }
 function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = true; }
 
-function tone(frequency: number, duration = 0.12, delay = 0, type: OscillatorType = 'sine') {
-  if (!soundEnabled) return;
-  try {
-    audio ??= new AudioContext();
-    void audio.resume().catch(() => {});
-    const osc = audio.createOscillator(), gain = audio.createGain();
-    osc.type = type;
-    osc.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.045, audio.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + delay + duration);
-    osc.connect(gain); gain.connect(audio.destination);
-    osc.start(audio.currentTime + delay); osc.stop(audio.currentTime + delay + duration);
-  } catch { /* Audio is optional; the game remains playable. */ }
+function paintAudio() {
+  const { music, sfx, musicVolume, sfxVolume } = lakeAudio.prefs;
+  for (const [id, on, label] of [['music', music, '音乐'], ['music-hud', music, '音乐'], ['sound', sfx, '音效'], ['sfx-hud', sfx, '音效']] as const) {
+    const button = document.getElementById(id);
+    if (!button) continue;
+    button.setAttribute('aria-pressed', String(on));
+    const text = button.querySelector('span');
+    if (text && id !== 'music-hud' && id !== 'sfx-hud') text.textContent = `${label}${on ? '开启' : '关闭'}`;
+  }
+  ($('#music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
+  ($('#sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
+}
+function followAudio() {
+  lakeAudio.setMood(game.phase === 'won' ? 'bright' : game.boss ? 'tense' : 'calm');
+  const drawing = (drawHeld || touchDraw) && game.phase === 'playing';
+  if (game.retracting && !heardRetract && drawing) lakeAudio.play('rebound');
+  if (game.retracting) lakeAudio.play('rewind');
+  heardRetract = game.retracting;
+  const drawingLine = drawing && !game.retracting && game.trail.length > 1;
+  lakeAudio.drawHum(drawingLine);
+  if (drawingLine && game.trail.length !== lineMark) {
+    if (lineMark <= 1) lakeAudio.play('draw-start');
+    else lakeAudio.play('draw-tick');
+  }
+  lineMark = game.trail.length;
+  const jumping = Boolean(game.bossJump);
+  if (jumping && !hadJump) lakeAudio.play('boss-jump');
+  hadJump = jumping;
+  if (game.actorsReady && game.boss && !hadBoss) lakeAudio.play('boss');
+  hadBoss = Boolean(game.boss);
 }
 
 function clearInput() {
@@ -207,6 +228,7 @@ function clearInput() {
 }
 function restart() {
   closeGallery(); clearInput(); freshNote = ''; game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig }); syncScene(); game.start(); effects.length = 0; hitFlash = 0;
+  heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   $('#toast').classList.remove('visible');
   openingFrameAt = performance.now();
   sync(); canvas.focus({ preventScroll: true }); render(performance.now());
@@ -256,12 +278,35 @@ $('#control-mode').addEventListener('click', () => {
   const label = single ? '单手 · 自由触控' : mode === 'two-right' ? '双手 · 方向在右' : '双手 · 方向在左';
   $('#control-mode-name').textContent = label; $('#control-mode').setAttribute('aria-label', `切换操作方式，当前${label}`);
 });
-$('#sound').addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  $('#sound').setAttribute('aria-pressed', String(soundEnabled));
-  $('#sound span').textContent = soundEnabled ? '音效开启' : '音效关闭';
-  tone(660);
+function bindAudioControl(id: string, kind: 'music' | 'sfx') {
+  document.getElementById(id)?.addEventListener('click', () => {
+    lakeAudio.unlock();
+    if (kind === 'music') lakeAudio.setMusic(!lakeAudio.prefs.music);
+    else lakeAudio.setSfx(!lakeAudio.prefs.sfx);
+    paintAudio();
+    lakeAudio.play('click');
+  });
+}
+bindAudioControl('music', 'music');
+bindAudioControl('music-hud', 'music');
+bindAudioControl('sound', 'sfx');
+bindAudioControl('sfx-hud', 'sfx');
+$('#music-volume').addEventListener('input', () => {
+  lakeAudio.unlock();
+  lakeAudio.setMusicVolume(Number(($('#music-volume') as HTMLInputElement).value) / 100);
 });
+$('#sfx-volume').addEventListener('input', () => {
+  lakeAudio.unlock();
+  lakeAudio.setSfxVolume(Number(($('#sfx-volume') as HTMLInputElement).value) / 100);
+});
+paintAudio();
+window.addEventListener('pointerdown', () => lakeAudio.unlock(), { capture: true });
+window.addEventListener('keydown', () => lakeAudio.unlock(), { capture: true });
+$('#app').addEventListener('pointerdown', event => {
+  const button = (event.target as Element | null)?.closest('button');
+  if (!button || button.closest('.dpad, .audio-dock, .controls-panel') || ['touch-draw', 'joystick', 'primary', 'restart', 'mobile-restart'].includes(button.id)) return;
+  lakeAudio.play('click');
+}, { capture: true });
 
 const keyDirections: Record<string, Direction> = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
@@ -445,31 +490,36 @@ function handleEvent(event: GameEvent) {
   if (typeof event === 'object') {
     if (event.type === 'bossHit') {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
-      notify(`蚀根受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `蚀根 ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); tone(240, 0.15, 0, 'triangle');
+      notify(`蚀根受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `蚀根 ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); lakeAudio.play('boss-hit');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
       const names = event.enemies.map(enemy => ENEMY_STYLES[enemy.kind].name).join('、');
       const points = event.enemies.reduce((sum, enemy) => sum + enemy.points, 0);
-      notify(`圈敌成功 · ${names} +${points}`, `击败${event.enemies.length}敌 · +${points}`); tone(660); tone(990, 0.2, 0.08);
+      notify(`圈敌成功 · ${names} +${points}`, `击败${event.enemies.length}敌 · +${points}`); lakeAudio.play('defeat');
     }
   } else if (event === 'capture') {
     for (const region of game.lastCapture) effects.push((theme.createCaptureEffect ?? lakeDissolve)(region, reducedMotion.matches));
     notify('连接成功 · 新的领地已揭开', '领地已扩大');
-    tone(523); tone(784, 0.18, 0.08);
+    lakeAudio.play('capture', Math.max(0.2, game.percent - audioPercent));
   } else if (event === 'partition') {
-    notify('通路已连接 · 继续围出闭合区域', '通路已连接，继续圈地'); tone(440);
-  } else if (event === 'bossAttack') {
-    tone(180, 0.15, 0, 'triangle');
+    notify('通路已连接 · 继续围出闭合区域', '通路已连接，继续圈地'); lakeAudio.play('partition');
   } else if (event === 'hit') {
     hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`, `受击 · 剩余${game.lives}命`);
-    tone(120, 0.25, 0, 'triangle');
+    lakeAudio.play('hurt');
+    if (game.lives > 0) lakeAudio.play('respawn');
   } else if (event === 'won') {
     const result = applyUnlocks(codex, game.percent, game.lives);
     codex = result.codex; writeCodex(codex);
     freshNote = result.fresh.length ? `新解开：${result.fresh.map(id => rewardNames[id]).join('、')}` : '这些纪念都已经在图鉴里了。';
     effects.push(sealBreak(reducedMotion.matches));
-    tone(523); tone(659, 0.2, 0.15); tone(1046, 0.4, 0.3);
-  } else if (event === 'start') tone(440);
+    lakeAudio.play('seal');
+    let fanfare = 1.15;
+    if (game.percent >= 90 - 1e-4) { lakeAudio.play('milestone', 1, fanfare); fanfare += 0.62; }
+    if (game.lives >= 3) { lakeAudio.play('perfect', 1, fanfare); fanfare += 0.4; }
+    if (result.fresh.length) lakeAudio.play('reward', 1, fanfare);
+  } else if (event === 'lost') lakeAudio.play('gameover');
+  else if (event === 'start') lakeAudio.play('level');
+  audioPercent = game.percent;
 }
 
 function sync() {
@@ -625,6 +675,7 @@ function frame(now: number) {
   for (const effect of effects) effect.update(game.phase === 'paused' ? 0 : dt);
   for (let i = effects.length - 1; i >= 0; i--) if (effects[i].finished) effects.splice(i, 1);
   for (const event of game.events.splice(0)) handleEvent(event);
+  followAudio();
   hitFlash = Math.max(0, hitFlash - dt);
   if (now > toastUntil) $('#toast').classList.remove('visible');
   uiClock += dt;

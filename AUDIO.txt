@@ -1,0 +1,13 @@
+封林 audio
+============
+
+All music and sound effects are synthesized at runtime by src/audio.ts
+with the Web Audio API. The repository does not ship audio files.
+
+Source: original work written for this game. No samples, stems, or
+melodies were taken from a recording or a sample library.
+
+License: CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+The synthesis code is dedicated to the public domain. The rest of the
+game keeps whatever license the repository already uses.

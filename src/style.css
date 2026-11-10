@@ -191,7 +191,8 @@ body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100
 }
 /* A short landscape screen (a phone on its side) keeps the HUD in a narrow column so the 3:2 board can use the height. */
 @media(orientation:landscape) and (max-height:560px){
- .site-header{display:none}
+ .site-header{display:flex;height:0;min-height:0;padding:0;border:0;overflow:visible}
+ .site-header .brand,.header-right>:not(.audio-dock){display:none}
  .intro{display:none}
  main{padding:2px 6px 4px}
  .game-layout{grid-template-columns:minmax(0,1fr)}
@@ -215,6 +216,7 @@ body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100
  .score{font-size:12px}
  .life-paw{width:16px;height:18px}
  .vine{width:22%}
+ .audio-dock{position:fixed;top:4px;left:6px;right:auto;z-index:40}
 }
 @media(max-width:620px) and (orientation:portrait){
  .seal-hud{flex-wrap:wrap;padding:6px 8px 0}
@@ -229,3 +231,11 @@ body{background:radial-gradient(ellipse at 50% 0,#3a241866,transparent 55%),#100
  .touch-controls{flex:0 0 auto}
  .board-footer{height:24px}
 }
+.audio-dock{display:flex;gap:4px;margin-left:10px}
+.audio-dock button{height:26px;padding:0 8px;border-radius:13px;border:1px solid #8d6a3a;background:#1a120ee6;color:#f0d7a0;font-size:11px;letter-spacing:.4px}
+.audio-dock button[aria-pressed="false"]{opacity:.45}
+.audio-slider{display:flex;align-items:center;gap:8px;padding:8px 12px;color:#a9bbc5;font-size:10px;letter-spacing:.4px;border-top:1px solid #202f39}
+.audio-slider input{flex:1;min-width:0;accent-color:#e4c27a}
+.controls-panel button[aria-pressed="true"] .toggle{background:#315c51}
+.controls-panel button[aria-pressed="true"] .toggle:before{background:var(--mint);left:14px}
+@media(max-width:620px){.audio-dock button{font-size:11px;height:24px;padding:0 7px}}
