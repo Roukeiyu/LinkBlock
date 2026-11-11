@@ -31,13 +31,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <img class="ink-rule" src="${ui('ink_divider.png')}" alt="" />
       <div id="seal-row" class="seal-row"></div>
       <p id="seal-count" class="seal-count"></p>
-      <button id="menu-start" class="menu-btn" type="button">开始游戏</button>
+      <button id="menu-start" class="menu-btn is-selected" type="button" aria-current="true">开始游戏</button>
       <button id="menu-levels" class="menu-btn" type="button">选择关卡</button>
       <button id="menu-gallery" class="menu-btn" type="button">图鉴</button>
       <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false">设置</button>
       <div id="menu-settings-panel" class="menu-settings" hidden>
-        <button id="menu-music" type="button" aria-pressed="true"><span>音乐开启</span></button>
-        <button id="menu-sfx" type="button" aria-pressed="true"><span>音效开启</span></button>
+        <button id="menu-music" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle" aria-hidden="true"></span></button>
+        <button id="menu-sfx" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音效开启</span><span class="toggle" aria-hidden="true"></span></button>
         <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
         <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
       </div>
@@ -45,7 +45,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
   <header class="site-header">
     <button id="home" class="brand" type="button" aria-label="返回主界面"><img class="brand-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /></button>
-    <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span><div class="audio-dock" role="group" aria-label="声音"><button id="music-hud" type="button" aria-pressed="true" aria-label="音乐">音乐</button><button id="sfx-hud" type="button" aria-pressed="true" aria-label="音效">音效</button></div></div>
+    <div class="top-controls" role="toolbar" aria-label="游戏控制"><button id="pause" class="ink-tab" type="button" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart" class="ink-tab" type="button">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音乐"><span>音乐</span><span class="toggle" aria-hidden="true"></span></button><button id="sound" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音效">${icon('sound')}<span>音效</span><span class="toggle" aria-hidden="true"></span></button><label class="audio-slider"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider"><span>音效音量</span><input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
   </header>
   <main>
     <section class="intro"><div><p class="eyebrow">解封</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">画线净化被封住的区域，揭开这一关的封印。</p></div><div class="chapter"><span></span><p>解封</p></div></section>
@@ -91,37 +91,32 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           </div>
         </div>
         <div class="board-footer"><span><i id="state-dot" class="state-dot"></i><span id="state-label">准备就绪</span></span><span id="elapsed">00:00</span><span id="notice-slot"><span id="toast" class="toast" role="status" aria-live="polite"><span class="toast-full"></span><span class="toast-compact" aria-hidden="true"></span></span></span></div>
-        <div class="mobile-game-status"><span><b id="mobile-boss-name">首领</b> <b id="mobile-boss-hp">5 / 5</b></span><button id="mobile-pause" aria-label="暂停游戏">暂停</button><button id="mobile-restart" aria-label="重新开始游戏">重开</button></div>
+        <div class="mobile-game-status"><span><b id="mobile-boss-name">首领</b> <b id="mobile-boss-hp">5 / 5</b></span></div>
         <div class="touch-controls single" aria-label="手机手柄" data-mode="one-hand"><div class="controller-side dpad-side" hidden><div class="dpad"><span class="dpad-hit-area" aria-hidden="true"></span><button data-dir="up" aria-label="向上">↑</button><button data-dir="left" aria-label="向左">←</button><button data-dir="down" aria-label="向下">↓</button><button data-dir="right" aria-label="向右">→</button></div><span>方向</span></div><div class="controller-side draw-side" hidden><button id="touch-draw" aria-label="按住画线，松开收线" aria-pressed="false"><i aria-hidden="true"></i></button><span>按住画线 · 松开收线</span></div><div class="controller-side joystick-side"><button id="joystick" aria-label="单手触控区，任意位置按住滑动画线，松开收线" aria-pressed="false"><span class="joystick-disc" aria-hidden="true"><span class="joystick-guides">＋</span><i class="joystick-knob"></i></span></button><span>区域内任意位置滑动画线 · 松开收线</span></div><button id="control-mode">切换操作方式 <span id="control-mode-name" aria-live="polite">单手 · 自由触控</span></button></div>
       </div>
-      <aside>
-        <div class="side-panel field-notes"><div class="panel-heading"><span class="eyebrow">FIELD NOTES</span><span class="tiny-index">/ 001</span></div><h2>小小一步，<br>更大的世界。</h2><p class="panel-copy">安全区是你的起点，<br>勇气决定你的边界。</p><div class="divider"></div><ol class="instructions"><li><span class="step-number">01</span><div><h3>找到你的方向</h3><p>用 <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> 或 WASD<br>沿已揭示小岛的岸线移动。</p></div></li><li><span class="step-number">02</span><div><h3>越过边界</h3><p>按住 <kbd class="space-key">SPACE</kbd> 并移动画线，<br>回到岸线，净化圈内的区域。<br>碰到自己的线会自动收回，再按画线键可停下；若一直按着方向，回到起点后会立刻再画。<br>圈住普通敌人可击败并得分，<br>圈住首领可削减一格生命。<br>裸露外框不能靠岸；碰边可转向。<br>松开空格，沿原路快速收线。</p></div></li><li><span class="step-number">03</span><div><h3>观察敌人的轨迹</h3><p>敌人会击断未闭合的线。<br>首领的攻击能穿过领地边界，<br>躲开弹道再出发。</p></div></li></ol><div class="legend"><span><i class="legend-safe"></i>安全区</span><span><i class="legend-trail"></i>轨迹</span><span><i class="legend-enemy"></i>敌人</span></div><div class="enemy-roster" aria-label="敌人图鉴">${(['straight', 'orbit', 'zigzag', 'boss'] as const).map(kind => `<div class="enemy-entry" data-kind="${kind}"><i class="enemy-mark ${kind}" style="--enemy-color:${ENEMY_STYLES[kind].color}"></i><span><b class="enemy-name">${ENEMY_STYLES[kind].name}</b><small>${({ straight: '直线', orbit: '环绕', zigzag: '折线', boss: '首领' })[kind]}</small></span><em>${kind === 'boss' ? '<span id="boss-status">八向散射</span>' : kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'}</em></div>`).join('')}</div><div class="boss-health" role="progressbar" aria-label="Boss 生命" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5"><span id="boss-hearts"></span><small id="boss-hp-text">5 / 5</small><span id="boss-phase" hidden></span></div></div>
-        <div class="controls-panel"><button id="pause" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle"></span></button><button id="sound" type="button" aria-pressed="true">${icon('sound')}<span>音效开启</span><span class="toggle"></span></button><label class="audio-slider">音乐音量 <input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider">音效音量 <input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
-        <div class="side-note"><span>✦</span><p>不必一次占领整个世界。<br>每一小块，都算数。</p></div>
-      </aside>
     </section>
     <footer class="site-footer"><img class="footer-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /><span>无需下载 · 即刻探索</span></footer>
   </main>
   <div id="modal-shade" hidden></div>
   <div id="overlay" class="overlay" hidden>
-    <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><img id="overlay-seal" class="overlay-seal" alt="" src="${ui('wax_seal_red.png')}" /></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button" type="button">选关</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><button id="back-menu" class="ghost-button" type="button">返回主界面</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+    <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><img id="overlay-seal" class="overlay-seal" alt="" src="${ui('wax_seal_red.png')}" /></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button ink-tab" type="button">选关</button><button id="open-gallery" class="ghost-button ink-tab" type="button">图鉴</button><button id="back-menu" class="ghost-button ink-tab" type="button">返回主界面</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
   </div>
   <div id="gallery" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="gallery-title">
-      <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" type="button">返回</button></div>
+      <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" class="ink-tab" type="button">返回</button></div>
       <div id="gallery-grid" class="gallery-sections"></div>
     </div>
   </div>
-  <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" type="button">关闭</button></div>
+  <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
   <div id="level-select" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
-      <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" type="button">返回</button></div>
+      <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" class="ink-tab" type="button">返回</button></div>
       <div id="level-list" class="level-list"></div>
     </div>
   </div>`;
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-for (const [name, file] of [['--menu-art', 'main_menu.webp'], ['--page-frame', 'page_frame.webp'], ['--parchment', 'parchment_tile.webp'], ['--ink-divider', 'ink_divider.png'], ['--ribbon', 'ribbon_bookmark.png']] as const) {
+for (const [name, file] of [['--menu-art', 'main_menu.webp'], ['--page-frame', 'page_frame.webp'], ['--parchment', 'parchment_tile.webp'], ['--ink-divider', 'ink_divider.png'], ['--ribbon', 'ribbon_bookmark.png'], ['--wax-red', 'wax_seal_red.png']] as const) {
   document.documentElement.style.setProperty(name, `url('${new URL(ui(file), document.baseURI).href}')`);
 }
 const canvas = $<HTMLCanvasElement>('#board');
@@ -173,9 +168,9 @@ const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', 
 interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string; sheet?: boolean }
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
-    { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '尚未解锁' },
-    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '尚未解锁', sheet: true },
-    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '尚未解锁', sheet: true },
+    { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
+    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '未解锁 · 净化达到 90%', sheet: true },
+    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '未解锁 · 一条命都没有失去', sheet: true },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
     level: level.id,
@@ -191,7 +186,7 @@ function galleryCards(): GalleryCard[] {
 function paintCharms() {
   for (const charm of document.querySelectorAll<HTMLButtonElement>('.charm')) {
     const id = charm.dataset.reward as RewardId;
-    const open = rewardsFor(codex, current.id)[id];
+    const open = rewardOpen(current.id, id);
     charm.classList.toggle('unlocked', open);
     charm.classList.toggle('locked', !open);
     charm.setAttribute('aria-pressed', String(open));
@@ -223,12 +218,19 @@ function paintPortrait() {
   portrait.alt = freed ? `${current.theme}已解开` : `${current.theme}仍被封印`;
   $('#portrait').setAttribute('aria-label', current.theme);
 }
+function rewardOpen(levelId: number, id: RewardId) {
+  return rewardsFor(codex, levelId)[id] === true;
+}
 function renderGallery() {
   const cards = galleryCards();
   $('#gallery-grid').innerHTML = LEVELS.map(level => {
     const items = cards.filter(card => card.level === level.id).map(item => {
-      const open = rewardsFor(codex, level.id)[item.id];
-      return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img ${item.sheet ? 'class="sheet"' : ''} src="${asset(item.src)}" alt="" loading="lazy" decoding="async" /><span>${item.title}</span><small>${open ? item.blurb : item.locked}</small></button>`;
+      const open = rewardOpen(level.id, item.id);
+      const picture = open
+        ? `<img ${item.sheet ? 'class="sheet"' : ''} src="${asset(item.src)}" alt="" loading="lazy" decoding="async" />`
+        : `<span class="sealed-plate" aria-hidden="true"><img src="${asset('ui/wax_seal_red.png')}" alt="" /></span>`;
+      const note = open ? item.blurb : item.locked;
+      return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'} aria-label="${item.title}，${note}">${picture}<span>${item.title}</span><small>${note}</small></button>`;
     }).join('');
     return `<section class="gallery-level"><h3>${level.title}</h3><div class="gallery-grid">${items}</div></section>`;
   }).join('');
@@ -241,17 +243,32 @@ function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = tru
 
 function paintAudio() {
   const { music, sfx, musicVolume, sfxVolume } = lakeAudio.prefs;
-  for (const [id, on, label] of [['music', music, '音乐'], ['music-hud', music, '音乐'], ['menu-music', music, '音乐'], ['sound', sfx, '音效'], ['sfx-hud', sfx, '音效'], ['menu-sfx', sfx, '音效']] as const) {
+  for (const [id, on, label] of [['music', music, '音乐'], ['menu-music', music, '音乐'], ['sound', sfx, '音效'], ['menu-sfx', sfx, '音效']] as const) {
     const button = document.getElementById(id);
     if (!button) continue;
     button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', `${label}${on ? '开启' : '关闭'}`);
     const text = button.querySelector('span');
-    if (text && id !== 'music-hud' && id !== 'sfx-hud') text.textContent = `${label}${on ? '开启' : '关闭'}`;
+    if (text) text.textContent = id.startsWith('menu-') ? `${label}${on ? '开启' : '关闭'}` : label;
   }
   ($('#music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
   ($('#sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
   ($('#menu-music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
   ($('#menu-sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
+}
+const menuItems = () => [...document.querySelectorAll<HTMLButtonElement>('.menu-page > .menu-btn')];
+const menuConsumed = new Set<string>();
+function paintMenu(index?: number) {
+  const buttons = menuItems();
+  if (!buttons.length) return;
+  const current = index ?? Math.max(0, buttons.findIndex(button => button.classList.contains('is-selected')));
+  const selected = ((current % buttons.length) + buttons.length) % buttons.length;
+  buttons.forEach((button, i) => {
+    const on = i === selected;
+    button.classList.toggle('is-selected', on);
+    if (on) button.setAttribute('aria-current', 'true');
+    else button.removeAttribute('aria-current');
+  });
 }
 function paintSealRow() {
   const cleared = LEVELS.filter(level => rewardsFor(codex, level.id).clear).length;
@@ -270,6 +287,7 @@ function placeShade() {
 function hideMenu() { $('#title-screen').hidden = true; }
 function showMenu() {
   paintSealRow();
+  paintMenu(0);
   lakeAudio.useTrack(LEVELS[0].music);
   $('#title-screen').hidden = false;
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
@@ -385,8 +403,6 @@ $('#primary').addEventListener('click', () => {
 });
 pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
-$('#mobile-pause').addEventListener('click', togglePause);
-$('#mobile-restart').addEventListener('click', restart);
 // Safari's text selection and link/image callouts also apply to the header and
 // instructions. Block only native selection/menu/drag defaults, never touches;
 // real form fields and editable content retain their normal editing behavior.
@@ -416,10 +432,8 @@ function bindAudioControl(id: string, kind: 'music' | 'sfx') {
   });
 }
 bindAudioControl('music', 'music');
-bindAudioControl('music-hud', 'music');
 bindAudioControl('menu-music', 'music');
 bindAudioControl('sound', 'sfx');
-bindAudioControl('sfx-hud', 'sfx');
 bindAudioControl('menu-sfx', 'sfx');
 function bindVolume(id: string, kind: 'music' | 'sfx') {
   document.getElementById(id)?.addEventListener('input', () => {
@@ -439,7 +453,7 @@ window.addEventListener('pointerdown', () => lakeAudio.unlock(), { capture: true
 window.addEventListener('keydown', () => lakeAudio.unlock(), { capture: true });
 $('#app').addEventListener('pointerdown', event => {
   const button = (event.target as Element | null)?.closest('button');
-  if (!button || button.closest('.dpad, .audio-dock, .controls-panel') || ['touch-draw', 'joystick', 'primary', 'restart', 'mobile-restart'].includes(button.id)) return;
+  if (!button || button.closest('.dpad, .top-controls, .menu-settings') || ['touch-draw', 'joystick', 'primary', 'restart'].includes(button.id)) return;
   lakeAudio.play('click');
 }, { capture: true });
 
@@ -447,8 +461,12 @@ const keyDirections: Record<string, Direction> = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
 };
+function menuOpen() {
+  return !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
+}
 window.addEventListener('keydown', e => {
   if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!$('#title-screen').hidden || !$('#gallery').hidden || !$('#level-select').hidden || !$('#viewer').hidden) return;
   if (e.code === 'Space' && game.phase === 'opening') {
     if (e.target instanceof HTMLButtonElement && !e.target.matches('#touch-draw, #joystick')) return;
     e.preventDefault(); if (!e.repeat) confirmOpening(); return;
@@ -468,6 +486,7 @@ window.addEventListener('keydown', e => {
   }
 });
 window.addEventListener('keyup', e => {
+  if (menuConsumed.delete(e.code)) return;
   if (e.code === 'Space') {
     drawHeld = false;
     if (!touchDraw) game.beginRetraction();
@@ -693,21 +712,9 @@ function sync() {
   $('#lives').setAttribute('aria-label', `剩余 ${game.lives} 条生命`);
   const seconds = Math.floor(game.elapsed);
   $('#elapsed').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-  for (const kind of ['straight', 'orbit', 'zigzag', 'boss'] as const) {
-    const remaining = kind === 'boss' ? Number(Boolean(game.boss)) : game.enemies.filter(enemy => enemy.kind === kind).length;
-    const row = $(`[data-kind="${kind}"]`); row.classList.toggle('defeated', !waiting && remaining === 0);
-    if (kind !== 'boss') row.querySelector('em')!.textContent = waiting ? '等待入场' : remaining === 0 ? '已击败' : `${kind === 'straight' ? 'FAST' : kind === 'orbit' ? 'ORBIT' : 'ZIGZAG'} ×${remaining}`;
-  }
-  $('#boss-status').textContent = waiting ? '等待入场' : !game.boss ? '已击败' : game.bossJump ? (game.bossJump.to ? '跃迁中' : '寻找落点') : game.bossAttack && game.bossAttack.warning > 0 ? '即将释放' : game.bossAttack?.name ?? '普通攻击';
-  $('#boss-status').classList.toggle('warning', Boolean(game.boss && !game.bossJump && game.bossAttack && game.bossAttack.warning > 0));
   const hp = game.boss || waiting ? game.bossHealth : 0;
-  $('#boss-hearts').innerHTML = Array.from({ length: game.bossMaxHealth }, (_, i) => `<i class="${i < hp ? 'filled' : ''}"></i>`).join('');
-  $('#boss-hp-text').textContent = `${hp} / ${game.bossMaxHealth}`;
-  $('#mobile-boss-hp').textContent = `${hp} / ${game.bossMaxHealth}`;
-  $('#mobile-pause').textContent = game.phase === 'paused' ? '继续' : '暂停';
-  ($('#mobile-pause') as HTMLButtonElement).disabled = !['playing', 'opening', 'paused'].includes(game.phase);
-  $('.boss-health').setAttribute('aria-valuenow', String(hp)); $('.boss-health').setAttribute('aria-valuemax', String(game.bossMaxHealth));
-  $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.reinforcementTarget === undefined ? game.bossPhase : `${game.bossPhase} · 访客 ${game.enemies.length}/${game.reinforcementTarget}`;
+  const mobileHp = document.getElementById('mobile-boss-hp');
+  if (mobileHp) mobileHp.textContent = `${hp} / ${game.bossMaxHealth}`;
   pauseButton.disabled = !['playing', 'opening', 'paused'].includes(game.phase);
   overlay.hidden = !$('#title-screen').hidden || game.phase === 'playing' || selecting || (game.phase === 'won' && effects.length > 0);
   placeShade();
@@ -939,6 +946,28 @@ $('#menu-settings').addEventListener('click', () => {
 $('#home').addEventListener('click', showMenu);
 $('#back-menu').addEventListener('click', showMenu);
 paintSealRow();
+paintMenu(0);
+$('.menu-page').addEventListener('pointerover', event => {
+  if (!menuOpen()) return;
+  const button = (event.target as Element | null)?.closest('button');
+  if (!button || button.parentElement !== $('.menu-page')) return;
+  const index = menuItems().indexOf(button as HTMLButtonElement);
+  if (index >= 0) paintMenu(index);
+});
+window.addEventListener('keydown', event => {
+  if (!menuOpen() || isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+  const buttons = menuItems();
+  const index = Math.max(0, buttons.findIndex(button => button.classList.contains('is-selected')));
+  if (event.code === 'ArrowUp' || event.code === 'KeyW') { event.preventDefault(); paintMenu(index - 1); return; }
+  if (event.code === 'ArrowDown' || event.code === 'KeyS') { event.preventDefault(); paintMenu(index + 1); return; }
+  if (event.code === 'ArrowLeft') { event.preventDefault(); paintMenu(0); return; }
+  if (event.code === 'ArrowRight') { event.preventDefault(); paintMenu(buttons.length - 1); return; }
+  if (event.code === 'Space' || event.code === 'Enter' || event.code === 'NumpadEnter') {
+    event.preventDefault();
+    menuConsumed.add(event.code);
+    buttons[index]?.click();
+  }
+});
 $('#level-list').addEventListener('click', event => {
   const button = (event.target as Element).closest<HTMLButtonElement>('button[data-level]');
   if (!button || button.disabled) return;

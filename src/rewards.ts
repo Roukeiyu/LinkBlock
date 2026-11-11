@@ -6,11 +6,12 @@ export interface Codex extends LevelRewards { levels?: Record<number, LevelRewar
 export const EMPTY_CODEX: Codex = { clear: false, ninety: false, perfect: false };
 
 const blank = (): LevelRewards => ({ clear: false, ninety: false, perfect: false });
+const flag = (value: unknown) => value === true;
 
 export function rewardsFor(codex: Codex, levelId = 1): LevelRewards {
-  if (levelId <= 1) return { clear: !!codex.clear, ninety: !!codex.ninety, perfect: !!codex.perfect };
+  if (levelId <= 1) return { clear: flag(codex.clear), ninety: flag(codex.ninety), perfect: flag(codex.perfect) };
   const found = codex.levels?.[levelId];
-  return found ? { clear: !!found.clear, ninety: !!found.ninety, perfect: !!found.perfect } : blank();
+  return found ? { clear: flag(found.clear), ninety: flag(found.ninety), perfect: flag(found.perfect) } : blank();
 }
 
 export function freshUnlocks(before: Codex, percent: number, lives: number, levelId = 1): RewardId[] {
@@ -43,10 +44,10 @@ export function readCodex(storage: Pick<Storage, 'getItem'> | undefined = global
       for (const [id, value] of Object.entries(parsed.levels)) {
         const levelId = Number(id);
         if (!Number.isInteger(levelId) || levelId < 2 || levelId > 5 || !value || typeof value !== 'object') continue;
-        levels[levelId] = { clear: !!value.clear, ninety: !!value.ninety, perfect: !!value.perfect };
+        levels[levelId] = { clear: flag(value.clear), ninety: flag(value.ninety), perfect: flag(value.perfect) };
       }
     }
-    return { clear: !!parsed.clear, ninety: !!parsed.ninety, perfect: !!parsed.perfect, levels };
+    return { clear: flag(parsed.clear), ninety: flag(parsed.ninety), perfect: flag(parsed.perfect), levels };
   } catch {
     return { ...EMPTY_CODEX };
   }

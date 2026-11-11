@@ -645,9 +645,9 @@ for (const variant of ['left edge', 'right edge', 'safe area']) test(`island coa
   await session.send('Input.dispatchTouchEvent', { type: variant === 'safe area' ? 'touchCancel' : 'touchEnd', touchPoints: [] }); await page.clock.runFor(500); await session.detach();
   expect((await probe(page)).player).toEqual({ x: 24, y: 18 }); expect((await probe(page)).trail).toHaveLength(0); await expect(pad).toHaveAttribute('aria-pressed', 'false');
   expect(await pad.evaluate(e => (e as HTMLElement).style.getPropertyValue('--origin-x'))).toBe('');
-  await page.locator('#mobile-pause').click(); await expect(page.locator('#state-label')).toHaveText('已暂停'); await page.locator('#mobile-pause').click();
+  await page.locator('#pause').click(); await expect(page.locator('#state-label')).toHaveText('已暂停'); await page.locator('#pause').click();
   await page.locator('#control-mode').click(); await expect(page.locator('.touch-controls')).toHaveAttribute('data-mode', 'two-left'); await expect(pad).toBeHidden();
-  await page.locator('#mobile-restart').click(); await expect(page.locator('#state-label')).toHaveText('选择起点'); expect(errors).toEqual([]);
+  await page.locator('#restart').click(); await expect(page.locator('#state-label')).toHaveText('选择起点'); expect(errors).toEqual([]);
 });
 
 test('one-handed joystick draws while held, turns continuously, clamps the knob and retracts on release', async ({ page }) => {
