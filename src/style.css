@@ -378,15 +378,15 @@ button.ink-tab kbd{margin:0;min-width:16px;height:16px;padding:0 3px;display:inl
 }
 
 /* Level select is a short centered sheet. The gallery keeps the larger page. */
-.level-select{align-items:center;justify-content:center;padding:12px}
-.level-select .gallery-card{width:min(520px,calc(100vw - 28px));max-height:none;overflow:visible;padding:8px 16px 10px}
-.level-select .gallery-head{position:relative;display:flex;justify-content:center;align-items:center;margin:0 0 6px;padding:2px 0 4px;min-height:28px}
-.level-select .gallery-head h2{width:100%;margin:0;text-align:center;font-size:18px;line-height:1.2;letter-spacing:.34em}
-.level-select .gallery-head .ink-tab{position:absolute;right:0;top:50%;height:26px;padding:0 8px;transform:translateY(-50%)}
-.level-select .level-list{gap:4px}
-.level-select .level-list button{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;align-items:center;justify-items:center;gap:4px;padding:2px 6px;text-align:center;border-radius:8px}
-.level-select .level-seal{grid-column:1;width:30px;height:30px}
+.level-select{align-items:center;justify-content:center;padding:8px}
+.level-select .gallery-card{width:min(480px,calc(100vw - 24px));max-height:none;overflow:visible;padding:2px 12px 4px;border-width:12px}
+.level-select .gallery-head{position:relative;display:flex;justify-content:center;align-items:center;margin:0 0 2px;padding:0;min-height:0}
+.level-select .gallery-head h2{width:100%;margin:0;text-align:center;font-size:15px;line-height:1;letter-spacing:.28em}
+.level-select .gallery-head .ink-tab{position:absolute;right:0;top:50%;height:22px;padding:0 7px;font-size:11px;transform:translateY(-50%)}
+.level-select .level-list{gap:2px}
+.level-select .level-list button{display:grid;grid-template-columns:20px minmax(0,1fr) 20px;align-items:center;justify-items:center;gap:2px;padding:0 4px;text-align:center;border-radius:6px}
+.level-select .level-seal{grid-column:1;width:18px;height:18px}
 .level-select .level-copy{grid-column:2;align-items:center;text-align:center;gap:0}
 .level-select .level-copy b,.level-select .level-copy small{display:block;width:100%;text-align:center}
-.level-select .level-copy b{font-size:14px;line-height:1.25;letter-spacing:.08em}
-.level-select .level-copy small{font-size:11px;line-height:1.25;letter-spacing:.04em}
+.level-select .level-copy b{font-size:13px;line-height:1.15;letter-spacing:.06em}
+.level-select .level-copy small{font-size:11px;line-height:1.15;letter-spacing:.03em}
