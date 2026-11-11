@@ -22,6 +22,7 @@ describe('level catalog', () => {
     expect(LEVELS[2].names.boss).toBe('狂电塔');
     expect(LEVELS[3].names.boss).toBe('血月石像');
     expect(LEVELS[4].names.boss).toBe('秋猎魔骑');
+    expect(LEVELS.map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
     expect(LEVELS[0].rewardNinety).toBeUndefined();
     expect(LEVELS[0].rewardPerfect).toBeUndefined();
     expect(LEVELS.slice(1).map(level => [level.rewardNinety, level.rewardPerfect])).toEqual([
