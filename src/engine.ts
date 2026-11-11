@@ -1,5 +1,5 @@
 import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, type Point, type Polygon } from './geometry';
-import { SHORE_CONTACT_TOLERANCE, walkCoast } from './coast';
+import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
 import { Island } from './island';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
@@ -176,7 +176,6 @@ export class Game {
         if (route.stepping) this.shoreStep = { direction, point: { ...this.player } };
         return false;
       }
-      if (!drawing || this.protection > 0) return false;
       const entry = { x: p.x + v.x * 1e-5, y: p.y + v.y * 1e-5 };
       if (this.island) {
         if (entry.x < 0 || entry.x > this.width || entry.y < 0 || entry.y > this.height) return false;
@@ -186,8 +185,15 @@ export class Game {
         entry.x = Math.max(1e-5, Math.min(this.width - 1e-5, entry.x));
         entry.y = Math.max(1e-5, Math.min(this.height - 1e-5, entry.y));
       }
-      this.cutRegion = this.territories.findIndex(region => inside(entry, region));
-      if (this.cutRegion < 0) return false;
+      const region = this.territories.findIndex(region => inside(entry, region));
+      if (region < 0) {
+        const turn = turnAtJunction(p, v, amount, this.boundarySegments);
+        this.playerPath.push(...turn.slice(1)); this.player = turn.at(-1)!;
+        if (turn.stepping) this.shoreStep = { direction, point: { ...this.player } };
+        return false;
+      }
+      if (!drawing || this.protection > 0) return false;
+      this.cutRegion = region;
       this.anchor = { ...p };
       this.trail = [{ ...p }];
     }
