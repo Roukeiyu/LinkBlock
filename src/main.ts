@@ -164,7 +164,7 @@ const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
 let codex: Codex = readCodex();
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
-interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string }
+interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string; sheet?: boolean }
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
     { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '尚未解锁' },
@@ -175,7 +175,8 @@ function galleryCards(): GalleryCard[] {
     level: level.id,
     id,
     title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '九成净化' : '无伤'}`,
-    src: level.restored,
+    src: id === 'clear' ? level.restored : id === 'ninety' ? level.rewardNinety! : level.rewardPerfect!,
+    sheet: id !== 'clear',
     blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '一条命都没有失去',
     locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 一条命都没有失去',
   })));
@@ -218,7 +219,7 @@ function renderGallery() {
   $('#gallery-grid').innerHTML = LEVELS.map(level => {
     const items = cards.filter(card => card.level === level.id).map(item => {
       const open = rewardsFor(codex, level.id)[item.id];
-      return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img src="${asset(item.src)}" alt="" /><span>${item.title}</span><small>${open ? item.blurb : item.locked}</small></button>`;
+      return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img ${item.sheet ? 'class="sheet"' : ''} src="${asset(item.src)}" alt="" loading="lazy" decoding="async" /><span>${item.title}</span><small>${open ? item.blurb : item.locked}</small></button>`;
     }).join('');
     return `<section class="gallery-level"><h3>${level.title}</h3><div class="gallery-grid">${items}</div></section>`;
   }).join('');
@@ -883,6 +884,7 @@ $('#gallery-grid').addEventListener('click', event => {
   const reward = galleryCards().find(entry => String(entry.level) === item.dataset.level && entry.id === item.dataset.reward);
   if (!reward) return;
   const image = $<HTMLImageElement>('#viewer-img');
+  image.classList.toggle('sheet', Boolean(reward.sheet));
   image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false;
 });
 loadLevelMask(current);

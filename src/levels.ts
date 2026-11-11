@@ -18,6 +18,9 @@ export interface LevelDef {
   music: string;
   portraitSealed: string;
   portraitRescued: string;
+  /** Dedicated 4:3 gallery sheets. Level 1 keeps its own cards and leaves these unset. */
+  rewardNinety?: string;
+  rewardPerfect?: string;
   /** Three straight-moving looks, then the orbiter, the zigzag, and the boss. */
   names: { straight: [string, string, string]; orbit: string; zigzag: string; boss: string };
   sprites: SpriteSheet;
@@ -52,6 +55,7 @@ export const LEVELS: LevelDef[] = [
     id: 2, theme: '木乃伊', title: '第二关 · 沙漠神殿',
     restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png', music: 'desert-temple',
     portraitSealed: 'levels/2/portrait_sealed.png', portraitRescued: 'levels/2/portrait_rescued.png',
+    rewardNinety: 'levels/2/mummy-90.webp', rewardPerfect: 'levels/2/mummy-perfect.webp',
     names: { straight: ['流沙', '缠布', '豺影'], orbit: '圣甲', zigzag: '罐灵', boss: '沙傀王' },
     sprites: sheet('levels/2', ['enemy_liusha.png', 'enemy_shengjia.png', 'enemy_guanling.png', 'enemy_chanbu.png', 'enemy_chaiying.png', 'boss_shakuiwang.png']),
     enemySpeed: 1.05, bossSpeed: 1.04, squad: { straight: 4, orbit: 3, zigzag: 3 }, reinforceInterval: 0.92, reinforceSpeed: 1.05,
@@ -60,6 +64,7 @@ export const LEVELS: LevelDef[] = [
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
     restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png', music: 'storm-lab',
     portraitSealed: 'levels/3/portrait_sealed.png', portraitRescued: 'levels/3/portrait_rescued.png',
+    rewardNinety: 'levels/3/frankenstein-90.webp', rewardPerfect: 'levels/3/frankenstein-perfect.webp',
     names: { straight: ['电弧', '齿轮魂', '雷鼠'], orbit: '缝偶', zigzag: '酸雾', boss: '狂电塔' },
     sprites: sheet('levels/3', ['enemy_dianhu.png', 'enemy_fengou.png', 'enemy_suanwu.png', 'enemy_chilunhun.png', 'enemy_leishu.png', 'boss_kuangdianta.png']),
     enemySpeed: 1.1, bossSpeed: 1.08, squad: { straight: 4, orbit: 4, zigzag: 3 }, reinforceInterval: 0.85, reinforceSpeed: 1.1,
@@ -68,6 +73,7 @@ export const LEVELS: LevelDef[] = [
     id: 4, theme: '吸血鬼', title: '第四关 · 玫瑰古堡',
     restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png', music: 'rose-waltz',
     portraitSealed: 'levels/4/portrait_sealed.png', portraitRescued: 'levels/4/portrait_rescued.png',
+    rewardNinety: 'levels/4/vampire-90.webp', rewardPerfect: 'levels/4/vampire-perfect.webp',
     names: { straight: ['血蝠', '棘玫瑰', '棺鸦'], orbit: '红雾', zigzag: '镜影', boss: '血月石像' },
     sprites: sheet('levels/4', ['enemy_xuefu.png', 'enemy_hongwu.png', 'enemy_jingying.png', 'enemy_jimeigui.png', 'enemy_guanya.png', 'boss_xueyueshixiang.png']),
     enemySpeed: 1.15, bossSpeed: 1.12, squad: { straight: 4, orbit: 4, zigzag: 4 }, reinforceInterval: 0.78, reinforceSpeed: 1.15,
@@ -76,6 +82,7 @@ export const LEVELS: LevelDef[] = [
     id: 5, theme: '无头骑士', title: '第五关 · 秋夜南瓜谷',
     restored: 'levels/5/horseman-restored.webp', sealed: 'levels/5/horseman_sealed_solid.webp', mask: 'levels/5/char_mask.png', music: 'autumn-ride',
     portraitSealed: 'levels/5/portrait_sealed.png', portraitRescued: 'levels/5/portrait_rescued.png',
+    rewardNinety: 'levels/5/horseman-90.webp', rewardPerfect: 'levels/5/horseman-perfect.webp',
     names: { straight: ['鬼火', '铁蹄', '断缰'], orbit: '南瓜灵', zigzag: '落叶旋', boss: '秋猎魔骑' },
     sprites: sheet('levels/5', ['enemy_guihuo.png', 'enemy_nangualing.png', 'enemy_luoyexuan.png', 'enemy_tieti.png', 'enemy_duanjiang.png', 'boss_qiuliemoqi.png']),
     enemySpeed: 1.2, bossSpeed: 1.16, squad: { straight: 5, orbit: 4, zigzag: 4 }, reinforceInterval: 0.72, reinforceSpeed: 1.2,
