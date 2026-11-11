@@ -1,0 +1,164 @@
+[
+  {
+    "chapter": 5,
+    "source_url": "https://suno.com/song/fb4f655c-d0a1-4f63-b7a0-dc2f19089e83",
+    "source_sha256": "578388906eb363ea7d79c655bdb529629a159c4cdd2a320e279fb21eaa93275f",
+    "original_duration_seconds": 149.952,
+    "trim_end_seconds": 148.756896,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 145.756896,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/autumn-ride-suno-v1.ogg",
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -6.57,
+        "endpoint_sample_jump": 0.00214806834992487,
+        "sha256": "504d14edb994aef80f1da560eb40facc8beffc4d6d860ce7533536c489af77df"
+      },
+      {
+        "file": "public/audio/autumn-ride-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -7.91,
+        "endpoint_sample_jump": 0.0001865637968876399,
+        "sha256": "3f118175a485b77f20d765fa51f30e73c8e79b1a5f4c790a637968147f848eef"
+      }
+    ]
+  },
+  {
+    "chapter": 6,
+    "source_url": "https://suno.com/song/de2f86ca-8f8d-440b-9f2f-49d3cfcfb51b",
+    "source_sha256": "f421192cc7f1fd5b92d4772166b95d0eb438dba5a3dfa717d629796cf943ac6d",
+    "original_duration_seconds": 150.0,
+    "trim_end_seconds": 149.138896,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 146.138896,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/sunken-court-suno-v1.ogg",
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -8.06,
+        "endpoint_sample_jump": 0.0009056170529220253,
+        "sha256": "11d023d3623f91bd203f9a030013a3861554ecfb7db3188fc142c8c1a4d24025"
+      },
+      {
+        "file": "public/audio/sunken-court-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -8.63,
+        "endpoint_sample_jump": 0.0007209958275780082,
+        "sha256": "b6d9ab13c2a1776bf7703b06869024bd645bb9de3f9d4a1778bbcd947b89e656"
+      }
+    ]
+  },
+  {
+    "chapter": 7,
+    "source_url": "https://suno.com/song/6ab2fce7-0dc3-4099-98ed-c2143e3ed73e",
+    "source_sha256": "4f5c0c575cdfb67edf1b4d8a080d01cab175e542e06adf452547b89caaae5c32",
+    "original_duration_seconds": 150.792,
+    "trim_end_seconds": 150.086312,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 147.086312,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/fox-shrine-suno-v1.ogg",
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -7.38,
+        "endpoint_sample_jump": 0.002696960378671065,
+        "sha256": "bfd22276b5cf5a4e6bbe1c5ee6615f1661925d15ba0c81b0d24d5e68b55ad605"
+      },
+      {
+        "file": "public/audio/fox-shrine-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -7.86,
+        "endpoint_sample_jump": 0.00018379269749857485,
+        "sha256": "d496a137fe9e12ae1bba86222e20cbc6439cae5d020f405afd80ed9bf4a82947"
+      }
+    ]
+  },
+  {
+    "chapter": 8,
+    "source_url": "https://suno.com/song/4a3e92a6-baa2-4805-8199-2c1afcba6b36",
+    "source_sha256": "fc2fb5dce124900869fc5925d9d5705b05cb18b6e239fa9c0a08d3c7704fd168",
+    "original_duration_seconds": 149.64,
+    "trim_end_seconds": 147.86125,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 144.86125,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/aurora-throne-suno-v1.ogg",
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -7.68,
+        "endpoint_sample_jump": 0.00017022744577843696,
+        "sha256": "276dd739f013ff2fe3f41f350a6c25e84aca3bf2408199457a0628d9a72002e9"
+      },
+      {
+        "file": "public/audio/aurora-throne-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -8.15,
+        "endpoint_sample_jump": 0.0010641081316862255,
+        "sha256": "8e46b1857eeac6b8eceda2338d416e2f0db079773c501a104c2e32b65de24659"
+      }
+    ]
+  },
+  {
+    "chapter": 9,
+    "source_url": "https://suno.com/song/57a6bb89-a834-4e31-8128-3814bc0eef56",
+    "source_sha256": "c80fb4851b72f7e6e1a1239691df8d71ab77e4379f9b0dab7e1cac1fd9b82436",
+    "original_duration_seconds": 149.472,
+    "trim_end_seconds": 148.108854,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 145.108854,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/dusk-belfry-suno-v1.ogg",
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -7.03,
+        "endpoint_sample_jump": 0.0004346287460066378,
+        "sha256": "15354d398f9ee653ad39236d6244a14d800836ae330c8d9c70b160114832bad8"
+      },
+      {
+        "file": "public/audio/dusk-belfry-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -7.66,
+        "endpoint_sample_jump": 4.097478813491762e-05,
+        "sha256": "b74caaeb865972ab2e66037ff6e641e9702d8a13e360834cff024a5c3970aa3d"
+      }
+    ]
+  },
+  {
+    "chapter": 10,
+    "source_url": "https://suno.com/song/2abb682a-b45f-4a66-ab71-70fe624b08ee",
+    "source_sha256": "0c890ba437fdc593fc3552354fa2f448ab359c294c9ab20485ce65c2ed3e9914",
+    "original_duration_seconds": 149.304,
+    "trim_end_seconds": 148.324333,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "loop_duration_seconds": 145.324333,
+    "subjective_listening_verified": false,
+    "outputs": [
+      {
+        "file": "public/audio/ember-crown-suno-v1.ogg",
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -7.39,
+        "endpoint_sample_jump": 0.0009730142483022064,
+        "sha256": "1b69e8a79edab506e507114931f4110d3ec9554cc9da9fbc44e27f586d953d8a"
+      },
+      {
+        "file": "public/audio/ember-crown-suno-v1.mp3",
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -7.87,
+        "endpoint_sample_jump": 0.00016364822295145132,
+        "sha256": "8bd5212280e0f87b317f77837846f43c939b1172e40a3d208ae13f6047843dd9"
+      }
+    ]
+  }
+]

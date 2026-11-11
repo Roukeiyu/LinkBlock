@@ -27,6 +27,12 @@ jobs:
         run: npm ci
       - name: Test game rules
         run: npm test
+      - name: Install browser for audio regression tests
+        run: npx playwright install --with-deps chromium
+      - name: Test music playback and campaign assets
+        run: |
+          npm run test:e2e -- tests/audio.spec.ts tests/expansion.spec.ts
+          npm run test:e2e -- tests/game.spec.ts --grep "pause, sound, restart and background pause"
       - name: Build website
         run: npm run build
       - name: Upload Pages artifact

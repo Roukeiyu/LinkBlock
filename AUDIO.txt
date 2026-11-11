@@ -3,8 +3,8 @@
 
 Background music
 ----------------
-Each level loops one track. Levels 1–5 use music supplied by the repository owner;
-levels 6–10 use original synthesized ambient loops made for this expansion. The game
+Each level loops one track. Levels 1–4 retain the owner-supplied music.
+Levels 5–10 use Suno recordings generated for the owner and prepared as loops. The game
 prefers the Opus .ogg and falls back to .mp3. A file is downloaded only
 after the first tap or key press, and only for the level being played.
 
@@ -21,32 +21,60 @@ Level 3 — Storm Laboratory (~1:33)
 Level 4 — Rose Waltz (~2:53)
   public/audio/rose-waltz.ogg and public/audio/rose-waltz.mp3
 
-Level 5 — Autumn Ride (~1:50)
-  public/audio/autumn-ride.ogg and public/audio/autumn-ride.mp3
-
-The five tracks above are the owner's own generations for this game. They are not
+The four tracks above are the owner's generations for this game. They are not
 covered by the CC0 dedication below.
 
-Level 6 — 沉潮王庭 Sunken Court (~0:53), 72 BPM
-  public/audio/sunken-court.ogg and public/audio/sunken-court.mp3
+Level 5 — 秋夜南瓜谷 / Lanterns on the Hollow Road
+  public/audio/autumn-ride-suno-v1.ogg and public/audio/autumn-ride-suno-v1.mp3
+  Source: https://suno.com/song/fb4f655c-d0a1-4f63-b7a0-dc2f19089e83
 
-Level 7 — 狐火神社 Fox Shrine (~0:42), 92 BPM
-  public/audio/fox-shrine.ogg and public/audio/fox-shrine.mp3
+Level 6 — 沉潮王庭 / Beneath the Moonlit Tide
+  public/audio/sunken-court-suno-v1.ogg and public/audio/sunken-court-suno-v1.mp3
+  Source: https://suno.com/song/de2f86ca-8f8d-440b-9f2f-49d3cfcfb51b
 
-Level 8 — 极光冰座 Aurora Throne (~0:58), 66 BPM
-  public/audio/aurora-throne.ogg and public/audio/aurora-throne.mp3
+Level 7 — 狐火神社 / Lanterns Beyond the Torii
+  public/audio/fox-shrine-suno-v1.ogg and public/audio/fox-shrine-suno-v1.mp3
+  Source: https://suno.com/song/6ab2fce7-0dc3-4099-98ed-c2143e3ed73e
 
-Level 9 — 暮钟圣城 Dusk Belfry (~0:46), 84 BPM
-  public/audio/dusk-belfry.ogg and public/audio/dusk-belfry.mp3
+Level 8 — 极光冰座 / Aurora over the Frozen Lake
+  public/audio/aurora-throne-suno-v1.ogg and public/audio/aurora-throne-suno-v1.mp3
+  Source: https://suno.com/song/4a3e92a6-baa2-4805-8199-2c1afcba6b36
 
-Level 10 — 熔冠终庭 Ember Crown (~0:37), 104 BPM
-  public/audio/ember-crown.ogg and public/audio/ember-crown.mp3
+Level 9 — 暮钟圣城 / Shadows in the Belfry
+  public/audio/dusk-belfry-suno-v1.ogg and public/audio/dusk-belfry-suno-v1.mp3
+  Source: https://suno.com/song/57a6bb89-a834-4e31-8128-3814bc0eef56
 
-These new 16-bar stereo loops are synthesized without third-party samples.
-Their tempos, roots and melodies differ; note and reverb tails wrap around
-the loop boundary. Rebuild them with scripts/build-expansion-assets.py --music
-(Python 3, NumPy and ffmpeg with libopus/libmp3lame). Normal builds use the
-committed audio files and do not require Python or ffmpeg.
+Level 10 — 熔冠终庭 / Embers beneath the Crown
+  public/audio/ember-crown-suno-v1.ogg and public/audio/ember-crown-suno-v1.mp3
+  Source: https://suno.com/song/2abb682a-b45f-4a66-ab71-70fe624b08ee
+
+These six recordings are Suno-generated, not programmatically synthesized and
+not covered by the CC0 sound-effect dedication. Generation dates were not
+included with the downloaded source metadata. Original MP3 downloads are
+retained separately; source SHA-256 hashes and output measurements are in
+public/audio/suno-v1-sources.json.
+
+Processing: trim detected terminal silence below -45 dB, overlap the final and
+initial 3 seconds with an equal-power crossfade, and rotate the loop to start
+at the original 3-second point. Two-pass loudness normalization targets -20 LUFS
+with a -2 dBTP ceiling, followed by stereo 48 kHz Opus (96 kbps) and MP3 (160 kbps)
+exports. A 10 ms de-click envelope at each endpoint prevents codec-boundary
+clicks without a musical fade-out. Final measurements are recorded per encoded format in the manifest.
+No pitch or tempo correction is applied. Musical phrasing, instrumentation,
+absence of voices and subjective loop quality have not been audition-verified;
+automated decoding, loudness and playback checks do not establish those facts.
+
+Rebuild from approved original downloads and their sources.json:
+  python3 scripts/prepare-suno-audio.py /path/to/originals
+Requires Python 3, NumPy and ffmpeg/ffprobe with libopus/libmp3lame. Normal game builds
+use the committed exports and need neither Python nor ffmpeg. New -suno-v1
+resource names avoid stale cached audio; levels 1–4 and sound effects are unchanged.
+
+Legacy unused audio retained for history: autumn-ride was the owner's former
+level-5 recording. sunken-court, fox-shrine, aurora-throne, dusk-belfry and
+ember-crown (without -suno-v1) are the former synthesized expansion loops,
+rebuildable with scripts/build-expansion-assets.py --music. They are no longer
+selected by src/levels.ts. The synthesis script does not overwrite Suno exports.
 
 Sound effects
 -------------
