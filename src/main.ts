@@ -11,6 +11,19 @@ import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio } from './audio';
 
+const logo = (large = false) => `<span class="logo${large ? ' logo-large' : ''}">
+  <svg class="logo-seal" viewBox="0 0 72 72" aria-hidden="true">
+    <circle cx="36" cy="36" r="33" fill="#120e0b" stroke="currentColor" stroke-width="2"/>
+    <circle cx="36" cy="36" r="26" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="1.5 2.5"/>
+    <path d="M36 6v7M36 59v7M6 36h7M59 36h7" stroke="currentColor" stroke-width="1.3"/>
+    <path d="M24 29c0-7 5.4-12 12-12s12 5 12 12" fill="none" stroke="currentColor" stroke-width="1.7"/>
+    <path d="M21 30.5h5M46 30.5h5" stroke="currentColor" stroke-width="1.4"/>
+    <rect x="25" y="33" width="22" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+    <path d="M36 37.5v5" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M36 18.5l3.4 5.4L36 29l-3.4-5.1z" fill="currentColor"/>
+  </svg>
+  <span class="logo-words"><span class="logo-en">LINKBLOCK</span><span class="logo-zh">解封</span></span>
+</span>`;
 const icon = (name: string) => {
   const paths: Record<string, string> = {
     sound: '<path d="m11 5-6 4H2v6h3l6 4V5Zm4 3a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
@@ -22,8 +35,30 @@ const icon = (name: string) => {
 };
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+  <div id="title-screen" class="title-screen">
+    <div class="title-stage" aria-hidden="true">
+      <div class="fog"></div>
+      <div class="seal-circle"></div>
+      <div class="seal-circle inner"></div>
+      <div class="silhouette-row">${LEVELS.map(level => `<img alt="" src="${import.meta.env.BASE_URL}${level.portraitSealed}" />`).join('')}</div>
+    </div>
+    <div class="menu-col">
+      ${logo(true)}
+      <p id="seal-count" class="seal-count">已解封 0/5</p>
+      <button id="menu-start" class="menu-btn primary-button" type="button">开始游戏</button>
+      <button id="menu-levels" class="menu-btn ghost-button" type="button">选择关卡</button>
+      <button id="menu-gallery" class="menu-btn ghost-button" type="button">图鉴</button>
+      <button id="menu-settings" class="menu-btn ghost-button" type="button" aria-expanded="false">设置</button>
+      <div id="menu-settings-panel" class="menu-settings" hidden>
+        <button id="menu-music" type="button" aria-pressed="true"><span>音乐开启</span></button>
+        <button id="menu-sfx" type="button" aria-pressed="true"><span>音效开启</span></button>
+        <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
+        <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
+      </div>
+    </div>
+  </div>
   <header class="site-header">
-    <a class="brand" href="./" aria-label="LinkBlock 首页"><span class="brand-icon"><i></i><i></i><i></i></span>LINK<span class="brand-light">BLOCK</span><span class="beta">ARCADE / 01</span></a>
+    <button id="home" class="brand" type="button" aria-label="返回主界面">${logo(false)}</button>
     <div class="header-right"><span class="online-dot"></span><span>无需登录，自由探索</span><span class="edition">WEB EDITION</span><div class="audio-dock" role="group" aria-label="声音"><button id="music-hud" type="button" aria-pressed="true" aria-label="音乐">音乐</button><button id="sfx-hud" type="button" aria-pressed="true" aria-label="音效">音效</button></div></div>
   </header>
   <main>
@@ -55,6 +90,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="board-stage">
           <div class="frame-fit">
             <div class="frame-row top"><div class="rail"></div><span class="sigil clasp" aria-hidden="true"></span></div>
+            <svg class="filigree tl" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30C16 28 22 18 24 8M6 38C22 36 34 22 40 8M10 10h14M10 10v14"/></svg>
+            <svg class="filigree tr" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30C16 28 22 18 24 8M6 38C22 36 34 22 40 8M10 10h14M10 10v14"/></svg>
+            <svg class="filigree bl" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30C16 28 22 18 24 8M6 38C22 36 34 22 40 8M10 10h14M10 10v14"/></svg>
+            <svg class="filigree br" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30C16 28 22 18 24 8M6 38C22 36 34 22 40 8M10 10h14M10 10v14"/></svg>
             <div class="frame-row mid">
               <div class="frame-side left"></div>
               <div class="board-hole">
@@ -62,7 +101,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
           <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><span class="sigil"></span></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button" type="button">选关</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><span class="sigil"></span></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button" type="button">选关</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><button id="back-menu" class="ghost-button" type="button">返回主界面</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
           </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
@@ -214,7 +253,7 @@ function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = tru
 
 function paintAudio() {
   const { music, sfx, musicVolume, sfxVolume } = lakeAudio.prefs;
-  for (const [id, on, label] of [['music', music, '音乐'], ['music-hud', music, '音乐'], ['sound', sfx, '音效'], ['sfx-hud', sfx, '音效']] as const) {
+  for (const [id, on, label] of [['music', music, '音乐'], ['music-hud', music, '音乐'], ['menu-music', music, '音乐'], ['sound', sfx, '音效'], ['sfx-hud', sfx, '音效'], ['menu-sfx', sfx, '音效']] as const) {
     const button = document.getElementById(id);
     if (!button) continue;
     button.setAttribute('aria-pressed', String(on));
@@ -223,6 +262,19 @@ function paintAudio() {
   }
   ($('#music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
   ($('#sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
+  ($('#menu-music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
+  ($('#menu-sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
+}
+function paintSealCount() {
+  const count = LEVELS.filter(level => rewardsFor(codex, level.id).clear).length;
+  $('#seal-count').textContent = `已解封 ${count}/5`;
+}
+function hideMenu() { $('#title-screen').hidden = true; }
+function showMenu() {
+  paintSealCount();
+  lakeAudio.useTrack(LEVELS[0].music);
+  $('#title-screen').hidden = false;
+  if (game.phase === 'playing' || game.phase === 'opening') togglePause();
 }
 function followAudio() {
   lakeAudio.setMood(game.phase === 'won' ? 'bright' : game.boss ? 'tense' : 'calm');
@@ -282,6 +334,7 @@ function loadLevelMask(level: LevelDef) {
 }
 function beginLevel(id: number) {
   current = levelById(id);
+  hideMenu();
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
   applyAccent(current);
@@ -364,16 +417,23 @@ function bindAudioControl(id: string, kind: 'music' | 'sfx') {
 }
 bindAudioControl('music', 'music');
 bindAudioControl('music-hud', 'music');
+bindAudioControl('menu-music', 'music');
 bindAudioControl('sound', 'sfx');
 bindAudioControl('sfx-hud', 'sfx');
-$('#music-volume').addEventListener('input', () => {
-  lakeAudio.unlock();
-  lakeAudio.setMusicVolume(Number(($('#music-volume') as HTMLInputElement).value) / 100);
-});
-$('#sfx-volume').addEventListener('input', () => {
-  lakeAudio.unlock();
-  lakeAudio.setSfxVolume(Number(($('#sfx-volume') as HTMLInputElement).value) / 100);
-});
+bindAudioControl('menu-sfx', 'sfx');
+function bindVolume(id: string, kind: 'music' | 'sfx') {
+  document.getElementById(id)?.addEventListener('input', () => {
+    lakeAudio.unlock();
+    const value = Number((document.getElementById(id) as HTMLInputElement).value) / 100;
+    if (kind === 'music') lakeAudio.setMusicVolume(value);
+    else lakeAudio.setSfxVolume(value);
+    paintAudio();
+  });
+}
+bindVolume('music-volume', 'music');
+bindVolume('sfx-volume', 'sfx');
+bindVolume('menu-music-volume', 'music');
+bindVolume('menu-sfx-volume', 'sfx');
 paintAudio();
 window.addEventListener('pointerdown', () => lakeAudio.unlock(), { capture: true });
 window.addEventListener('keydown', () => lakeAudio.unlock(), { capture: true });
@@ -847,7 +907,33 @@ function frame(now: number) {
 $('#open-gallery').addEventListener('click', openGallery);
 $('#open-levels').addEventListener('click', openLevels);
 $('#next-level').addEventListener('click', () => { if (current.id < LEVELS.length) beginLevel(current.id + 1); });
-$('#levels-close').addEventListener('click', () => { closeLevels(); if (game.phase === 'paused') togglePause(); });
+$('#levels-close').addEventListener('click', () => {
+  closeLevels();
+  if (!$('#title-screen').hidden) return;
+  if (game.phase === 'paused') togglePause();
+});
+$('#menu-start').addEventListener('click', () => {
+  const id = progress.unlocked;
+  if (game.phase === 'paused' && current.id === id) { hideMenu(); togglePause(); return; }
+  if (game.phase === 'ready' && current.id === id) {
+    hideMenu();
+    game.start();
+    openingFrameAt = performance.now();
+    sync(); canvas.focus({ preventScroll: true }); render(performance.now());
+    return;
+  }
+  beginLevel(id);
+});
+$('#menu-levels').addEventListener('click', openLevels);
+$('#menu-gallery').addEventListener('click', openGallery);
+$('#menu-settings').addEventListener('click', () => {
+  const panel = $('#menu-settings-panel');
+  panel.hidden = !panel.hidden;
+  $('#menu-settings').setAttribute('aria-expanded', String(!panel.hidden));
+});
+$('#home').addEventListener('click', showMenu);
+$('#back-menu').addEventListener('click', showMenu);
+paintSealCount();
 $('#level-list').addEventListener('click', event => {
   const button = (event.target as Element).closest<HTMLButtonElement>('button[data-level]');
   if (!button || button.disabled) return;
