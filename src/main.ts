@@ -168,8 +168,8 @@ interface GalleryCard { level: number; id: RewardId; title: string; src: string;
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
     { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '尚未解锁' },
-    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '尚未解锁' },
-    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '尚未解锁' },
+    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '尚未解锁', sheet: true },
+    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '尚未解锁', sheet: true },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
     level: level.id,
