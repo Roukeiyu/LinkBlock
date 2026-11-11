@@ -1,6 +1,13 @@
 import { distance, EPS, inside, wallEdges, type Point, type Polygon } from './geometry';
 
 export type EnemyKind = 'straight' | 'orbit' | 'zigzag' | 'boss';
+export interface EnemyMotion {
+  straight: 'surge' | 'corner' | 'curve';
+  period: number;
+  orbitRate: number;
+  zigzagInterval: number;
+  zigzagAngle: number;
+}
 export interface DefeatedEnemy extends Point { kind: EnemyKind; points: number }
 export const DEFEAT_POINTS: Record<EnemyKind, number> = { straight: 500, orbit: 500, zigzag: 500, boss: 2000 };
 export interface Enemy extends Point {
@@ -15,6 +22,7 @@ export interface Enemy extends Point {
   turnSign: number;
   traceClock: number;
   trace: Point[];
+  motionClock?: number;
 }
 export const ENEMY_STYLES = {
   straight: { name: '腐风', motion: '雾 / 孢 / 鸦', color: '#ff727d', speed: 14.3, radius: 0.55, visualRadius: 0.85 },
@@ -83,23 +91,41 @@ function rotate(enemy: Enemy, angle: number) {
   enemy.vy = vx * Math.sin(angle) + vy * Math.cos(angle);
 }
 export type Walls = [Point, Point][];
-export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], walls: Walls[]) {
+export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], walls: Walls[], motion?: EnemyMotion) {
   enemy.previous = { x: enemy.x, y: enemy.y };
   const region = regions.findIndex((polygon, i) => inside(enemy, polygon, walls[i]));
   if (region < 0) return;
-  if (enemy.kind === 'orbit') rotate(enemy, seconds * 0.85 * enemy.turnSign);
+  let pace = 1;
+  if (motion && enemy.kind === 'straight') {
+    const before = enemy.motionClock ?? 0;
+    const after = before + seconds;
+    enemy.motionClock = after % motion.period;
+    if (motion.straight === 'surge') {
+      // A visible slowdown precedes each charge; velocity remains the base
+      // heading so boosts do not multiply forever or alter collision bounds.
+      const phase = enemy.motionClock / motion.period;
+      pace = phase < 0.6 ? 0.45 : 1.7;
+    } else if (motion.straight === 'corner') {
+      for (let turns = Math.floor(after / motion.period); turns > 0; turns--) rotate(enemy, enemy.turnSign * Math.PI / 2);
+    } else {
+      const wave = (t: number) => Math.sin(t * Math.PI * 2 / motion.period) * 0.65;
+      rotate(enemy, (wave(after) - wave(before)) * enemy.turnSign);
+    }
+  }
+  if (enemy.kind === 'orbit') rotate(enemy, seconds * (motion?.orbitRate ?? 0.85) * enemy.turnSign);
   if (enemy.kind === 'zigzag') {
     enemy.turnClock += seconds;
-    if (enemy.turnClock >= 0.72 - EPS) {
-      enemy.turnClock -= 0.72;
-      rotate(enemy, enemy.turnSign * Math.PI * 0.4); enemy.turnSign *= -1;
+    const interval = motion?.zigzagInterval ?? 0.72;
+    while (enemy.turnClock >= interval - EPS) {
+      enemy.turnClock -= interval;
+      rotate(enemy, enemy.turnSign * (motion?.zigzagAngle ?? Math.PI * 0.4)); enemy.turnSign *= -1;
     }
   }
   const blocked = (p: Point) => !inside(p, regions[region], walls[region]) || walls[region].some(([a, b]) => distance(p, a, b) < enemy.radius);
-  const nx = { x: enemy.x + enemy.vx * seconds, y: enemy.y };
+  const nx = { x: enemy.x + enemy.vx * seconds * pace, y: enemy.y };
   if (blocked(nx)) { enemy.vx *= -1; if (enemy.kind === 'orbit') enemy.turnSign *= -1; }
   else enemy.x = nx.x;
-  const ny = { x: enemy.x, y: enemy.y + enemy.vy * seconds };
+  const ny = { x: enemy.x, y: enemy.y + enemy.vy * seconds * pace };
   if (blocked(ny)) { enemy.vy *= -1; if (enemy.kind === 'orbit') enemy.turnSign *= -1; }
   else enemy.y = ny.y;
   enemy.traceClock += seconds;

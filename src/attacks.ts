@@ -13,6 +13,7 @@ export interface AttackHazard {
 }
 export interface AttackContext {
   readonly origin: Readonly<Point>;
+  readonly target?: Readonly<Point>;
   readonly arena: Arena;
   spawn(hazard: AttackHazard): boolean;
   cast(): void;
@@ -22,6 +23,8 @@ export interface BossAttack {
   readonly warning: number;
   readonly directions?: number;
   readonly angleOffset?: number;
+  /** Exact shot bearings, shared by the warning renderer and emitter. */
+  readonly warningAngles?: readonly number[];
   update(seconds: number, context: AttackContext): void;
 }
 export type BossAttackFactory = () => BossAttack;

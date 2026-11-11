@@ -6,7 +6,7 @@ import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
-import { LEVELS, bossConfigFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
+import { LEVELS, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio } from './audio';
@@ -34,6 +34,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <button id="menu-start" class="menu-btn is-selected" type="button" aria-current="true">开始游戏</button>
       <button id="menu-levels" class="menu-btn" type="button">选择关卡</button>
       <button id="menu-gallery" class="menu-btn" type="button">图鉴</button>
+      <button id="menu-guide" class="menu-btn" type="button">关卡攻略</button>
       <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false">设置</button>
       <div id="menu-settings-panel" class="menu-settings" hidden>
         <button id="menu-music" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle" aria-hidden="true"></span></button>
@@ -45,7 +46,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
   <header class="site-header">
     <button id="home" class="brand" type="button" aria-label="返回主界面"><img class="brand-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /></button>
-    <div class="top-controls" role="toolbar" aria-label="游戏控制"><button id="pause" class="ink-tab" type="button" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart" class="ink-tab" type="button">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音乐"><span>音乐</span><span class="toggle" aria-hidden="true"></span></button><button id="sound" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音效">${icon('sound')}<span>音效</span><span class="toggle" aria-hidden="true"></span></button><label class="audio-slider"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider"><span>音效音量</span><input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
+    <div class="top-controls" role="toolbar" aria-label="游戏控制"><button id="combat-help" class="ink-tab" type="button">攻略</button><button id="pause" class="ink-tab" type="button" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart" class="ink-tab" type="button">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音乐"><span>音乐</span><span class="toggle" aria-hidden="true"></span></button><button id="sound" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音效">${icon('sound')}<span>音效</span><span class="toggle" aria-hidden="true"></span></button><label class="audio-slider"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider"><span>音效音量</span><input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
   </header>
   <main>
     <section class="intro"><div><p class="eyebrow">解封</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">画线净化被封住的区域，揭开这一关的封印。</p></div><div class="chapter"><span></span><p>解封</p></div></section>
@@ -107,6 +108,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div id="gallery-grid" class="gallery-sections"></div>
     </div>
   </div>
+  <div id="combat-guide" class="gallery" hidden>
+    <div class="gallery-card combat-guide-card" role="dialog" aria-labelledby="combat-guide-title">
+      <div class="gallery-head"><h2 id="combat-guide-title">关卡攻略</h2><button id="combat-guide-close" class="ink-tab" type="button">返回</button></div>
+      ${LEVELS.map(level => `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p></section>`).join('')}
+      <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
+    </div>
+  </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
   <div id="level-select" class="gallery level-select" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
@@ -124,7 +132,7 @@ const ctx = canvas.getContext('2d')!;
 const overlay = $('#overlay');
 const pauseButton = $<HTMLButtonElement>('#pause');
 const theme = lakeTheme;
-let game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: theme.bossConfig });
+let game = new Game(72, 48, gameOptionsFor(LEVELS[0]));
 let current: LevelDef = LEVELS[0];
 let progress: LevelProgress = readLevelProgress();
 let refreshCard = false;
@@ -278,7 +286,7 @@ function paintSealRow() {
 }
 function placeShade() {
   const shade = $('#modal-shade');
-  const open = ['#overlay', '#level-select', '#gallery', '#viewer'].map(selector => $(selector)).filter(el => !el.hidden);
+  const open = ['#overlay', '#level-select', '#gallery', '#viewer', '#combat-guide'].map(selector => $(selector)).filter(el => !el.hidden);
   if (!open.length) { shade.hidden = true; return; }
   open.forEach((el, index) => { el.style.zIndex = String(40 + index * 2); });
   shade.style.zIndex = String(40 + (open.length - 1) * 2 - 1);
@@ -351,13 +359,12 @@ function loadLevelMask(level: LevelDef) {
 }
 function beginLevel(id: number) {
   current = levelById(id);
-  hideMenu();
+  hideMenu(); $('#combat-guide').hidden = true;
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
   applyAccent(current);
   lakeAudio.useTrack(current.music);
-  const first = current.id === 1;
-  game = new Game(72, 48, { opening: true, createBossAttack: theme.createBossAttack, bossConfig: first ? theme.bossConfig : bossConfigFor(current), ...(first ? {} : { squad: current.squad, speedScale: current.enemySpeed, bossSpeedScale: current.bossSpeed }) });
+  game = new Game(72, 48, gameOptionsFor(current));
   syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   $('#toast').classList.remove('visible');
@@ -371,7 +378,7 @@ function renderLevels() {
   $('#level-list').innerHTML = LEVELS.map(level => {
     const open = level.id <= progress.unlocked;
     const cleared = rewardsFor(codex, level.id).clear;
-    return `<button type="button" data-level="${level.id}" style="--seal:${level.accent}" ${open ? '' : 'disabled'}><img class="level-seal" alt="" src="${asset(cleared ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" /><span class="level-copy"><b>${level.title}</b><small>${open ? `${level.theme} · ${level.names.boss}` : '尚未解锁'}</small></span></button>`;
+    return `<button type="button" data-level="${level.id}" title="${level.tactic}" aria-label="${level.title} · ${level.difficulty}。${level.tactic}${open ? '' : ' 尚未解锁'}" style="--seal:${level.accent}" ${open ? '' : 'disabled'}><img class="level-seal" alt="" src="${asset(cleared ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" /><span class="level-copy"><b>${level.title}</b><small>${open ? `${level.difficulty} · ${level.names.boss}` : '尚未解锁'}</small></span></button>`;
   }).join('');
 }
 function openLevels() {
@@ -462,11 +469,11 @@ const keyDirections: Record<string, Direction> = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
 };
 function menuOpen() {
-  return !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
+  return $('#combat-guide').hidden && !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
 }
 window.addEventListener('keydown', e => {
   if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (!$('#title-screen').hidden || !$('#gallery').hidden || !$('#level-select').hidden || !$('#viewer').hidden) return;
+  if (!$('#combat-guide').hidden || !$('#title-screen').hidden || !$('#gallery').hidden || !$('#level-select').hidden || !$('#viewer').hidden) return;
   if (e.code === 'Space' && game.phase === 'opening') {
     if (e.target instanceof HTMLButtonElement && !e.target.matches('#touch-draw, #joystick')) return;
     e.preventDefault(); if (!e.repeat) confirmOpening(); return;
@@ -719,6 +726,7 @@ function sync() {
   overlay.hidden = !$('#title-screen').hidden || game.phase === 'playing' || selecting || (game.phase === 'won' && effects.length > 0);
   placeShade();
   $('#level-title').textContent = current.title;
+  $('#combat-help').title = `${current.difficulty} · ${game.bossAttack?.name ?? current.names.boss}：${current.tactic}`;
   const showCard = refreshCard || lastPhase !== game.phase;
   if (lastPhase === game.phase && !refreshCard) return;
   refreshCard = false;
@@ -831,7 +839,7 @@ function render(now: number) {
       ctx.stroke(); ctx.restore();
     }
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
-    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions, game.bossAttack?.angleOffset);
+    if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions, game.bossAttack?.angleOffset, game.bossAttack?.warningAngles);
     for (const hazard of game.hazards) hazard.render(ctx);
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
@@ -916,6 +924,21 @@ function frame(now: number) {
   render(now);
   requestAnimationFrame(frame);
 }
+function openCombatGuide() {
+  if (game.phase === 'playing' || game.phase === 'opening') togglePause();
+  clearInput(); $('#combat-guide').hidden = false; placeShade();
+  $('#combat-guide-close').focus();
+}
+$('#menu-guide').addEventListener('click', openCombatGuide);
+$('#combat-help').addEventListener('click', openCombatGuide);
+function closeCombatGuide() {
+  $('#combat-guide').hidden = true; placeShade();
+  ($('#title-screen').hidden ? $('#primary') : $('#menu-guide')).focus();
+}
+$('#combat-guide-close').addEventListener('click', closeCombatGuide);
+window.addEventListener('keydown', event => {
+  if (!$('#combat-guide').hidden && event.code === 'Escape') { event.preventDefault(); closeCombatGuide(); }
+});
 $('#open-gallery').addEventListener('click', openGallery);
 $('#open-levels').addEventListener('click', openLevels);
 $('#next-level').addEventListener('click', () => { if (current.id < LEVELS.length) beginLevel(current.id + 1); });

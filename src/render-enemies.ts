@@ -63,7 +63,7 @@ function blit(ctx: CanvasRenderingContext2D, image: HTMLImageElement, height: nu
   ctx.drawImage(image, -width / 2, -height / 2, width, height);
 }
 
-export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 4, angleOffset = 0) {
+export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning = 0, reducedMotion = false, jump?: BossJump, hurt = 0, directions = 4, angleOffset = 0, warningAngles?: readonly number[]) {
   const color = ENEMY_STYLES[enemy.kind].color;
   const r = enemy.visualRadius;
   const look = lookFor(enemy);
@@ -90,8 +90,7 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
     ctx.globalAlpha = 0.3 + warning * 0.7;
     ctx.strokeStyle = '#ffe0c6'; ctx.lineWidth = 0.14;
     ctx.beginPath(); ctx.arc(0, 0, r * 1.53, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * warning); ctx.stroke();
-    for (let i = 0; i < directions; i++) {
-      const angle = angleOffset + i * Math.PI * 2 / directions;
+    for (const angle of warningAngles ?? Array.from({ length: directions }, (_, i) => angleOffset + i * Math.PI * 2 / directions)) {
       ctx.beginPath(); ctx.moveTo(Math.cos(angle) * r * 1.78, Math.sin(angle) * r * 1.78);
       ctx.lineTo(Math.cos(angle) * r * 2.37, Math.sin(angle) * r * 2.37); ctx.stroke();
     }

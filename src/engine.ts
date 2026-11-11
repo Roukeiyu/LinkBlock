@@ -2,7 +2,7 @@ import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partit
 import { SHORE_CONTACT_TOLERANCE, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
 import { Island } from './island';
-import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy } from './enemies';
+import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
@@ -10,7 +10,7 @@ export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
-export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number }
+export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
@@ -106,6 +106,10 @@ export class Game {
     this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(this.width, this.height);
     this.enemies = options.enemies ?? defaultEnemies(this.width, this.height, this.boss, this.random, this.opening ? { regions: this.territories, player: this.player } : undefined, options.squad);
     if (options.speedScale && options.speedScale !== 1) for (const enemy of this.enemies) { enemy.vx *= options.speedScale; enemy.vy *= options.speedScale; }
+    if (options.enemyMotion) for (const enemy of this.enemies) {
+      enemy.motionClock = this.random() * options.enemyMotion.period;
+      enemy.turnClock %= options.enemyMotion.zigzagInterval;
+    }
     if (options.bossSpeedScale && options.bossSpeedScale !== 1 && this.boss) { this.boss.vx *= options.bossSpeedScale; this.boss.vy *= options.bossSpeedScale; }
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();
@@ -369,6 +373,7 @@ export class Game {
       // A crowded/narrow room defers the remaining reinforcements; never force
       // a body onto an active line, the player, another body or claimed land.
       if (!to) break;
+      if (this.options.enemyMotion) enemy.motionClock = this.random() * this.options.enemyMotion.period;
       enemy.x = to.x; enemy.y = to.y; enemy.previous = { ...to }; enemy.trace = [{ ...to }];
       this.enemies.push(enemy); this.reinforcementSerial++; spawned = true;
     }
@@ -438,7 +443,8 @@ export class Game {
     if (drawing && !this.drawingHeld) this.resumeDrawing();
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy)), ...this.bossSettings.phases.map(phase => phase.reinforcements?.speed ?? 0));
+    const pace = this.options.enemyMotion?.straight === 'surge' ? 1.7 : 1;
+    const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy) * pace), ...this.bossSettings.phases.map(phase => (phase.reinforcements?.speed ?? 0) * pace));
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
     let gestureEnded = false;
@@ -447,9 +453,9 @@ export class Game {
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
       this.updateBossJump(dt);
       if (this.updateReinforcements(dt)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-      for (const body of bodies) if (body !== this.boss || !this.bossJump) advanceEnemy(body, dt, this.territories, walls);
+      for (const body of bodies) if (body !== this.boss || !this.bossJump) advanceEnemy(body, dt, this.territories, walls, body === this.boss ? undefined : this.options.enemyMotion);
       if (this.boss && this.bossAttack && !this.bossJump) this.bossAttack.update(dt, {
-        origin: this.boss, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),
+        origin: this.boss, target: this.player, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),
       });
       for (const hazard of this.hazards) hazard.update(dt, this);
       this.boundaryRelocated = false;

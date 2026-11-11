@@ -1,4 +1,7 @@
 import { lakeBossConfig, type BossConfig } from './boss';
+import { LevelAttack, type AttackPattern } from './level-attacks';
+import type { EnemyMotion } from './enemies';
+import type { GameOptions } from './engine';
 import type { SpriteSheet } from './render-enemies';
 
 export interface Squad {
@@ -9,6 +12,10 @@ export interface Squad {
 
 export interface LevelDef {
   id: number;
+  difficulty: string;
+  tactic: string;
+  enemyMotion?: EnemyMotion;
+  attackPattern?: AttackPattern;
   theme: string;
   title: string;
   restored: string;
@@ -46,6 +53,7 @@ const sheet = (dir: string, files: [string, string, string, string, string, stri
 
 export const LEVELS: LevelDef[] = [
   {
+    difficulty: '入门', tactic: '小怪匀速巡游；首领十字与 X 交替，残血改为八向散射。看清空隙再出线。',
     id: 1, theme: '狼人', title: '第一关 · 月下封林',
     restored: 'wolf-restored.webp', sealed: 'wolf-sealed.webp', mask: 'char_mask.png', music: 'moonlit-grove',
     portraitSealed: 'sprites/portrait_sealed.png', portraitRescued: 'sprites/portrait_rescued.png',
@@ -55,6 +63,8 @@ export const LEVELS: LevelDef[] = [
     accent: '#c5d4e6',
   },
   {
+    difficulty: '进阶', tactic: '小怪先慢行再冲刺；首领瞄准扇射。预警出现后侧移，利用慢行窗口圈地。',
+    enemyMotion: { straight: 'surge', period: 2.8, orbitRate: 0.5, zigzagInterval: 1.1, zigzagAngle: Math.PI / 3 }, attackPattern: 'sand',
     id: 2, theme: '木乃伊', title: '第二关 · 沙漠神殿',
     restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png', music: 'desert-temple',
     portraitSealed: 'levels/2/portrait_sealed.png', portraitRescued: 'levels/2/portrait_rescued.png',
@@ -65,6 +75,8 @@ export const LEVELS: LevelDef[] = [
     accent: '#e0c27a',
   },
   {
+    difficulty: '挑战', tactic: '小怪定时直角转向；电弧每轮旋转，残血六向齐射。避免长时间停在旧空隙。',
+    enemyMotion: { straight: 'corner', period: 1.1, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: Math.PI / 2 }, attackPattern: 'storm',
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
     restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png', music: 'storm-lab',
     portraitSealed: 'levels/3/portrait_sealed.png', portraitRescued: 'levels/3/portrait_rescued.png',
@@ -75,6 +87,8 @@ export const LEVELS: LevelDef[] = [
     accent: '#2ed3c6',
   },
   {
+    difficulty: '高难', tactic: '小怪弧线游走；双翼弹幕夹击预警方向两侧。辨认中央通道，短线分次圈地。',
+    enemyMotion: { straight: 'curve', period: 2.4, orbitRate: 1.15, zigzagInterval: 0.6, zigzagAngle: Math.PI * 0.55 }, attackPattern: 'rose',
     id: 4, theme: '吸血鬼', title: '第四关 · 玫瑰古堡',
     restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png', music: 'rose-waltz',
     portraitSealed: 'levels/4/portrait_sealed.png', portraitRescued: 'levels/4/portrait_rescued.png',
@@ -85,6 +99,8 @@ export const LEVELS: LevelDef[] = [
     accent: '#e25b78',
   },
   {
+    difficulty: '终极', tactic: '小怪频繁冲锋；首领环射留下旋转缺口，残血加速。先找缺口，再趁间隔画线。',
+    enemyMotion: { straight: 'surge', period: 1.6, orbitRate: 1.65, zigzagInterval: 0.42, zigzagAngle: Math.PI * 0.45 }, attackPattern: 'hunt',
     id: 5, theme: '无头骑士', title: '第五关 · 秋夜南瓜谷',
     restored: 'levels/5/horseman-restored.webp', sealed: 'levels/5/horseman_sealed_solid.webp', mask: 'levels/5/char_mask.png', music: 'autumn-ride',
     portraitSealed: 'levels/5/portrait_sealed.png', portraitRescued: 'levels/5/portrait_rescued.png',
@@ -100,19 +116,27 @@ export const levelById = (id: number) => LEVELS.find(level => level.id === id) ?
 
 /** Level 1 returns the live config object so its phases are not copied or retuned. */
 export function bossConfigFor(level: LevelDef): BossConfig {
-  if (level.id === 1 || level.reinforceInterval === 1 && level.reinforceSpeed === 1) return lakeBossConfig;
+  if (level.id === 1) return lakeBossConfig;
   return {
     maxHealth: lakeBossConfig.maxHealth,
     jumpDuration: lakeBossConfig.jumpDuration,
-    phases: lakeBossConfig.phases?.map(phase => ({
+    phases: lakeBossConfig.phases?.map((phase, stage) => ({
       ...phase,
+      createAttack: level.attackPattern ? () => new LevelAttack(level.attackPattern!, stage) : phase.createAttack,
       reinforcements: phase.reinforcements ? {
         ...phase.reinforcements,
+        targetCount: stage === 2 ? 13 + level.id : 8 + level.id,
         interval: phase.reinforcements.interval * level.reinforceInterval,
         speed: phase.reinforcements.speed * level.reinforceSpeed,
       } : undefined,
     })),
   };
+}
+
+/** Shared by the page and simulation tests, including restart and next-level. */
+export function gameOptionsFor(level: LevelDef): GameOptions {
+  return { opening: true, bossConfig: bossConfigFor(level), squad: level.squad,
+    speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion };
 }
 
 export interface LevelProgress { unlocked: number }

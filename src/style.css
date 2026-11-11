@@ -390,3 +390,14 @@ button.ink-tab kbd{margin:0;min-width:16px;height:16px;padding:0 3px;display:inl
 .level-select .level-copy b,.level-select .level-copy small{display:block;width:100%;text-align:center}
 .level-select .level-copy b{font-size:14px;line-height:1.25;letter-spacing:.04em}
 .level-select .level-copy small{font-size:12px;line-height:1.25;letter-spacing:.02em}
+
+.combat-guide-card{width:min(600px,calc(100vw - 24px));color:#1a0e08}
+.combat-guide-card section{margin:12px 0;border-bottom:1px solid #6b4a2a55;padding-bottom:8px}
+.combat-guide-card h3{font-size:15px;margin:0 0 4px}
+.combat-guide-card p{font-size:13px;line-height:1.6;margin:0}
+.top-controls #combat-help{flex-shrink:0;white-space:nowrap}
+.menu-page{overflow-y:auto;justify-content:safe center;scrollbar-width:thin}
+@media(max-width:360px) and (orientation:portrait){
+ .site-header{flex-wrap:wrap;justify-content:center;gap:3px}
+ .top-controls{width:100%;margin-left:0;justify-content:center;flex-wrap:wrap}
+}
