@@ -108,7 +108,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
-  <div id="level-select" class="gallery" hidden>
+  <div id="level-select" class="gallery level-select" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
       <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" class="ink-tab" type="button">返回</button></div>
       <div id="level-list" class="level-list"></div>
