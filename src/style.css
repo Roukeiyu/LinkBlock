@@ -316,7 +316,7 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .menu-page{position:absolute;left:54%;top:15%;width:31%;height:66%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;z-index:2}
 .menu-logo{width:min(100%,420px);height:auto;filter:drop-shadow(0 2px 0 #0002)}
 .ink-rule{width:78%;height:auto;margin:2px 0 4px;opacity:.85}
-.seal-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;max-width:100%}
+.seal-row{display:grid;grid-template-columns:repeat(5,auto);gap:6px;justify-content:center;max-width:100%}
 .menu-seal{width:36px;height:36px;object-fit:contain}
 .seal-count{margin:0 0 6px;color:var(--ink);letter-spacing:.28em;font-size:13px}
 .menu-btn{position:relative;width:100%;margin:0;height:42px;padding:0 30px 0 18px;border:1px solid #3a2414;border-radius:4px;background:linear-gradient(#f7e7c6,#c9965a);color:#1a0e08;letter-spacing:.22em;font-size:18px;font-weight:700;text-shadow:0 1px 0 #fff6;box-shadow:inset 0 1px 0 #fff8,0 2px 0 #3a241455}
@@ -334,6 +334,7 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 @keyframes rise{from{transform:translateY(0)}to{transform:translateY(-100vh)}}
 @media(max-height:560px) and (orientation:landscape){.menu-page{top:10%;height:78%}.menu-logo{width:min(100%,280px)}.menu-btn{height:32px;font-size:15px}.menu-seal{width:26px;height:26px}.brand-logo{height:26px}}
 @media(orientation:portrait){.menu-page{left:18%;top:18%;width:64%;height:64%}}
+@media(orientation:portrait) and (max-height:650px){.menu-page{top:10%;height:80%}}
 
 /* Top-bar controls replace the side panel. One row of ink tabs, leather switches, and wax thumbs. */
 .site-header{width:100%;max-width:none;margin:0;align-self:stretch;height:auto;min-height:46px;padding:4px 14px;gap:10px;align-items:center}

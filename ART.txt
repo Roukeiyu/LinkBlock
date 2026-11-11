@@ -1,0 +1,29 @@
+封林 — Level 6–10 artwork
+=========================
+
+The expansion's illustrations were generated specifically for this game:
+6 海妖 / 沉潮王庭, 7 狐妖 / 狐火神社, 8 冰霜巨人 / 极光冰座,
+9 石像鬼 / 暮钟圣城, and 10 炎魔 / 熔冠终庭.
+
+Each public/levels/{6,7,8,9,10}/ directory contains:
+- restored.webp: the complete character and scene, 1536 × 1024.
+- ninety.webp: a separate standing character reward illustration.
+- perfect.webp: a separate action character reward illustration.
+- mask.svg: authored black/white silhouette in the same scene coordinates;
+  used by the existing 60% character / 40% background progress calculation.
+- sealed.svg: matching scene with darkness, silhouette and seal overlays.
+- portrait.svg / portrait-sealed.svg: matching character portraits.
+- mist.svg, thorn.svg, ghost.svg, spore.svg, crow.svg and boss.svg:
+  original vector enemies using each level's palette and emblem.
+
+Illustrations are committed as WebP. SVGs embed the restored WebP so canvas
+rendering works without external resources inside the SVG image. No remote
+image service is used by the game.
+
+scripts/build-expansion-assets.py recreates the seals, masks, portraits,
+enemy sprites and new music from the committed restored.webp files. It needs
+Python 3, NumPy and ffmpeg. The restored/ninety/perfect illustrations are
+separate generated source artwork and are not recreated by that script.
+Normal npm builds use the committed files and need no image/audio tooling.
+
+Existing level 1–5 artwork and UI artwork remain in their original paths.

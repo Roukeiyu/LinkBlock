@@ -61,6 +61,7 @@ export class Game {
   private drawingHeld = false;
   phase: Phase = 'ready';
   lives = 3;
+  hitsTaken = 0;
   readonly maxLives = 3;
   /** Extra points from the latest capture when it covered more than 5% of the board. */
   lastCaptureBonus = 0;
@@ -413,7 +414,7 @@ export class Game {
     const home = this.trail.length ? { ...this.trail[0] } : { ...this.anchor };
     this.shoreStep = undefined;
     this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false;
-    this.player = home; this.anchor = { ...home }; this.lives--; this.protection = 1.5;
+    this.player = home; this.anchor = { ...home }; this.lives--; this.hitsTaken++; this.protection = 1.5;
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
   }

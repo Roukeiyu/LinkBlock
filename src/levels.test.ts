@@ -14,18 +14,18 @@ describe('level catalog', () => {
   });
 
   it('ramps later levels gently and names every cast', () => {
-    expect(LEVELS.map(level => level.theme)).toEqual(['狼人', '木乃伊', '弗兰肯斯坦', '吸血鬼', '无头骑士']);
-    expect(LEVELS.map(level => level.title)).toEqual([
+    expect(LEVELS.slice(0, 5).map(level => level.theme)).toEqual(['狼人', '木乃伊', '弗兰肯斯坦', '吸血鬼', '无头骑士']);
+    expect(LEVELS.slice(0, 5).map(level => level.title)).toEqual([
       '第一关 · 月下封林', '第二关 · 沙漠神殿', '第三关 · 雷雨实验室', '第四关 · 玫瑰古堡', '第五关 · 秋夜南瓜谷',
     ]);
     expect(LEVELS[1].names.boss).toBe('沙傀王');
     expect(LEVELS[2].names.boss).toBe('狂电塔');
     expect(LEVELS[3].names.boss).toBe('血月石像');
     expect(LEVELS[4].names.boss).toBe('秋猎魔骑');
-    expect(LEVELS.map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
+    expect(LEVELS.slice(0, 5).map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
     expect(LEVELS[0].rewardNinety).toBeUndefined();
     expect(LEVELS[0].rewardPerfect).toBeUndefined();
-    expect(LEVELS.slice(1).map(level => [level.rewardNinety, level.rewardPerfect])).toEqual([
+    expect(LEVELS.slice(1, 5).map(level => [level.rewardNinety, level.rewardPerfect])).toEqual([
       ['levels/2/mummy-90.webp', 'levels/2/mummy-perfect.webp'],
       ['levels/3/frankenstein-90.webp', 'levels/3/frankenstein-perfect.webp'],
       ['levels/4/vampire-90.webp', 'levels/4/vampire-perfect.webp'],
@@ -36,7 +36,7 @@ describe('level catalog', () => {
       const count = level.squad.straight + level.squad.orbit + level.squad.zigzag;
       const before = previous.squad.straight + previous.squad.orbit + previous.squad.zigzag;
       expect(level.enemySpeed).toBeGreaterThan(previous.enemySpeed);
-      expect(level.enemySpeed).toBeLessThanOrEqual(1.2);
+      expect(level.enemySpeed).toBeLessThanOrEqual(1.4);
       expect(count).toBeGreaterThanOrEqual(before);
       expect(level.reinforceInterval).toBeLessThan(previous.reinforceInterval);
       expect(bossConfigFor(level)).not.toBe(lakeBossConfig);
@@ -54,11 +54,11 @@ describe('level progress', () => {
     writeLevelProgress(progress, storage);
     expect(readLevelProgress(storage).unlocked).toBe(2);
     progress = noteClear(progress, 5);
-    expect(progress.unlocked).toBe(5);
+    expect(progress.unlocked).toBe(6);
     progress = noteClear(progress, 2);
-    expect(progress.unlocked).toBe(5);
-    writeLevelProgress({ unlocked: 9, cleared: [] }, storage);
-    expect(readLevelProgress(storage).unlocked).toBe(5);
+    expect(progress.unlocked).toBe(6);
+    writeLevelProgress({ unlocked: 99, cleared: [] }, storage);
+    expect(readLevelProgress(storage).unlocked).toBe(10);
   });
 });
 

@@ -1,5 +1,5 @@
 // Sound effects are synthesized in the browser with the Web Audio API (CC0).
-// Background music is the owner's Suno tracks in public/audio/, one loop per
+// Background music combines owner-supplied tracks and original synthesized loops, one per
 // level, loaded on the first gesture. See AUDIO.txt.
 
 export type Mood = 'calm' | 'tense' | 'bright';

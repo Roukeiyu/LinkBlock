@@ -1,3 +1,7 @@
+import { LEVELS } from './levels';
+
+const validLevels = new Set(LEVELS.map(level => level.id));
+
 export type RewardId = 'clear' | 'ninety' | 'perfect';
 export interface LevelRewards { clear: boolean; ninety: boolean; perfect: boolean }
 /** Level 1 stays on the original fields so an existing save still opens 阿澈. Later levels live under `levels`. */
@@ -17,25 +21,25 @@ export function rewardsFor(codex: Codex, levelId = 1): LevelRewards {
 /** Do not display orphan legacy gallery flags as earned rewards. */
 export function codexForProgress(codex: Codex, cleared: readonly number[]): Codex {
   const levels: Record<number, LevelRewards> = {};
-  for (const id of cleared) if (id >= 2 && id <= 5) levels[id] = { ...rewardsFor(codex, id), clear: true };
+  for (const id of cleared) if (id >= 2 && validLevels.has(id)) levels[id] = { ...rewardsFor(codex, id), clear: true };
   const first = cleared.includes(1) ? { ...rewardsFor(codex, 1), clear: true } : blank();
   return { ...first, levels };
 }
 
-export function freshUnlocks(before: Codex, percent: number, lives: number, levelId = 1): RewardId[] {
+export function freshUnlocks(before: Codex, percent: number, lives: number, levelId = 1, hitsTaken = 0): RewardId[] {
   const state = rewardsFor(before, levelId);
   const earned: RewardId[] = ['clear'];
   if (percent >= 90 - 1e-4) earned.push('ninety');
-  if (lives >= 3) earned.push('perfect');
+  if (lives >= 3 && hitsTaken === 0) earned.push('perfect');
   return earned.filter(id => !state[id]);
 }
 
-export function applyUnlocks(before: Codex, percent: number, lives: number, levelId = 1): { codex: Codex; fresh: RewardId[] } {
-  const fresh = freshUnlocks(before, percent, lives, levelId);
+export function applyUnlocks(before: Codex, percent: number, lives: number, levelId = 1, hitsTaken = 0): { codex: Codex; fresh: RewardId[] } {
+  const fresh = freshUnlocks(before, percent, lives, levelId, hitsTaken);
   const next = rewardsFor(before, levelId);
   if (percent >= 0) next.clear = true;
   if (percent >= 90 - 1e-4) next.ninety = true;
-  if (lives >= 3) next.perfect = true;
+  if (lives >= 3 && hitsTaken === 0) next.perfect = true;
   if (levelId <= 1) return { codex: { ...before, ...next }, fresh };
   return { codex: { ...before, levels: { ...before.levels, [levelId]: next } }, fresh };
 }
@@ -51,7 +55,7 @@ export function readCodex(storage: Pick<Storage, 'getItem'> | undefined = global
     if (parsed.levels && typeof parsed.levels === 'object') {
       for (const [id, value] of Object.entries(parsed.levels)) {
         const levelId = Number(id);
-        if (!Number.isInteger(levelId) || levelId < 2 || levelId > 5 || !value || typeof value !== 'object') continue;
+        if (!Number.isInteger(levelId) || levelId < 2 || !validLevels.has(levelId) || !value || typeof value !== 'object') continue;
         levels[levelId] = { clear: flag(value.clear), ninety: flag(value.ninety), perfect: flag(value.perfect) };
       }
     }

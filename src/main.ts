@@ -178,7 +178,7 @@ function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
     { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
     { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '未解锁 · 净化达到 90%', sheet: true },
-    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '未解锁 · 一条命都没有失去', sheet: true },
+    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '全程未受伤并通关', locked: '未解锁 · 全程未受伤并通关', sheet: true },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
     level: level.id,
@@ -186,8 +186,8 @@ function galleryCards(): GalleryCard[] {
     title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '九成净化' : '无伤'}`,
     src: id === 'clear' ? level.restored : id === 'ninety' ? level.rewardNinety! : level.rewardPerfect!,
     sheet: id !== 'clear',
-    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '一条命都没有失去',
-    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 一条命都没有失去',
+    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '全程未受伤并通关',
+    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 全程未受伤并通关',
   })));
   return [...first, ...later];
 }
@@ -403,7 +403,7 @@ function confirmOpening() {
 $('#primary').addEventListener('click', () => {
   if (game.phase === 'paused') togglePause();
   else if (game.phase === 'ready') game.start();
-  else if (game.phase === 'won' && current.id === LEVELS.length) beginLevel(1);
+  else if (game.phase === 'won' && current.id === LEVELS.length && LEVELS.every(level => progress.cleared.includes(level.id))) beginLevel(1);
   else beginLevel(current.id);
   openingFrameAt = performance.now();
   sync(); canvas.focus({ preventScroll: true }); render(performance.now());
@@ -685,7 +685,7 @@ function handleEvent(event: GameEvent) {
     lakeAudio.play('hurt');
     if (game.lives > 0) lakeAudio.play('respawn');
   } else if (event === 'won') {
-    const result = applyUnlocks(codex, game.percent, game.lives, current.id);
+    const result = applyUnlocks(codex, game.percent, game.lives, current.id, game.hitsTaken);
     codex = result.codex; writeCodex(codex);
     const unlocked = result.fresh.map(id => current.id === 1 ? rewardNames[id] : `${current.theme}·${rewardNames[id]}`);
     freshNote = unlocked.length ? `新解开：${unlocked.join('、')}` : '这些纪念都已经在图鉴里了。';
@@ -694,7 +694,7 @@ function handleEvent(event: GameEvent) {
     lakeAudio.play('seal');
     let fanfare = 1.15;
     if (game.percent >= 90 - 1e-4) { lakeAudio.play('milestone', 1, fanfare); fanfare += 0.62; }
-    if (game.lives >= 3) { lakeAudio.play('perfect', 1, fanfare); fanfare += 0.4; }
+    if (game.lives >= 3 && game.hitsTaken === 0) { lakeAudio.play('perfect', 1, fanfare); fanfare += 0.4; }
     if (result.fresh.length) lakeAudio.play('reward', 1, fanfare);
   } else if (event === 'lost') lakeAudio.play('gameover');
   else if (event === 'start') lakeAudio.play('level');
@@ -750,11 +750,11 @@ function sync() {
     $('#primary').innerHTML = `继续探索 ${icon('arrow')}`;
   } else if (game.phase === 'won') {
     const next = current.id < LEVELS.length ? levelById(current.id + 1) : undefined;
-    const clearedAll = !next;
+    const clearedAll = !next && LEVELS.every(level => progress.cleared.includes(level.id));
     $('#overlay-kicker').textContent = clearedAll ? 'ALL CLEAR' : 'SEAL BROKEN';
-    $('#overlay-title').textContent = clearedAll ? '五关都解开了。' : '封印解开了。';
+    $('#overlay-title').textContent = clearedAll ? `${LEVELS.length} 关都解开了。` : '封印解开了。';
     $('#overlay-copy').textContent = clearedAll
-      ? `${LEVELS.map(level => level.title.replace(/^第.关 · /, '')).join('、')}都已解开。得分 ${game.score.toLocaleString()}。`
+      ? `${LEVELS.map(level => level.title.replace(/^第.+?关 · /, '')).join('、')}都已解开。得分 ${game.score.toLocaleString()}。`
       : `这一关的封印碎开。已净化 ${percent.toFixed(1)}% · 得分 ${game.score.toLocaleString()} · 用时 ${$('#elapsed').textContent}`;
     $('#reward-note').textContent = freshNote;
     $('#primary').innerHTML = clearedAll ? `从第一关再来 ${icon('reset')}` : `再玩本关 ${icon('reset')}`;

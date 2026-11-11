@@ -58,7 +58,7 @@ describe('actual level battle lifecycle', () => {
     const options = { ...gameOptionsFor(level), opening: false, victory: { territory: false }, random: seeded() };
     const game = new Game(72, 48, options); game.start(); game.protection = 1000;
     const name = game.bossAttack!.name;
-    expect(name).toBe(['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎'][level.id - 1]);
+    expect(name).toBe(['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎', '快慢双潮', '三方狐火', '冰晶排射', '四翼石羽', '熔冠轮舞'][level.id - 1]);
     const first = game.bossAttack;
     hitBoss(game); expect(game.bossHealth).toBe(4); expect(game.bossAttack).toBe(first);
     hitBoss(game); expect(game.bossHealth).toBe(3); expect(game.bossAttack).not.toBe(first);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LevelAttack, type AttackPattern } from './level-attacks';
 import { Projectile, type AttackContext } from './attacks';
 
-const patterns: AttackPattern[] = ['sand', 'storm', 'rose', 'hunt'];
+const patterns: AttackPattern[] = ['sand', 'storm', 'rose', 'hunt', 'tide', 'fox', 'frost', 'gargoyle', 'inferno'];
 function setup(pattern: AttackPattern, stage = 0) {
   const attack = new LevelAttack(pattern, stage), shots: Projectile[] = [];
   const context: AttackContext = { origin: { x: 36, y: 24 }, target: { x: 60, y: 24 },
@@ -20,8 +20,8 @@ describe('distinct telegraphed boss attacks', () => {
       attack.update(attack.warningSeconds / 2 + 0.001, { ...context, target: { x: 0, y: 0 } });
       expect(shots).toHaveLength(angles.length);
       angles.forEach((angle, i) => {
-        expect(shots[i].velocity.x).toBeCloseTo(Math.cos(angle) * attack.speed);
-        expect(shots[i].velocity.y).toBeCloseTo(Math.sin(angle) * attack.speed);
+        expect(shots[i].velocity.x).toBeCloseTo(Math.cos(angle) * attack.shotSpeed(i));
+        expect(shots[i].velocity.y).toBeCloseTo(Math.sin(angle) * attack.shotSpeed(i));
       });
       expect(attack.warning).toBe(0);
     }

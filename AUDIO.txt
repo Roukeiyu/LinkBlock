@@ -3,7 +3,8 @@
 
 Background music
 ----------------
-Each level loops one track supplied by the repository owner. The game
+Each level loops one track. Levels 1–5 use music supplied by the repository owner;
+levels 6–10 use original synthesized ambient loops made for this expansion. The game
 prefers the Opus .ogg and falls back to .mp3. A file is downloaded only
 after the first tap or key press, and only for the level being played.
 
@@ -23,8 +24,29 @@ Level 4 — Rose Waltz (~2:53)
 Level 5 — Autumn Ride (~1:50)
   public/audio/autumn-ride.ogg and public/audio/autumn-ride.mp3
 
-These are the owner's own generations for this game. They are not
+The five tracks above are the owner's own generations for this game. They are not
 covered by the CC0 dedication below.
+
+Level 6 — 沉潮王庭 Sunken Court (~0:53), 72 BPM
+  public/audio/sunken-court.ogg and public/audio/sunken-court.mp3
+
+Level 7 — 狐火神社 Fox Shrine (~0:42), 92 BPM
+  public/audio/fox-shrine.ogg and public/audio/fox-shrine.mp3
+
+Level 8 — 极光冰座 Aurora Throne (~0:58), 66 BPM
+  public/audio/aurora-throne.ogg and public/audio/aurora-throne.mp3
+
+Level 9 — 暮钟圣城 Dusk Belfry (~0:46), 84 BPM
+  public/audio/dusk-belfry.ogg and public/audio/dusk-belfry.mp3
+
+Level 10 — 熔冠终庭 Ember Crown (~0:37), 104 BPM
+  public/audio/ember-crown.ogg and public/audio/ember-crown.mp3
+
+These new 16-bar stereo loops are synthesized without third-party samples.
+Their tempos, roots and melodies differ; note and reverb tails wrap around
+the loop boundary. Rebuild them with scripts/build-expansion-assets.py
+(Python 3, NumPy and ffmpeg with libopus/libmp3lame). Normal builds use the
+committed audio files and do not require Python or ffmpeg.
 
 Sound effects
 -------------
