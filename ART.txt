@@ -1,29 +1,52 @@
 封林 — Level 6–10 artwork
 =========================
 
-The expansion's illustrations were generated specifically for this game:
+The expansion's version 2 illustrations were redrawn specifically for this game:
 6 海妖 / 沉潮王庭, 7 狐妖 / 狐火神社, 8 冰霜巨人 / 极光冰座,
 9 石像鬼 / 暮钟圣城, and 10 炎魔 / 熔冠终庭.
 
-Each public/levels/{6,7,8,9,10}/ directory contains:
+The original wolf and mummy illustrations are the style references: mature,
+strongly built characters, dark drawn contours, matte painted shading, simple
+cloth/leather costumes and restrained lighting. Each character keeps its own
+monster features and environment. Rewards use distinct natural character poses
+rather than the previous ornate royal costumes and repeated spell-circle poses.
+
+Each public/levels/{6,7,8,9,10}/v2/ directory contains:
 - restored.webp: the complete character and scene, 1536 × 1024.
-- ninety.webp: a separate standing character reward illustration.
-- perfect.webp: a separate action character reward illustration.
-- mask.svg: authored black/white silhouette in the same scene coordinates;
+- ninety.webp: a separate 90% completion character illustration.
+- perfect.webp: a separate perfect completion character illustration.
+- mask.png: image-generated character segmentation, normalized to black/white
+  with the same threshold used by the game, in the same scene coordinates;
   used by the existing 60% character / 40% background progress calculation.
-- sealed.svg: matching scene with darkness, silhouette and seal overlays.
-- portrait.svg / portrait-sealed.svg: matching character portraits.
-- mist.svg, thorn.svg, ghost.svg, spore.svg, crow.svg and boss.svg:
-  original vector enemies using each level's palette and emblem.
+- sealed.webp: the exact scene with a desaturated dusk filter, opaque character
+  veil and subdued violet rim, using the same mask as completion scoring.
+- portrait.webp / portrait-sealed.webp: matching character portraits.
+- mist.webp, thorn.webp, ghost.webp, spore.webp, crow.webp and boss.webp:
+  illustrated transparent enemies matching the original enemy art style.
 
-Illustrations are committed as WebP. SVGs embed the restored WebP so canvas
-rendering works without external resources inside the SVG image. No remote
-image service is used by the game.
+Illustrations, sealed scenes and portraits are committed as WebP. The filters
+are rasterized during asset preparation so gameplay draws ordinary cached images
+without repeatedly evaluating large SVG filters. No remote image service is used.
 
-scripts/build-expansion-assets.py recreates the seals, masks, portraits,
-enemy sprites and new music from the committed restored.webp files. It needs
-Python 3, NumPy and ffmpeg. The restored/ninety/perfect illustrations are
-separate generated source artwork and are not recreated by that script.
-Normal npm builds use the committed files and need no image/audio tooling.
+scripts/build-expansion-assets.py prepares matching seal and portrait SVGs from
+the committed restored.webp and mask.png files (Python 3 standard library only).
+The intermediate files are written to the ignored art/expansion/build/ directory.
+Then run scripts/bake-expansion-art.mjs with Node to render those files into the
+runtime WebP assets. It uses Playwright Chromium (or CHROMIUM_PATH) and ffmpeg.
+Pass --music to build-expansion-assets.py to intentionally rebuild the existing
+music loops; that optional operation also requires NumPy and ffmpeg. Illustrations and segmentation are
+generated source artwork and are not recreated by this script.
+
+art/expansion/{6,7,8,9,10}-sprites.webp preserve the generated transparent
+3-column by 2-row sprite atlases. node scripts/pack-enemy-sprites.mjs extracts
+each cell to its alpha bounds and packages the six runtime WebP sprites; it
+requires ffmpeg and ffprobe. Atlas order: three straight-moving looks, orbiter,
+zigzag, boss. The script maps that order to the renderer's legacy look keys.
+Atlases are kept outside public so the game downloads only individual sprites.
+
+The v2 asset paths prevent cached older illustrations from mixing with this
+redraw. Normal npm builds use the committed files and need no image/audio tools.
 
 Existing level 1–5 artwork and UI artwork remain in their original paths.
+Earlier expansion files are retained for already-open clients; the active level
+catalog exclusively selects the v2 redraw and its matching supporting assets.

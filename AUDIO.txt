@@ -44,7 +44,7 @@ Level 10 — 熔冠终庭 Ember Crown (~0:37), 104 BPM
 
 These new 16-bar stereo loops are synthesized without third-party samples.
 Their tempos, roots and melodies differ; note and reverb tails wrap around
-the loop boundary. Rebuild them with scripts/build-expansion-assets.py
+the loop boundary. Rebuild them with scripts/build-expansion-assets.py --music
 (Python 3, NumPy and ffmpeg with libopus/libmp3lame). Normal builds use the
 committed audio files and do not require Python or ffmpeg.
 

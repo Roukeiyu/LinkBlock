@@ -12,6 +12,9 @@ test('all new art, masks, enemies, rewards and audio load from real bundled file
       image.onerror = () => reject(new Error(file)); image.src = file;
     }))), paths);
     expect(images.every(image => image.width > 0 && image.height > 0)).toBe(true);
+    const main = images.find(image => image.file === level.restored)!;
+    expect(images.find(image => image.file === level.mask)).toMatchObject({ width: main.width, height: main.height });
+    expect(images.find(image => image.file === level.sealed)).toMatchObject({ width: main.width, height: main.height });
     const maskShare = await page.evaluate(async path => {
       const image = new Image(); image.src = path; await image.decode();
       const canvas = document.createElement('canvas'); canvas.width = 96; canvas.height = 64;
@@ -20,6 +23,33 @@ test('all new art, masks, enemies, rewards and audio load from real bundled file
       return Array.from({ length: 96 * 64 }, (_, i) => data[i * 4] > 127 ? 1 : 0).reduce((a: number, b) => a + b, 0) / (96 * 64);
     }, level.mask);
     expect(maskShare).toBeGreaterThan(.1); expect(maskShare).toBeLessThan(.8);
+    // The same character mask must hide the redrawn character in the sealed
+    // plate; verify the actual packaged pixels, not just the filenames.
+    const sealedShare = await page.evaluate(async paths => {
+      const pixels = async (path: string) => {
+        const image = new Image(); image.src = path; await image.decode();
+        const canvas = document.createElement('canvas'); canvas.width = 192; canvas.height = 128;
+        const ctx = canvas.getContext('2d')!; ctx.drawImage(image, 0, 0, 192, 128);
+        return ctx.getImageData(0, 0, 192, 128).data;
+      };
+      const [mask, sealed] = await Promise.all(paths.map(pixels));
+      let character = 0, hidden = 0;
+      for (let i = 0; i < mask.length; i += 4) if (mask[i] > 250) {
+        character++; if (Math.max(sealed[i], sealed[i + 1], sealed[i + 2]) < 75) hidden++;
+      }
+      return hidden / character;
+    }, [level.mask, level.sealed]);
+    expect(sealedShare).toBeGreaterThan(.95);
+    const spriteCoverage = await page.evaluate(async files => Promise.all(files.map(async path => {
+      const image = new Image(); image.src = path; await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+      const ctx = canvas.getContext('2d')!; ctx.drawImage(image, 0, 0, 64, 64);
+      const rgba = ctx.getImageData(0, 0, 64, 64).data;
+      let solid = 0;
+      for (let i = 3; i < rgba.length; i += 4) if (rgba[i] > 127) solid++;
+      return solid / (64 * 64);
+    })), [level.sprites.mist, level.sprites.thorn, level.sprites.ghost, level.sprites.spore, level.sprites.crow, level.sprites.tree]);
+    for (const share of spriteCoverage) { expect(share).toBeGreaterThan(.05); expect(share).toBeLessThan(.95); }
     for (const ext of ['ogg', 'mp3']) {
       const response = await request.get(`/audio/${level.music}.${ext}`);
       expect(response.ok()).toBe(true); expect((await response.body()).length).toBeGreaterThan(10000);
@@ -69,6 +99,6 @@ test('old five-clear save opens level six, new rewards persist, and only level t
   await expect(page.locator('.gallery-level')).toHaveCount(10);
   await expect(page.locator('.gallery-item')).toHaveCount(30);
   await page.locator('.gallery-item[data-level="10"][data-reward="perfect"]').click();
-  await expect(page.locator('#viewer-img')).toHaveAttribute('src', /levels\/10\/perfect.webp$/);
+  await expect(page.locator('#viewer-img')).toHaveAttribute('src', /levels\/10\/v2\/perfect.webp$/);
   await expect.poll(() => page.locator('#viewer-img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
