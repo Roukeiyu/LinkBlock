@@ -82,9 +82,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
-          <div id="overlay" class="overlay">
-            <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><img id="overlay-seal" class="overlay-seal" alt="" src="${ui('wax_seal_red.png')}" /></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button" type="button">选关</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><button id="back-menu" class="ghost-button" type="button">返回主界面</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
-          </div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
               </div>
@@ -105,13 +102,17 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </section>
     <footer class="site-footer"><img class="footer-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /><span>无需下载 · 即刻探索</span></footer>
   </main>
+  <div id="modal-shade" hidden></div>
+  <div id="overlay" class="overlay" hidden>
+    <div class="overlay-card"><p id="overlay-kicker" class="eyebrow">解封</p><div class="territory-symbol" aria-hidden="true"><img id="overlay-seal" class="overlay-seal" alt="" src="${ui('wax_seal_red.png')}" /></div><h2 id="overlay-title">封印还在。<br>这一关在等你。</h2><p id="overlay-copy">按空格或动作键选定随机起点，5 秒后自动选定。<br>净化 75%，解开这一关的封印。</p><p id="reward-note"></p><button id="primary" class="primary-button">开始探索 ${icon('arrow')}</button><button id="next-level" class="primary-button" type="button" hidden>下一关</button><button id="open-levels" class="ghost-button" type="button">选关</button><button id="open-gallery" class="ghost-button" type="button">图鉴</button><button id="back-menu" class="ghost-button" type="button">返回主界面</button><span id="overlay-hint" class="overlay-hint">方向键移动 · 按住空格画线</span></div>
+  </div>
   <div id="gallery" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="gallery-title">
       <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" type="button">返回</button></div>
       <div id="gallery-grid" class="gallery-sections"></div>
     </div>
-    <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" type="button">关闭</button></div>
   </div>
+  <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" type="button">关闭</button></div>
   <div id="level-select" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
       <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" type="button">返回</button></div>
@@ -234,9 +235,9 @@ function renderGallery() {
 }
 function openGallery() {
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
-  renderGallery(); $('#viewer').hidden = true; $('#gallery').hidden = false;
+  renderGallery(); $('#viewer').hidden = true; $('#gallery').hidden = false; placeShade();
 }
-function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = true; }
+function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = true; placeShade(); }
 
 function paintAudio() {
   const { music, sfx, musicVolume, sfxVolume } = lakeAudio.prefs;
@@ -258,12 +259,21 @@ function paintSealRow() {
   $('#seal-row').setAttribute('aria-label', `已解封 ${cleared}/${LEVELS.length}`);
   $('#seal-row').innerHTML = LEVELS.map(level => `<img class="menu-seal" alt="" src="${asset(rewardsFor(codex, level.id).clear ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" />`).join('');
 }
+function placeShade() {
+  const shade = $('#modal-shade');
+  const open = ['#overlay', '#level-select', '#gallery', '#viewer'].map(selector => $(selector)).filter(el => !el.hidden);
+  if (!open.length) { shade.hidden = true; return; }
+  open.forEach((el, index) => { el.style.zIndex = String(40 + index * 2); });
+  shade.style.zIndex = String(40 + (open.length - 1) * 2 - 1);
+  shade.hidden = false;
+}
 function hideMenu() { $('#title-screen').hidden = true; }
 function showMenu() {
   paintSealRow();
   lakeAudio.useTrack(LEVELS[0].music);
   $('#title-screen').hidden = false;
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
+  else { overlay.hidden = true; placeShade(); }
 }
 function followAudio() {
   lakeAudio.setMood(game.phase === 'won' ? 'bright' : game.boss ? 'tense' : 'calm');
@@ -338,7 +348,7 @@ function beginLevel(id: number) {
   sync(); canvas.focus({ preventScroll: true }); render(performance.now());
 }
 function restart() { beginLevel(current.id); }
-function closeLevels() { $('#level-select').hidden = true; }
+function closeLevels() { $('#level-select').hidden = true; placeShade(); }
 function renderLevels() {
   $('#level-list').innerHTML = LEVELS.map(level => {
     const open = level.id <= progress.unlocked;
@@ -348,7 +358,7 @@ function renderLevels() {
 }
 function openLevels() {
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
-  renderLevels(); $('#level-select').hidden = false;
+  renderLevels(); $('#level-select').hidden = false; placeShade();
 }
 function accountOpeningTime() {
   if (game.phase !== 'opening') return;
@@ -699,7 +709,8 @@ function sync() {
   $('.boss-health').setAttribute('aria-valuenow', String(hp)); $('.boss-health').setAttribute('aria-valuemax', String(game.bossMaxHealth));
   $('#boss-phase').hidden = game.bossPhase === '默认'; $('#boss-phase').textContent = game.reinforcementTarget === undefined ? game.bossPhase : `${game.bossPhase} · 访客 ${game.enemies.length}/${game.reinforcementTarget}`;
   pauseButton.disabled = !['playing', 'opening', 'paused'].includes(game.phase);
-  overlay.hidden = game.phase === 'playing' || selecting || (game.phase === 'won' && effects.length > 0);
+  overlay.hidden = !$('#title-screen').hidden || game.phase === 'playing' || selecting || (game.phase === 'won' && effects.length > 0);
+  placeShade();
   $('#level-title').textContent = current.title;
   const showCard = refreshCard || lastPhase !== game.phase;
   if (lastPhase === game.phase && !refreshCard) return;
@@ -935,7 +946,7 @@ $('#level-list').addEventListener('click', event => {
 });
 $('#portrait').addEventListener('click', openGallery);
 $('#gallery-close').addEventListener('click', closeGallery);
-$('#viewer-close').addEventListener('click', () => { $('#viewer').hidden = true; });
+$('#viewer-close').addEventListener('click', () => { $('#viewer').hidden = true; placeShade(); });
 $('#charms').addEventListener('click', event => { if ((event.target as Element).closest('.charm')) openGallery(); });
 $('#gallery-grid').addEventListener('click', event => {
   const item = (event.target as Element).closest<HTMLButtonElement>('.gallery-item');
@@ -944,7 +955,7 @@ $('#gallery-grid').addEventListener('click', event => {
   if (!reward) return;
   const image = $<HTMLImageElement>('#viewer-img');
   image.classList.toggle('sheet', Boolean(reward.sheet));
-  image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false;
+  image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false; placeShade();
 });
 loadLevelMask(current);
 applyAccent();

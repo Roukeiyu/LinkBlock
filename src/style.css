@@ -258,14 +258,16 @@ body{background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--seal) 1
 @media(max-width:620px){.audio-dock button{font-size:11px;height:24px;padding:0 7px}}
 
 /* Grimoire chrome. --menu-art is the swappable title plate; seals and pages come from the level list. */
-:root{--ink:#3a2414;--parchment-ink:#f4e7cf}
+:root{--ink:#24160c;--parchment-ink:#c4a06a}
 body,button,input{font-family:"Noto Serif SC","Songti SC","STSong","SimSun","Palatino Linotype",Palatino,"Times New Roman",serif}
-body{color:var(--ink);background-color:#1a120c;background-image:var(--parchment);background-size:420px}
-.site-header,.game-main,.side-panel,.controls-panel,.board-footer,.seal-hud{background-color:#f4e7cf;background-image:var(--parchment);background-size:480px;color:var(--ink);border-color:#6b4a2a}
+body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(ellipse at 50% 20%,#3a2618 0%,#100a07 68%)}
+.site-header,.game-main,.side-panel,.controls-panel,.board-footer,.seal-hud,.gallery-card,.overlay-card,.gallery-item,.level-list button{background-color:#9a7344;background-image:radial-gradient(ellipse at 50% 42%,transparent 46%,#3a2414aa 100%),repeating-linear-gradient(0deg,#00000022 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,#00000016 0 1px,transparent 1px 4px),var(--parchment);background-blend-mode:multiply,multiply,multiply,multiply;background-size:auto,auto,auto,420px;color:var(--ink);border-color:#5c3b22}
 .site-header{border-bottom:1px solid #6b4a2a;box-shadow:inset 0 -1px 0 #e7d3a4}
 .brand{background:none;border:0;padding:0;color:inherit}
 .brand-logo{height:34px;width:auto;display:block}
-.header-right,.edition,.intro-copy,.chapter>span,.chapter p,.stat-label,.board-footer,.site-footer{color:#5c4632}
+.header-right,.edition,.intro-copy,.chapter>span,.chapter p,.stat-label,.board-footer,.site-footer,.controls-panel,.controls-panel button,.controls-panel kbd,.controls-panel svg,.audio-slider,.audio-dock button,.side-panel,.side-panel h2,.side-panel h3,.instructions h3,.instructions p,.panel-copy,.enemy-entry,.enemy-entry small,.enemy-entry em,#boss-hp-text,#boss-status,.side-note,.side-note p{color:var(--ink)}
+.audio-dock button{background:#b48958;border-color:#5c3b22}
+.controls-panel button{background:transparent}
 .intro h1,.level-title,.purity-caption,.bar-readout,.score,.overlay h2,.gallery-head h2,.gallery-level h3{color:var(--ink);text-shadow:none}
 .bar-readout{color:var(--ink)}
 .purity-caption .muted,.score{color:color-mix(in srgb,var(--seal) 55%,var(--ink))}
@@ -279,8 +281,14 @@ body{color:var(--ink);background-color:#1a120c;background-image:var(--parchment)
 .charm.unlocked{box-shadow:none}
 .life-wax{width:22px;height:22px;object-fit:contain}
 .life-wax.spent{opacity:.28}
-.gallery{background:#1a120cee}
-.gallery-card,.overlay-card{background-color:#f4e7cf;background-image:var(--parchment);color:var(--ink);border:22px solid transparent;border-image-source:var(--page-frame);border-image-slice:86;border-image-repeat:stretch;box-shadow:none}
+.gallery,.viewer{background:transparent}
+.gallery-card,.overlay-card{color:var(--ink);border:18px solid transparent;border-image-source:var(--page-frame);border-image-slice:78;border-image-repeat:stretch;box-shadow:none}
+#modal-shade{position:fixed;inset:0;background:rgba(18,8,4,.5);pointer-events:auto}
+#modal-shade[hidden]{display:none}
+#overlay.overlay{position:fixed;inset:0;z-index:32;display:flex;align-items:safe center;justify-content:center;padding:12px;overflow:auto;background:transparent;backdrop-filter:none}
+#overlay.overlay[hidden]{display:none}
+.overlay-card{width:min(460px,calc(100vw - 28px));max-height:calc(100dvh - 24px);overflow:auto;margin:auto;box-sizing:border-box}
+@media(max-height:760px){#overlay.overlay{padding:8px}.overlay-card{max-height:calc(100dvh - 16px);padding:8px 10px}.overlay h2{font-size:22px;line-height:1.25;margin-bottom:6px}.overlay-card>.eyebrow{margin-bottom:4px}.overlay-card>p:not(.eyebrow){margin-bottom:8px;line-height:1.4;font-size:12px}.overlay-seal{width:52px;height:52px}.territory-symbol{margin:0 auto 4px}.primary-button{height:34px;min-width:0}.ghost-button{margin-top:6px;padding:5px 10px}.overlay-hint{margin-top:6px}}
 .gallery-head{background:transparent}
 .gallery-item,.level-list button{background:transparent;color:var(--ink);border-color:#6b4a2a}
 .gallery-item small,.level-list button small{color:#6b5340}
@@ -288,9 +296,11 @@ body{color:var(--ink);background-color:#1a120c;background-image:var(--parchment)
 .level-list button{display:flex;flex-direction:row;align-items:center;gap:12px;text-align:left}
 .level-seal{width:52px;height:52px;object-fit:contain;flex:none}
 .level-copy{display:flex;flex-direction:column;gap:2px}
-.overlay-card>p:not(.eyebrow),.overlay-hint,#reward-note{color:#5c4632}
+.overlay-card{display:flex;flex-direction:column;align-items:center;gap:8px}
+.overlay-card>.eyebrow,.overlay-card>h2,.overlay-card>p,.overlay-hint,#reward-note,.gallery-level h3,.gallery-item span,.gallery-item small{color:#1a0e08;margin:0}
+.overlay-card>p:not(.eyebrow),.overlay-hint,#reward-note,.gallery-item small{color:#2a160c}
 .primary-button,.ghost-button{font-family:inherit;letter-spacing:.18em;color:var(--ink)}
-.primary-button{background:linear-gradient(#f7edd8,#e7d3a8);border-color:#6b4a2a;box-shadow:inset 0 1px 0 #fff8}
+.primary-button{background:linear-gradient(#e7c48a,#b8894e);border-color:#5c3b22;box-shadow:inset 0 1px 0 #fff6}
 .primary-button:hover{filter:none;background:#f3e2bc}
 .ghost-button{background:transparent;border-color:#6b4a2a}
 .overlay-seal{width:96px;height:96px;object-fit:contain;display:block;margin:0 auto}
