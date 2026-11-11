@@ -139,26 +139,44 @@ export function gameOptionsFor(level: LevelDef): GameOptions {
     speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion };
 }
 
-export interface LevelProgress { unlocked: number }
+export interface LevelProgress { unlocked: number; cleared: number[] }
 const KEY = 'linkblock.fenglin.levels';
 
 export function readLevelProgress(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): LevelProgress {
+  const empty = (): LevelProgress => ({ unlocked: 1, cleared: [] });
   try {
     const raw = storage?.getItem(KEY);
-    if (!raw) return { unlocked: 1 };
-    const unlocked = Math.round(Number(JSON.parse(raw).unlocked));
-    if (!Number.isFinite(unlocked)) return { unlocked: 1 };
-    return { unlocked: Math.min(LEVELS.length, Math.max(1, unlocked)) };
+    if (!raw) return empty();
+    const parsed = JSON.parse(raw);
+    const unlocked = Math.round(Number(parsed.unlocked));
+    if (!Number.isFinite(unlocked)) return empty();
+    const available = Math.min(LEVELS.length, Math.max(1, unlocked));
+    let cleared: number[] = [];
+    if (parsed.version === 2) {
+      if (Array.isArray(parsed.cleared)) cleared = LEVELS.map(level => level.id)
+        .filter(id => id <= available && parsed.cleared.includes(id));
+    } else if (parsed.version === undefined) {
+      // Legacy gallery flags alone are not proof of a completed level. Import
+      // only when both the reward and subsequent level availability agree.
+      try {
+        const rewards = JSON.parse(storage?.getItem('linkblock.fenglin.codex') ?? 'null');
+        cleared = LEVELS.filter(level => (level.id < available || level.id === LEVELS.length && available === LEVELS.length)
+          && (level.id === 1 ? rewards?.clear === true : rewards?.levels?.[level.id]?.clear === true)).map(level => level.id);
+      } catch { /* Keep available levels even if old gallery data is corrupt. */ }
+    }
+    return { unlocked: available, cleared };
   } catch {
-    return { unlocked: 1 };
+    return empty();
   }
 }
 
 export function writeLevelProgress(progress: LevelProgress, storage: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
-  try { storage?.setItem(KEY, JSON.stringify({ unlocked: progress.unlocked })); } catch { /* Private mode can reject storage. */ }
+  try { storage?.setItem(KEY, JSON.stringify({ version: 2, unlocked: progress.unlocked, cleared: progress.cleared })); } catch { /* Private mode can reject storage. */ }
 }
 
-/** Clearing a level opens the next one and never locks a later level already reached. */
+/** Only a completed run records a seal. Opening level 1 is not a completion. */
 export function noteClear(progress: LevelProgress, levelId: number): LevelProgress {
-  return { unlocked: Math.max(progress.unlocked, Math.min(LEVELS.length, levelId + 1)) };
+  if (!LEVELS.some(level => level.id === levelId)) return progress;
+  return { unlocked: Math.max(progress.unlocked, Math.min(LEVELS.length, levelId + 1)),
+    cleared: [...new Set([...progress.cleared, levelId])].sort((a, b) => a - b) };
 }

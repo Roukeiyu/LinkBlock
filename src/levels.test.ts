@@ -57,7 +57,7 @@ describe('level progress', () => {
     expect(progress.unlocked).toBe(5);
     progress = noteClear(progress, 2);
     expect(progress.unlocked).toBe(5);
-    writeLevelProgress({ unlocked: 9 }, storage);
+    writeLevelProgress({ unlocked: 9, cleared: [] }, storage);
     expect(readLevelProgress(storage).unlocked).toBe(5);
   });
 });

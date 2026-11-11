@@ -5,7 +5,7 @@ import { renderEnemy, renderWolfSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
-import { applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
+import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
 import { LEVELS, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
@@ -170,7 +170,7 @@ if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruin
 function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
 syncScene();
 const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
-let codex: Codex = readCodex();
+let codex: Codex = codexForProgress(readCodex(), progress.cleared);
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
 interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string; sheet?: boolean }
@@ -279,10 +279,10 @@ function paintMenu(index?: number) {
   });
 }
 function paintSealRow() {
-  const cleared = LEVELS.filter(level => rewardsFor(codex, level.id).clear).length;
+  const cleared = progress.cleared.length;
   $('#seal-count').textContent = `已解封 ${cleared}/${LEVELS.length}`;
   $('#seal-row').setAttribute('aria-label', `已解封 ${cleared}/${LEVELS.length}`);
-  $('#seal-row').innerHTML = LEVELS.map(level => `<img class="menu-seal" alt="" src="${asset(rewardsFor(codex, level.id).clear ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" />`).join('');
+  $('#seal-row').innerHTML = LEVELS.map(level => `<img class="menu-seal" alt="" src="${asset(progress.cleared.includes(level.id) ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" />`).join('');
 }
 function placeShade() {
   const shade = $('#modal-shade');
@@ -377,7 +377,7 @@ function closeLevels() { $('#level-select').hidden = true; placeShade(); }
 function renderLevels() {
   $('#level-list').innerHTML = LEVELS.map(level => {
     const open = level.id <= progress.unlocked;
-    const cleared = rewardsFor(codex, level.id).clear;
+    const cleared = progress.cleared.includes(level.id);
     return `<button type="button" data-level="${level.id}" title="${level.tactic}" aria-label="${level.title} · ${level.difficulty}。${level.tactic}${open ? '' : ' 尚未解锁'}" style="--seal:${level.accent}" ${open ? '' : 'disabled'}><img class="level-seal" alt="" src="${asset(cleared ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" /><span class="level-copy"><b>${level.title}</b><small>${open ? `${level.difficulty} · ${level.names.boss}` : '尚未解锁'}</small></span></button>`;
   }).join('');
 }

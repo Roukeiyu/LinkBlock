@@ -14,6 +14,14 @@ export function rewardsFor(codex: Codex, levelId = 1): LevelRewards {
   return found ? { clear: flag(found.clear), ninety: flag(found.ninety), perfect: flag(found.perfect) } : blank();
 }
 
+/** Do not display orphan legacy gallery flags as earned rewards. */
+export function codexForProgress(codex: Codex, cleared: readonly number[]): Codex {
+  const levels: Record<number, LevelRewards> = {};
+  for (const id of cleared) if (id >= 2 && id <= 5) levels[id] = { ...rewardsFor(codex, id), clear: true };
+  const first = cleared.includes(1) ? { ...rewardsFor(codex, 1), clear: true } : blank();
+  return { ...first, levels };
+}
+
 export function freshUnlocks(before: Codex, percent: number, lives: number, levelId = 1): RewardId[] {
   const state = rewardsFor(before, levelId);
   const earned: RewardId[] = ['clear'];
