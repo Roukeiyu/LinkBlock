@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyUnlocks, EMPTY_CODEX, freshUnlocks } from './rewards';
+import { applyUnlocks, EMPTY_CODEX, freshUnlocks, readCodex, rewardsFor, writeCodex } from './rewards';
 
 describe('封林 rewards', () => {
   it('unlocks the rescue on any clear, 90% only at the threshold, and perfect only with every life', () => {
@@ -14,5 +14,21 @@ describe('封林 rewards', () => {
     expect(next.fresh).toEqual([]);
     expect(next.codex).toEqual(before);
     expect(before).toEqual({ clear: true, ninety: true, perfect: false });
+  });
+  it('records later levels beside level 1 and keeps an old save as 阿澈 only', () => {
+    const memory = new Map<string, string>();
+    const storage = { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => { memory.set(key, value); } };
+    storage.setItem('linkblock.fenglin.codex', JSON.stringify({ clear: true, ninety: false, perfect: true }));
+    const saved = readCodex(storage);
+    expect(rewardsFor(saved, 1)).toEqual({ clear: true, ninety: false, perfect: true });
+    expect(rewardsFor(saved, 2)).toEqual(EMPTY_CODEX);
+    const next = applyUnlocks(saved, 92, 3, 2);
+    expect(next.fresh).toEqual(['clear', 'ninety', 'perfect']);
+    expect(rewardsFor(next.codex, 1)).toEqual({ clear: true, ninety: false, perfect: true });
+    expect(rewardsFor(next.codex, 2)).toEqual({ clear: true, ninety: true, perfect: true });
+    expect(applyUnlocks(next.codex, 70, 1, 2).fresh).toEqual([]);
+    writeCodex(next.codex, storage);
+    expect(rewardsFor(readCodex(storage), 2).clear).toBe(true);
+    expect(rewardsFor(readCodex(storage), 3).clear).toBe(false);
   });
 });

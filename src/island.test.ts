@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Island, islandPolygons } from './island';
-import { area, distance, inside, wallEdges, type Polygon } from './geometry';
+import clipping from 'polygon-clipping';
+import { Island, islandPolygons, repairLand, separatesShore } from './island';
+import { area, distance, inside, wallEdges, type Point, type Polygon } from './geometry';
+import type { MultiPolygon } from 'polygon-clipping';
 import { Game, type Direction } from './engine';
 
 const frame: Polygon = [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 40 }, { x: 0, y: 40 }];
@@ -55,5 +57,26 @@ describe('continuous island geometry', () => {
         }
       }
     }
+  });
+  it('drops a zero-width spike and claims a hairline slit without swallowing a real corridor', () => {
+    const arena: MultiPolygon = [[[[0, 0], [40, 0], [40, 40], [0, 40], [0, 0]]]];
+    const box = (x: number, y: number, w: number, h: number): MultiPolygon => [[[[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]]]];
+    const spiked: MultiPolygon = [[[[2, 2], [30, 2], [30, 30], [16, 30], [16, 10], [16, 30], [2, 30], [2, 2]]]];
+    const spike = repairLand(arena, spiked);
+    const vertical = (edge: [Point, Point]) => Math.abs(edge[0].x - edge[1].x) < 1e-6 && Math.abs(edge[0].x - 16) < 1e-6;
+    expect(spike.coast.some(vertical)).toBe(false);
+    expect(spike.gaps).toHaveLength(0);
+    expect(separatesShore([{ x: 16, y: 10 }, { x: 16, y: 30 }], spike.regions, islandPolygons(arena))).toBe(false);
+    const { difference } = clipping;
+    const slit = repairLand(arena, difference(box(5, 5, 25, 25), box(15, 8, 0.05, 14)));
+    expect(slit.regions.some(region => inside({ x: 15.025, y: 15 }, region))).toBe(false);
+    expect(slit.coast.some(([a, b]) => Math.abs(a.x - 15) < 0.1 && Math.abs(b.x - 15) < 0.1 && Math.abs(a.x - b.x) < 1e-6)).toBe(false);
+    expect(slit.gaps.reduce((sum, polygon) => sum + area(polygon), 0)).toBeCloseTo(0.7, 1);
+    const kept = repairLand(arena, difference(box(5, 5, 25, 25), box(10, 10, 8, 8)));
+    expect(kept.regions.some(region => inside({ x: 14, y: 14 }, region))).toBe(true);
+    expect(kept.gaps).toHaveLength(0);
+    const corridor = repairLand(arena, [...box(5, 5, 10, 20), ...box(16, 5, 10, 20)]);
+    expect(corridor.regions.some(region => inside({ x: 15.5, y: 15 }, region))).toBe(true);
+    expect(corridor.gaps).toHaveLength(0);
   });
 });

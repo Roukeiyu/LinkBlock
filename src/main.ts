@@ -5,7 +5,7 @@ import { renderEnemy, renderWolfSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
-import { applyUnlocks, readCodex, writeCodex, type Codex, type RewardId } from './rewards';
+import { applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
 import { LEVELS, bossConfigFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
@@ -106,7 +106,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="gallery" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="gallery-title">
       <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" type="button">返回</button></div>
-      <div id="gallery-grid" class="gallery-grid"></div>
+      <div id="gallery-grid" class="gallery-sections"></div>
     </div>
     <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" type="button">关闭</button></div>
   </div>
@@ -164,11 +164,23 @@ const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
 let codex: Codex = readCodex();
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
-const galleryItems: { id: RewardId; title: string; src: string; blurb: string }[] = [
-  { id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像' },
-  { id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%' },
-  { id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去' },
-];
+interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string }
+function galleryCards(): GalleryCard[] {
+  const first: GalleryCard[] = [
+    { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '尚未解锁' },
+    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '尚未解锁' },
+    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '一条命都没有失去', locked: '尚未解锁' },
+  ];
+  const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
+    level: level.id,
+    id,
+    title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '九成净化' : '无伤'}`,
+    src: level.restored,
+    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '一条命都没有失去',
+    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 一条命都没有失去',
+  })));
+  return [...first, ...later];
+}
 const charmFile: Record<RewardId, [string, string]> = {
   clear: ['sprites/badge_clear.png', 'sprites/badge_clear_locked.png'],
   ninety: ['sprites/badge_90.png', 'sprites/badge_90_locked.png'],
@@ -177,7 +189,7 @@ const charmFile: Record<RewardId, [string, string]> = {
 function paintCharms() {
   for (const charm of document.querySelectorAll<HTMLButtonElement>('.charm')) {
     const id = charm.dataset.reward as RewardId;
-    const open = codex[id];
+    const open = rewardsFor(codex, current.id)[id];
     charm.classList.toggle('unlocked', open);
     charm.classList.toggle('locked', !open);
     charm.setAttribute('aria-pressed', String(open));
@@ -202,9 +214,13 @@ function paintPortrait() {
   portrait.alt = freed ? '阿澈睁开了眼' : '阿澈闭着眼，仍被荆棘封着';
 }
 function renderGallery() {
-  $('#gallery-grid').innerHTML = galleryItems.map(item => {
-    const open = codex[item.id];
-    return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img src="${asset(item.src)}" alt="" /><span>${item.title}</span><small>${open ? item.blurb : '尚未解锁'}</small></button>`;
+  const cards = galleryCards();
+  $('#gallery-grid').innerHTML = LEVELS.map(level => {
+    const items = cards.filter(card => card.level === level.id).map(item => {
+      const open = rewardsFor(codex, level.id)[item.id];
+      return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'}><img src="${asset(item.src)}" alt="" /><span>${item.title}</span><small>${open ? item.blurb : item.locked}</small></button>`;
+    }).join('');
+    return `<section class="gallery-level"><h3>${level.title}</h3><div class="gallery-grid">${items}</div></section>`;
   }).join('');
 }
 function openGallery() {
@@ -258,17 +274,20 @@ function loadLevelArt(level: LevelDef) {
   loadLevelMask(level);
 }
 let charMaskImage: HTMLImageElement | undefined;
+let auraCanvas: HTMLCanvasElement | undefined;
 let maskToken = 0;
 let motes: { x: number; y: number; vy: number; r: number; gold: boolean; phase: number }[] = [];
 function loadLevelMask(level: LevelDef) {
   const token = ++maskToken;
   charMaskImage = undefined;
+  auraCanvas = undefined;
   motes = [];
   const image = new Image();
   image.decoding = 'async';
   image.onload = () => {
     if (token !== maskToken || !image.naturalWidth) return;
     charMaskImage = image;
+    auraCanvas = characterAura(image);
     const scratch = document.createElement('canvas');
     scratch.width = image.naturalWidth; scratch.height = image.naturalHeight;
     const context = scratch.getContext('2d', { willReadFrequently: true });
@@ -596,9 +615,10 @@ function handleEvent(event: GameEvent) {
     lakeAudio.play('hurt');
     if (game.lives > 0) lakeAudio.play('respawn');
   } else if (event === 'won') {
-    const result = applyUnlocks(codex, game.percent, game.lives);
+    const result = applyUnlocks(codex, game.percent, game.lives, current.id);
     codex = result.codex; writeCodex(codex);
-    freshNote = result.fresh.length ? `新解开：${result.fresh.map(id => rewardNames[id]).join('、')}` : '这些纪念都已经在图鉴里了。';
+    const unlocked = result.fresh.map(id => current.id === 1 ? rewardNames[id] : `${current.theme}·${rewardNames[id]}`);
+    freshNote = unlocked.length ? `新解开：${unlocked.join('、')}` : '这些纪念都已经在图鉴里了。';
     progress = noteClear(progress, current.id); writeLevelProgress(progress);
     effects.push(sealBreak(reducedMotion.matches));
     lakeAudio.play('seal');
@@ -776,20 +796,36 @@ function render(now: number) {
 let previous = performance.now();
 let uiClock = 0;
 let frameDt = 0;
+function characterAura(image: HTMLImageElement) {
+  const silhouette = document.createElement('canvas');
+  silhouette.width = image.naturalWidth; silhouette.height = image.naturalHeight;
+  const source = silhouette.getContext('2d');
+  if (!source) return undefined;
+  source.drawImage(image, 0, 0);
+  const pixels = source.getImageData(0, 0, silhouette.width, silhouette.height);
+  const data = pixels.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const coverage = Math.max(data[i], data[i + 1], data[i + 2]);
+    const solid = data[i + 3] > 127 && coverage > 127;
+    data[i] = 255; data[i + 1] = 255; data[i + 2] = 255; data[i + 3] = solid ? 255 : 0;
+  }
+  source.putImageData(pixels, 0, 0);
+  const aura = document.createElement('canvas');
+  aura.width = silhouette.width; aura.height = silhouette.height;
+  const glow = aura.getContext('2d');
+  if (!glow) return undefined;
+  glow.shadowColor = '#c9a6ff'; glow.shadowBlur = 24; glow.drawImage(silhouette, 0, 0);
+  glow.shadowColor = '#e7c56a'; glow.shadowBlur = 12; glow.drawImage(silhouette, 0, 0);
+  glow.shadowBlur = 0; glow.globalCompositeOperation = 'destination-out'; glow.drawImage(silhouette, 0, 0);
+  return aura;
+}
 function drawCharacterAura(ctx: CanvasRenderingContext2D) {
-  if (!charMaskImage?.naturalWidth) return;
-  const pulse = reducedMotion.matches ? 0.2 : 0.16 + 0.07 * Math.sin(performance.now() / 460);
+  if (!auraCanvas) return;
+  const pulse = reducedMotion.matches ? 0.55 : 0.45 + 0.2 * Math.sin(performance.now() / 460);
   ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = pulse;
-  ctx.shadowColor = '#e7c56a';
-  ctx.shadowBlur = 16;
-  ctx.drawImage(charMaskImage, 0, 0, game.width, game.height);
-  ctx.shadowColor = '#b48cff';
-  ctx.shadowBlur = 8;
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur = 0;
-  ctx.drawImage(charMaskImage, 0, 0, game.width, game.height);
+  ctx.drawImage(auraCanvas, 0, 0, game.width, game.height);
   ctx.restore();
 }
 function drawSealMotes(ctx: CanvasRenderingContext2D, dt: number) {
@@ -844,7 +880,7 @@ $('#charms').addEventListener('click', event => { if ((event.target as Element).
 $('#gallery-grid').addEventListener('click', event => {
   const item = (event.target as Element).closest<HTMLButtonElement>('.gallery-item');
   if (!item || item.disabled) return;
-  const reward = galleryItems.find(entry => entry.id === item.dataset.reward);
+  const reward = galleryCards().find(entry => String(entry.level) === item.dataset.level && entry.id === item.dataset.reward);
   if (!reward) return;
   const image = $<HTMLImageElement>('#viewer-img');
   image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false;

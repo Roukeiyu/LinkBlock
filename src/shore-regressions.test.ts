@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { Game, type Direction } from './engine';
-import { EPS, type Point } from './geometry';
+import { EPS, inside, type Point } from './geometry';
 import { Projectile } from './attacks';
+
+function interiorShores(game: Game) {
+  return game.boundarySegments.filter(([a, b]) => {
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len < 1e-5) return false;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const nx = -dy / len, ny = dx / len;
+    const sides = [1e-3, -1e-3].map(sign => ({ x: mid.x + nx * sign, y: mid.y + ny * sign }));
+    const insideBoard = (p: Point) => p.x > 0 && p.y > 0 && p.x < game.width && p.y < game.height;
+    const wet = (p: Point) => game.territories.some(region => inside(p, region));
+    return sides.every(insideBoard) && sides.every(p => !wet(p));
+  });
+}
 
 const directions: Direction[] = ['up', 'right', 'down', 'left'];
 function fixture(turns = 0) {
@@ -14,6 +27,17 @@ function fixture(turns = 0) {
   return { game, place, move, shore, rotate };
 }
 describe('reported internal shore and frame departure regressions', () => {
+  it('does not leave a shore inside land after adjacent captures share an edge', () => {
+    const game = new Game(40, 40, { opening: true, enemies: [], boss: null, victory: { territoryPercent: 100 } });
+    game.start();
+    game.opening!.region = [{ x: 10, y: 10 }, { x: 18, y: 10 }, { x: 18, y: 18 }, { x: 10, y: 18 }];
+    game.confirmOpening();
+    const place = (x: number, y: number) => { game.player = { x, y }; game.anchor = { x, y }; };
+    place(14, 10); game.move('up', true, 6); game.move('right', true, 8); game.move('down', true, 6);
+    place(18, 14); game.move('right', true, 6); game.move('down', true, 6); game.move('left', true, 6);
+    place(14, 18); game.move('down', true, 6); game.move('left', true, 8); game.move('up', true, 6);
+    expect(interiorShores(game)).toEqual([]);
+  });
   it.each([0, 1, 2, 3])('merges a near-shore closure without a microscopic gap or internal line, turns=%s', turns => {
     const { game, place, move, shore } = fixture(turns);
     place(20, 14); move('right', 4); move('down', 2); move('left', 4 - EPS / 4);

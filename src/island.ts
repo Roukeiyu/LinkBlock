@@ -1,5 +1,5 @@
 import clipping, { type MultiPolygon, type Ring } from 'polygon-clipping';
-import { area, closestPoint, distance, edges, EPS, onSegment, same, signedArea, simplify, split, wallEdges, type Point, type Polygon } from './geometry';
+import { area, closestPoint, distance, edges, EPS, inside, onSegment, same, signedArea, simplify, split, wallEdges, type Point, type Polygon } from './geometry';
 
 const ring = (points: Polygon): Ring => points.map(p => [p.x, p.y]);
 const { difference, intersection, union } = clipping;
@@ -17,21 +17,80 @@ export function islandPolygons(shape: MultiPolygon): Polygon[] {
 }
 const size = (shape: MultiPolygon) => islandPolygons(shape).reduce((sum, p) => sum + area(p), 0);
 
+/**
+ * An enclosed slit thinner than the drawn shoreline reads as one interior line.
+ * Exterior steps of the same width stay, because they are real shore.
+ */
+const HAIRLINE = 0.2;
+
+/** True when exactly one side of the edge is water or outside the arena. */
+export function separatesShore(edge: [Point, Point], water: Polygon[], arena: Polygon[]) {
+  const [a, b] = edge;
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  if (len <= EPS) return false;
+  const nx = -dy / len, ny = dx / len;
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const probe = 1e-3;
+  const open = (sign: number) => {
+    const point = { x: mid.x + nx * probe * sign, y: mid.y + ny * probe * sign };
+    return !arena.some(region => inside(point, region)) || water.some(region => inside(point, region));
+  };
+  return open(1) !== open(-1);
+}
+
+/** Width of the narrowest slab that still contains the polygon. */
+function slabWidth(region: Polygon) {
+  const points = (region.rings ?? [region]).flat();
+  let tight = Infinity;
+  for (const ring of region.rings ?? [region]) for (const [a, b] of edges(ring)) {
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len <= EPS) continue;
+    let max = 0;
+    for (const point of points) max = Math.max(max, Math.abs((point.x - a.x) * dy - (point.y - a.y) * dx) / len);
+    tight = Math.min(tight, max);
+  }
+  return tight;
+}
+
+/** Enclosed water thin enough to draw as a single interior stroke. */
+export function enclosedSlivers(water: Polygon[], arena: Polygon[]) {
+  const limit = arena.flatMap(wallEdges);
+  const touchesFrame = (region: Polygon) => (region.rings ?? [region]).some(ring => edges(ring).some(([a, b]) => limit.some(([c, d]) => distance({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, c, d) <= 1e-4)));
+  return water.filter(region => area(region) > EPS && !touchesFrame(region) && slabWidth(region) < HAIRLINE);
+}
+
+export function repairLand(arenaShape: MultiPolygon, land: MultiPolygon) {
+  const arena = islandPolygons(arenaShape);
+  let regions = islandPolygons(difference(arenaShape, land));
+  let owned = land;
+  const fills = enclosedSlivers(regions, arena).map(region => geometry(region)).filter(shape => size(shape) > EPS);
+  let gaps: Polygon[] = [];
+  if (fills.length) {
+    const sealed = fills.reduce((acc, piece) => union(acc, piece));
+    gaps = islandPolygons(difference(sealed, owned));
+    owned = union(owned, sealed);
+    regions = islandPolygons(difference(arenaShape, owned));
+  }
+  // A zero-width spike, or both banks of a slit, can survive inside land that is
+  // already enclosed. Those edges do not separate land from open water.
+  const coast = islandPolygons(owned).flatMap(wallEdges).filter(edge => separatesShore(edge, regions, arena));
+  return { land: owned, regions, coast, gaps };
+}
+
 export class Island {
   private land: MultiPolygon;
   private readonly arena: MultiPolygon;
   regions: Polygon[] = [];
   coast: [Point, Point][] = [];
+  /** Hairline gaps folded into land on the last refresh. Their area is claimed, not scored. */
+  sealedGaps: Polygon[] = [];
 
   constructor(outline: Polygon, starting: Polygon) {
     this.arena = geometry(outline); this.land = union(geometry(starting)); this.refresh();
   }
   private refresh(land = this.land) {
-    const regions = islandPolygons(difference(this.arena, land));
-    // Every real island edge is a shore, including a section against the arena
-    // limit. Bare frame sections never enter this land-derived perimeter.
-    const coast = islandPolygons(land).flatMap(wallEdges);
-    this.land = land; this.regions = regions; this.coast = coast;
+    const repaired = repairLand(this.arena, land);
+    this.land = repaired.land; this.regions = repaired.regions; this.coast = repaired.coast; this.sealedGaps = repaired.gaps;
   }
   project(point: Point, tolerance = EPS): Point | undefined {
     // Contact tolerance must not create a second, slightly displaced shore.

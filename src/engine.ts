@@ -144,7 +144,7 @@ export class Game {
   confirmOpening() {
     if (this.phase !== 'opening' || !this.opening) return false;
     const region = this.opening.region;
-    this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region];
+    this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region, ...this.island.sealedGaps];
     this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
     this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.recomputeCompletion(); this.checkWin(); return true;
   }
@@ -299,7 +299,7 @@ export class Game {
     const length = this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0);
     if (!this.island) this.territories.splice(this.cutRegion, 1, ...remaining);
     this.cutRegion = -1;
-    this.captured.push(...this.lastCapture);
+    this.captured.push(...this.lastCapture, ...this.island?.sealedGaps ?? []);
     this.trail = [];
     if (!this.isBoundary(this.player.x, this.player.y)) {
       // Finishing an entire disconnected room can erase the closure point too.
