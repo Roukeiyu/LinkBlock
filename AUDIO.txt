@@ -48,6 +48,34 @@ the loop boundary. Rebuild them with scripts/build-expansion-assets.py --music
 (Python 3, NumPy and ffmpeg with libopus/libmp3lame). Normal builds use the
 committed audio files and do not require Python or ffmpeg.
 
+Planned Suno replacements — levels 5–10 (not yet active)
+------------------------------------------------------
+The owner's supplied creation brief is preserved in:
+  docs/audio/linkblock-suno-5-10.txt
+
+This is a text prompt sheet, not playable audio. No new Suno recordings have
+been supplied or installed by this update. The files and playback mappings
+listed above remain active until the six finished tracks are available.
+
+Level 5: Lanterns on the Hollow Road — target 96 BPM, 6/8
+Level 6: Beneath the Moonlit Tide — target 78 BPM, 6/8
+Level 7: Lanterns Beyond the Torii — target 100 BPM, 4/4
+Level 8: Aurora over the Frozen Lake — target 76 BPM, 4/4
+Level 9: Shadows in the Belfry — target 90 BPM, 3/4
+Level 10: Embers beneath the Crown — target 112 BPM, 4/4
+
+Before replacing the active tracks:
+1. Obtain the six selected recordings, their Suno links and generation dates.
+2. Audition and edit the loop points, match perceived loudness, and check seams.
+3. Export Opus .ogg and .mp3 pairs with new resource names in public/audio/;
+   update the corresponding music stems in src/levels.ts only when both exist.
+4. Replace the relevant entries above with the actual provenance and duration.
+   Do not describe Suno recordings as synthesized expansion loops or CC0 effects.
+5. Test pause/resume, level changes, volume settings and mobile playback.
+
+Prompt durations, tempos and loop endings are targets, not verified properties
+of a generated recording. The brief's pending status remains accurate.
+
 Sound effects
 -------------
 Every effect (drawing, capture, the seal, the boss, UI clicks) is still
