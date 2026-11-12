@@ -13,7 +13,7 @@ export function openingTouchesFace(region: Polygon, width: number, height: numbe
     && Math.min(...region.map(p => p.y)) <= face.bottom * height;
 }
 
-export const openingFaceGap = (width: number, height: number) => Math.min(width, height) / 48 * 0.75;
+export const openingFaceGap = (width: number, height: number) => Math.min(width, height) / 48 * 0.25;
 
 // Beta(3,6) puts the typical result near 10% while keeping the full 0.1–30%
 // range available. Gamma sums avoid rejection loops, even with a constant RNG.

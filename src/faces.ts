@@ -16,12 +16,13 @@ export const FACE_REGIONS = {
 } as const;
 
 export type FaceArtwork = keyof typeof FACE_REGIONS;
+export const FACE_PROTECTION_SCALE = 1.1;
 
 export function faceProtection(artwork: FaceArtwork) {
   const face = FACE_REGIONS[artwork];
-  // Use the larger face dimension, with 25% padding on each side. Shift at the
+  // Use the larger face dimension, with only 5% padding on each side. Shift at the
   // image edges rather than clipping, so the protected region stays square.
-  const size = Math.ceil(Math.max(face.width, face.height) * 1.5);
+  const size = Math.ceil(Math.max(face.width, face.height) * FACE_PROTECTION_SCALE);
   const x = Math.max(0, Math.min(face.imageWidth - size, face.x + (face.width - size) / 2));
   const y = Math.max(0, Math.min(face.imageHeight - size, face.y + (face.height - size) / 2));
   return { left: x / face.imageWidth, top: y / face.imageHeight,
