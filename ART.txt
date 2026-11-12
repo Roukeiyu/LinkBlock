@@ -1,32 +1,44 @@
 封林 — Level 6–10 artwork
 =========================
 
-The expansion's version 2 illustrations were redrawn specifically for this game:
+The expansion's active version 3 illustrations were redrawn specifically for this game:
 6 海妖 / 沉潮王庭, 7 狐妖 / 狐火神社, 8 冰霜巨人 / 极光冰座,
 9 石像鬼 / 暮钟圣城, and 10 炎魔 / 熔冠终庭.
 
-The original wolf and mummy illustrations are the style references: mature,
-strongly built characters, dark drawn contours, matte painted shading, simple
-cloth/leather costumes and restrained lighting. Each character keeps its own
-monster features and environment. Rewards use distinct natural character poses
-rather than the previous ornate royal costumes and repeated spell-circle poses.
+The original first five chapters are the style references: mature, strongly
+built men, natural body hair, fine painted contours, atmospheric moonlight and
+practical cloth/leather costumes. The new cast varies facial structure, hair,
+facial hair and expression while retaining that established visual direction.
+The sea man has restrained iridescent scale patches on exposed skin; the blond
+frost giant has a subtle icy-blue complexion; the lava warrior has short black
+hair and beard, dark red skin, swept-back black horns and sparse ember fissures.
+Within each chapter all three illustrations preserve the same character.
+Clear / ninety / perfect progress from layered outerwear and long trousers to
+lighter outfits and relaxed poses. The frost giant uses clothed lighter-outfit
+variants (vest without mantle/boots, then a linen top and shorts).
 
-Each public/levels/{6,7,8,9,10}/v2/ directory contains:
+Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - restored.webp: the complete character and scene, 1536 × 1024.
 - ninety.webp: a separate 90% completion character illustration.
 - perfect.webp: a separate perfect completion character illustration.
 - mask.png: image-generated character segmentation, normalized to black/white
-  with the same threshold used by the game, in the same scene coordinates;
+  with the same threshold used by the game, in the same scene coordinates,
+  with small enclosed generation artifacts closed and a three-pixel edge guard;
   used by the existing 60% character / 40% background progress calculation.
 - sealed.webp: the exact scene with a desaturated dusk filter, opaque character
   veil and subdued violet rim, using the same mask as completion scoring.
 - portrait.webp / portrait-sealed.webp: matching character portraits.
-- mist.webp, thorn.webp, ghost.webp, spore.webp, crow.webp and boss.webp:
-  illustrated transparent enemies matching the original enemy art style.
+The expansion's six enemy sprites per chapter remain in their v2 directories.
 
 Illustrations, sealed scenes and portraits are committed as WebP. The filters
 are rasterized during asset preparation so gameplay draws ordinary cached images
 without repeatedly evaluating large SVG filters. No remote image service is used.
+
+art/expansion/v3-sources.json records the generated source PNGs. Run
+node scripts/pack-character-art.mjs /path/to/generated_images to encode the
+three illustrations and normalize their masks; it requires ffmpeg/ffprobe.
+The source images remain intact. The committed WebPs/PNGs are sufficient for
+all ordinary builds; original generation files are not a build dependency.
 
 scripts/build-expansion-assets.py prepares matching seal and portrait SVGs from
 the committed restored.webp and mask.png files (Python 3 standard library only).
@@ -44,12 +56,19 @@ requires ffmpeg and ffprobe. Atlas order: three straight-moving looks, orbiter,
 zigzag, boss. The script maps that order to the renderer's legacy look keys.
 Atlases are kept outside public so the game downloads only individual sprites.
 
-The v2 asset paths prevent cached older illustrations from mixing with this
+The v3 asset paths prevent cached older illustrations from mixing with this
 redraw. Normal npm builds use the committed files and need no image/audio tools.
+src/faces.ts records newly measured head regions for opening protection, and
+review/faces.html exposes those regions for visual inspection.
 
-Existing level 1–5 artwork and UI artwork remain in their original paths.
-Earlier expansion files are retained for already-open clients; the active level
-catalog exclusively selects the v2 redraw and its matching supporting assets.
+Existing level 1–5 character artwork and UI artwork remain in their original
+paths. Chapter 1 and 4 small enemies were redrawn with lighter body planes and
+readable pale/lavender and rose/gold palettes respectively. Their five-sprite
+atlases are art/early/{1,4}-sprites-v3.webp; package with
+node scripts/pack-enemy-sprites.mjs --early. The sixth atlas cell is empty and
+the existing bosses are preserved. Runtime sprites live in levels/{1,4}/v3.
+Earlier files remain available for already-open clients; LEVELS selects the
+current character/supporting assets and enemy sprites independently.
 
 Player and dialog update
 ------------------------

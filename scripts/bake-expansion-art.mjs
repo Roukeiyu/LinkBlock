@@ -24,7 +24,7 @@ try {
       canvas.getContext('2d').drawImage(image, 0, 0);
       return canvas.toDataURL('image/png').split(',')[1];
     }, svg);
-    const output = resolve(root, 'public/levels', String(level), 'v2', `${name}.webp`);
+    const output = resolve(root, 'public/levels', String(level), 'v3', `${name}.webp`);
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', 'pipe:0', '-frames:v', '1',
       '-c:v', 'libwebp', '-quality', '90', '-compression_level', '6', output], { input: Buffer.from(png, 'base64') });
     console.log(`${level}/${name}.webp`);

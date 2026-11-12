@@ -15,8 +15,8 @@ import wave
 
 ROOT = Path(__file__).resolve().parents[1]
 # Square UI framing around each generated character's face, in source pixels.
-PORTRAITS = {6: (535, 0, 440), 7: (500, 0, 440), 8: (500, 0, 440),
-             9: (520, 0, 440), 10: (470, 0, 440)}
+PORTRAITS = {6: (440, 0, 430), 7: (460, 0, 410), 8: (475, 0, 400),
+             9: (530, 0, 400), 10: (450, 0, 440)}
 
 
 def embed(path, mime):
@@ -29,7 +29,7 @@ def svg(body, view='0 0 1536 1024', width=1536, height=1024):
 
 def build_art():
     for level, (x, y, size) in PORTRAITS.items():
-        folder = ROOT / 'public' / 'levels' / str(level) / 'v2'
+        folder = ROOT / 'public' / 'levels' / str(level) / 'v3'
         plate = embed(folder / 'restored.webp', 'image/webp')
         mask = embed(folder / 'mask.png', 'image/png')
         art = f'<image width="1536" height="1024" href="{plate}"/>'

@@ -1,5 +1,6 @@
 /** Package the generated 3 × 2 atlases into the game's six transparent sprites.
  * Run: node scripts/pack-enemy-sprites.mjs (requires ffmpeg and ffprobe).
+ * Add --early for the five redrawn small enemies in chapters 1 and 4.
  * Each cell is cropped only to its alpha bounds, keeping the generated pixels.
  */
 import { execFileSync } from 'node:child_process';
@@ -12,8 +13,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // The renderer's legacy look keys differ from that reading order.
 const names = ['mist', 'spore', 'crow', 'thorn', 'ghost', 'boss'];
 
-for (let level = 6; level <= 10; level++) {
-  const atlas = resolve(root, 'art/expansion', `${level}-sprites.webp`);
+const early = process.argv.includes('--early');
+const jobs = early
+  ? [1, 4].map(level => ({ level, version: 'v3', count: 5, source: `art/early/${level}-sprites-v3.webp` }))
+  : [6, 7, 8, 9, 10].map(level => ({ level, version: 'v2', count: 6, source: `art/expansion/${level}-sprites.webp` }));
+
+for (const { level, version, count, source } of jobs) {
+  const atlas = resolve(root, source);
   const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0',
     '-show_entries', 'stream=width,height', '-of', 'json', atlas], { encoding: 'utf8' }));
   const { width, height } = probe.streams[0];
@@ -21,9 +27,9 @@ for (let level = 6; level <= 10; level++) {
   const pixels = execFileSync('ffmpeg', ['-v', 'error', '-i', atlas, '-f', 'rawvideo',
     '-pix_fmt', 'rgba', '-frames:v', '1', 'pipe:1'], { maxBuffer: 32 * 1024 * 1024 });
   const cw = width / 3, ch = height / 2;
-  const folder = resolve(root, 'public/levels', String(level), 'v2');
+  const folder = resolve(root, 'public/levels', String(level), version);
   mkdirSync(folder, { recursive: true });
-  for (let cell = 0; cell < 6; cell++) {
+  for (let cell = 0; cell < count; cell++) {
     const ox = cell % 3 * cw, oy = Math.floor(cell / 3) * ch;
     let left = cw, right = -1, top = ch, bottom = -1, filled = 0;
     for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 // Face centres measured from the actual artwork, independent of opening bounds.
 const faceCentres = [[.47, .18], [.49, .19], [.37, .20], [.37, .20], [.34, .17],
-  [.47, .15], [.49, .15], [.46, .14], [.49, .15], [.47, .16]];
+  [.44, .17], [.44, .19], [.44, .16], [.48, .16], [.45, .16]];
 
 for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
   test(`all level openings keep faces hidden at 30 Hz on ${viewport.width}px screens`, async ({ page }) => {

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { LEVELS } from '../src/levels';
 
 for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
   test(`${pageName} review loads every current image and opens the original`, async ({ page }) => {
@@ -20,7 +21,7 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
     const original = await page.locator('#levels section:visible img').first().getAttribute('src');
-    expect(original).toContain('levels/10/v2/');
+    expect(original).toContain(pageName === 'rewards' ? LEVELS[9].restored : LEVELS[9].sprites.tree);
     await page.locator('#levels section:visible figure button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);

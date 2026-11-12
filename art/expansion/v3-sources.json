@@ -1,0 +1,37 @@
+{
+  "version": "v3",
+  "width": 1536,
+  "height": 1024,
+  "levels": {
+    "6": {
+      "restored": "exec-ce0613be-47d1-412d-8b2b-d249e578e758.png",
+      "ninety": "exec-36ce90cb-2d0e-4411-8b26-b1eb7fe88df3.png",
+      "perfect": "exec-989da0fe-f1b7-4942-9496-3e2fe04e0374.png",
+      "mask": "exec-532676a7-8a05-49b2-a263-64248da8ff26.png"
+    },
+    "7": {
+      "restored": "exec-d7cc3cfa-7711-436e-a099-63ff823af1ee.png",
+      "ninety": "exec-7ccda44c-8837-4c43-ac03-ba993040a139.png",
+      "perfect": "exec-f1ee2efc-00a8-4adf-a350-78d2e1874418.png",
+      "mask": "exec-740d318f-4a9f-4009-80ef-37cbb93d6660.png"
+    },
+    "8": {
+      "restored": "exec-db1d9955-0544-4b36-ac77-c466a33b9bd3.png",
+      "ninety": "exec-75cfbc61-e526-477a-9fac-bd5125a014cc.png",
+      "perfect": "exec-af64d2d1-b74e-4c0b-b879-d63e6594e4b9.png",
+      "mask": "exec-fceb127d-c8c5-44d5-bd62-a9c73bd3fe89.png"
+    },
+    "9": {
+      "restored": "exec-eff6fcb0-575a-431f-86e7-c41ef36403e7.png",
+      "ninety": "exec-3ab020cf-595d-48e8-a865-a25fe0ade949.png",
+      "perfect": "exec-54bc38e6-52a9-40a5-a49a-fe49eb4dcc76.png",
+      "mask": "exec-8ed561ad-02b1-4346-8691-1bfe728a5427.png"
+    },
+    "10": {
+      "restored": "exec-e4fa6651-4006-4d53-a6f0-93d5dc8893a1.png",
+      "ninety": "exec-21a126c6-6c8d-4fea-b38a-e03516646eb5.png",
+      "perfect": "exec-4cf688f9-ed93-44c5-9b9b-efca8873317d.png",
+      "mask": "exec-12f74477-c918-4442-9dd4-4e65ed097eb1.png"
+    }
+  }
+}
