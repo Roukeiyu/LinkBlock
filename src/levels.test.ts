@@ -51,8 +51,9 @@ describe('level catalog', () => {
     expect(LEVELS[4].names.boss).toBe('秋猎魔骑');
     expect(LEVELS.slice(0, 5).map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
     for (const level of LEVELS.slice(0, 5)) {
-      expect(level.rewardNinety).toBe(`levels/${level.id}/v8/ninety.webp`);
-      expect(level.rewardPerfect).toBe(`levels/${level.id}/v8/perfect.webp`);
+      const version = [1, 2, 4].includes(level.id) ? 'v9' : 'v8';
+      expect(level.rewardNinety).toBe(`levels/${level.id}/${version}/ninety.webp`);
+      expect(level.rewardPerfect).toBe(`levels/${level.id}/${version}/perfect.webp`);
     }
     for (let i = 1; i < LEVELS.length; i++) {
       const level = LEVELS[i], previous = LEVELS[i - 1];

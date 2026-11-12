@@ -1,0 +1,21 @@
+{
+  "version": "v9",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 2: matching straight short hair across all three tiers and original mummy linen/belt details for perfect. Chapter 4: mature white short-haired gentleman across tiers. Chapter 7: festival fundoshi and reconstructed near hip and leg. All edits preserve the 3:2 canvas. Masks are packaged separately with v9-mask-sources.json.",
+  "levels": {
+    "2": {
+      "restored": { "origin": "generated", "file": "exec-81747c7d-0b03-4487-9df5-072dfe55bdbb.png" },
+      "ninety": { "origin": "generated", "file": "exec-0152fb73-5613-42e5-965a-080417a9f368.png" },
+      "perfect": { "origin": "generated", "file": "exec-8fde58e6-ab80-40fb-a27e-d4587d653ec9.png" }
+    },
+    "4": {
+      "restored": { "origin": "generated", "file": "exec-8653f6b7-180a-43e4-b661-d7fd3e1066d0.png" },
+      "ninety": { "origin": "generated", "file": "exec-f3f231c9-e549-4506-a718-e665214973e0.png" },
+      "perfect": { "origin": "generated", "file": "exec-d5a34169-abf6-40f5-b639-baa7448a047c.png" }
+    },
+    "7": {
+      "perfect": { "origin": "generated", "file": "chapter7-final-v9.png" }
+    }
+  }
+}

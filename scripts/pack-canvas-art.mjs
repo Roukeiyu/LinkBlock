@@ -1,5 +1,5 @@
 /** Package already-generated 3:2 artwork; never crop or stretch to hide a wrong canvas.
- * node scripts/pack-canvas-art.mjs /path/to/generated_images
+ * node scripts/pack-canvas-art.mjs /path/to/generated_images [manifest.json]
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { imageDimensions } from './image-dimensions.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const generated = process.argv[2];
 if (!generated) throw new Error('Supply the generated PNG directory.');
-const manifest = JSON.parse(readFileSync(resolve(root, 'art/canvas/v8-sources.json'), 'utf8'));
+const manifest = JSON.parse(readFileSync(resolve(root, process.argv[3] ?? 'art/canvas/v8-sources.json'), 'utf8'));
 for (const [level, sources] of Object.entries(manifest.levels)) {
   const folder = resolve(root, 'public/levels', level, manifest.version);
   mkdirSync(folder, { recursive: true });

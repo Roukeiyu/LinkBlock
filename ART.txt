@@ -15,7 +15,7 @@ hair and beard, dark red skin, swept-back black horns and sparse ember fissures.
 Within each chapter all three illustrations preserve the same character.
 Clear / ninety / perfect progress from layered outerwear to lighter outfits
 and relaxed poses. Updated rewards give the sea man rope-belt sailor trousers,
-the fox spirit tied charcoal hakama trousers, the frost giant a fur-edged waistwrap
+the fox spirit an ivory festival fundoshi, the frost giant a fur-edged waistwrap
 and one shin guard, the stone guardian a separate burgundy velvet lap cloth,
 and the lava warrior wine-red lounge briefs with a gold and gemstone waistband. The frost giant's ninety vest is fully open, and his perfect portrait
 has a bare torso. These edits retain the v3 character identities and settings.
@@ -38,10 +38,12 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
   veil and subdued violet rim, using the same mask as completion scoring.
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
-The active perfect rewards for chapters 6, 7 and 8, plus chapter 8's ninety
+The active perfect rewards for chapters 6 and 8, plus chapter 8's ninety
 reward, use their v4 directories. Chapter 6's restored, ninety, sealed and portrait
 images use v7, retaining the v3 mask because the character silhouette is unchanged.
 Chapter 9's ninety reward uses v7; chapter 9 and 10 perfect rewards use v8.
+Chapter 7's perfect reward uses v9, with the weight-bearing hip and foreground
+leg reconstructed following the user's drawn pose guide before fitting the wrap.
 Other expansion files still use v3.
 src/levels.ts selects the active image for each tier.
 
@@ -93,14 +95,10 @@ compositions were expanded horizontally with generated scenery, preserving
 complete figures instead of stretching or cropping. Unchanged early main plates
 and their masks/seals are uniformly resampled to the new resolution; masks use
 nearest-neighbor sampling so the character/background classification stays sharp.
-The first five chapters' active main/reward/mask/seal files live in v8.
+Chapters 3 and 5 retain their v8 main/reward/mask/seal files; chapters 1, 2 and 4
+now use v9, described below.
 
-Chapters 1, 2 and 4 have consistent distinct identities across all three tiers:
-the wolf has a broad square jaw, dense brows and rugged short beard/sideburns;
-the Egyptian guardian has compact curly hair and a neatly trimmed full beard;
-the vampire has a clean-shaven narrow face, high cheekbones and silver-gray hair.
-Chapter 2 ninety retains extra ragged linen strips and its perfect reward uses
-the original irregular wrapped shorts. Chapter 3 retains stitched knee-length
+Chapter 3 retains stitched knee-length
 shorts. Chapter 4 perfect wears an open-front ivory one-piece lounge suit.
 Chapter 5 perfect wears tan short overalls with the bib folded down and straps
 hanging loose at the hips. Their established poses and settings are retained.
@@ -114,6 +112,31 @@ CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 1 2
 The original PNGs remain untouched; normal builds use the committed files.
 The face bounds are scaled into the new canvas and checked against the new heads.
 Older v2/v3/v4/v7 sources and files remain available for previous clients.
+
+Character refinements and wolf restoration (v9)
+----------------------------------------------
+Chapter 1 restores the previous wolf design without generating a new character:
+the original main plate and the two 3:2 outpaints made before the v8 face redesign
+are reused. Its original mask is scaled consistently and supporting portraits
+and sealed scene are rebuilt from that restored main plate.
+Chapter 2 has straight short black hair with tapered sides and a brushed-back
+top, keeping the dark full beard. Its ninety retains the shoulder/arm/shin linen
+strips; perfect now matches the main plate's torn layered linen wrap, engraved
+gold belt segments and dangling scarab pendant rather than tailored shorts.
+Chapter 4 becomes a mature white-haired gentleman with short side-parted hair,
+subtle facial age lines and neat silver stubble, consistently across all tiers.
+Its perfect outfit remains the open-front ivory one-piece lounge suit.
+Chapter 7 perfect wears an opaque ivory mikoshi-festival fundoshi. The near hip,
+pelvis and thigh/knee/calf connection follow the user's red-line anatomy guide.
+
+Reproduce packaging with the original generated PNG directory:
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v9-wolf-sources.json
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v9-sources.json
+node scripts/pack-character-art.mjs /path/to/generated_images art/canvas/v9-mask-sources.json
+The new masks for chapters 2 and 4 follow their shorter hair silhouettes and
+are normalized by the existing character-mask packer. Rebuild supporting files:
+python scripts/build-expansion-assets.py --levels 1 2 4 --version v9
+CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 1 2 4 --version v9
 
 npm run build checks all 30 reward canvases and 20 sealed/mask canvases using
 scripts/check-artwork.mjs. It reads PNG/WebP headers without ffmpeg or browser
@@ -148,3 +171,7 @@ scripts/export-art-review.mjs reads the current level catalog and exports the
 30 reward images and 60 enemy images, plus a four-frame player preview. Normal
 development/build writes linked review pages; --offline additionally embeds
 the exact current files into two portable HTML files for art review.
+Both online and offline enlarged viewers support previous/next buttons, arrow
+keys and horizontal touch swipes. They wrap within the selected chapter (or the
+whole catalog when unfiltered), updating image, caption, position and download
+together. Vertical scrolling and pinch gestures do not advance the image.

@@ -1,0 +1,10 @@
+{
+  "version": "v9",
+  "width": 1536,
+  "height": 1024,
+  "description": "Character masks aligned to the new short-haired main plates. Preserve the original filled-body silhouettes; normalize and guard the generated binary masks with pack-character-art.mjs.",
+  "levels": {
+    "2": { "mask": "exec-df9da958-daf4-4dfa-be57-4f7de278bc5d.png" },
+    "4": { "mask": "exec-7fbbc284-61a8-4fc7-ae98-ab857d1956a8.png" }
+  }
+}

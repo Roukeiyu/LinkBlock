@@ -36,8 +36,39 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await page.locator('#levels section:visible figure button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
+    const perLevel = count / 10;
+    const visibleImages = page.locator('#levels section:visible .grid img');
+    const assertCurrent = async (index: number, total: number, source: string, label: string) => {
+      await expect(page.locator('#position')).toHaveText(`${index + 1} / ${total}`);
+      await expect(page.locator('#full')).toHaveAttribute('src', source);
+      await expect(page.locator('#full')).toHaveAttribute('alt', label);
+      await expect(page.locator('#caption')).toHaveText(label);
+      await expect(page.locator('#download')).toHaveAttribute('href', new URL(source, page.url()).href);
+      await expect(page.locator('#download')).toHaveAttribute('download', `level-10-${source.split('/').pop()}`);
+    };
+    // A filtered viewer loops within this level, and keeps captions/downloads in sync.
+    await page.getByRole('button', { name: '上一张', exact: true }).click();
+    await assertCurrent(perLevel - 1, perLevel, (await visibleImages.last().getAttribute('src'))!, (await visibleImages.last().getAttribute('alt'))!);
+    await page.keyboard.press('ArrowRight');
+    await assertCurrent(0, perLevel, original!, (await visibleImages.first().getAttribute('alt'))!);
+    await page.getByRole('button', { name: '下一张', exact: true }).click();
+    await assertCurrent(1, perLevel, (await visibleImages.nth(1).getAttribute('src'))!, (await visibleImages.nth(1).getAttribute('alt'))!);
     await page.keyboard.press('Escape');
     await expect(page.locator('#viewer')).not.toBeVisible();
+    await expect(page.locator('#levels section:visible figure button').first()).toBeFocused();
+    // With all levels visible, arrows cross chapter boundaries and wrap the catalog.
+    await page.locator('#level-filter').selectOption('all');
+    await page.locator('#levels figure button').first().click();
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('#position')).toHaveText(`${count} / ${count}`);
+    await expect(page.locator('#full')).toHaveAttribute('src', (await page.locator('#levels .grid img').last().getAttribute('src'))!);
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('#position')).toHaveText(`1 / ${count}`);
+    await page.locator('#close').click();
+    await page.locator('#levels figure button').nth(perLevel - 1).click();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('#full')).toHaveAttribute('src', (await page.locator('#levels .grid img').nth(perLevel).getAttribute('src'))!);
+    await page.locator('#close').click();
     if (pageName === 'enemies') {
       await page.locator('#animation-toggle').click();
       await expect(page.locator('#animation-toggle')).toHaveAttribute('aria-pressed', 'false');
@@ -50,6 +81,37 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test.describe('touch review navigation', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+  test('horizontal swipes change images while vertical gestures do not', async ({ page }) => {
+    await page.goto('/review/rewards.html');
+    await page.locator('#level-filter').selectOption('7');
+    await page.locator('#levels section:visible figure button').first().click();
+    await page.locator('#full').evaluate((img: HTMLImageElement) => img.decode());
+    const cdp = await page.context().newCDPSession(page);
+    const swipe = async (dx: number, dy: number) => {
+      const box = (await page.locator('#full').boundingBox())!;
+      const x = box.x + box.width / 2, y = box.y + box.height / 2;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      for (let step = 1; step <= 5; step++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * step / 5, y: y + dy * step / 5 }] });
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    await swipe(-100, 0);
+    await expect(page.locator('#position')).toHaveText('2 / 3');
+    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[6].rewardNinety}`);
+    await swipe(100, 0);
+    await expect(page.locator('#position')).toHaveText('1 / 3');
+    await swipe(0, -65);
+    await expect(page.locator('#position')).toHaveText('1 / 3');
+    await page.getByRole('button', { name: '上一张', exact: true }).click();
+    await expect(page.locator('#position')).toHaveText('3 / 3');
+    expect(await page.locator('#viewer').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await cdp.detach();
+  });
+});
 
 for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
   test(`gallery cards and enlarged rewards keep the same canvas at ${viewport.width}px`, async ({ page }) => {

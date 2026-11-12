@@ -1,0 +1,14 @@
+{
+  "version": "v9",
+  "width": 1536,
+  "height": 1024,
+  "description": "Restore the wolf's original face and character design. Reuse the original main plate and the two 3:2 outpaints made before the v8 face redesign; retain the uniform canvas. Rebuild sealed and portrait images from this restored plate and the original mask.",
+  "levels": {
+    "1": {
+      "restored": { "origin": "public", "file": "wolf-restored.webp" },
+      "ninety": { "origin": "generated", "file": "exec-85876e3d-b717-4703-bc2b-894cbeb4a683.png" },
+      "perfect": { "origin": "generated", "file": "exec-9e0e90fc-78c7-440e-b545-3773f0a48b3a.png" },
+      "mask": { "origin": "public", "file": "char_mask.png" }
+    }
+  }
+}
