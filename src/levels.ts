@@ -150,7 +150,7 @@ export const LEVELS: LevelDef[] = [
     enemyMotion: { straight: 'reverse', period: 1.4, orbitRate: 1.75, zigzagInterval: 0.46, zigzagAngle: 1.4 },
     restored: 'levels/9/v3/restored.webp', sealed: 'levels/9/v3/sealed.webp', mask: 'levels/9/v3/mask.png', music: 'dusk-belfry-suno-v1',
     portraitSealed: 'levels/9/v3/portrait-sealed.webp', portraitRescued: 'levels/9/v3/portrait.webp',
-    rewardNinety: 'levels/9/v3/ninety.webp', rewardPerfect: 'levels/9/v4/perfect.webp',
+    rewardNinety: 'levels/9/v3/ninety.webp', rewardPerfect: 'levels/9/v5/perfect.webp',
     names: { straight: ['碎翼', '钟尘', '石鸦'], orbit: '铜环', zigzag: '影像', boss: '暮钟石卫' },
     sprites: sheet('levels/9/v2', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
     enemySpeed: 1.36, bossSpeed: 1.29, squad: { straight: 6, orbit: 5, zigzag: 5 }, reinforceInterval: 0.61, reinforceSpeed: 1.28, accent: '#b8a4eb',
