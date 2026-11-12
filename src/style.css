@@ -351,7 +351,8 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .menu-settings .audio-slider{grid-column:1/-1;justify-content:space-between;color:var(--ink);border-top-color:#6b4a2a55}
 .menu-settings .audio-slider input[type="range"]{width:65%}
 .candle-glow{position:absolute;right:4%;top:4%;width:22vw;height:36vh;background:radial-gradient(circle,#ffd7a655,transparent 68%);mix-blend-mode:screen;pointer-events:none;animation:flicker 2.6s ease-in-out infinite}
-.dust{position:absolute;inset:0;pointer-events:none}
+/* Clip entering particles here so animation restarts cannot grow the scrollable menu. */
+.dust{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .dust i{position:absolute;bottom:-8px;width:3px;height:3px;border-radius:50%;background:#f6e7c4;opacity:.7;animation:rise linear infinite}
 @keyframes flicker{0%,100%{opacity:.35;transform:scale(1)}40%{opacity:.7;transform:scale(1.04)}70%{opacity:.45;transform:scale(.98)}}
 @keyframes rise{from{transform:translateY(0)}to{transform:translateY(-100vh)}}

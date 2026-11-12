@@ -1,5 +1,28 @@
 import { expect, test } from '@playwright/test';
 
+test('ambient particle loops never create a transient title scrollbar', async ({ page }) => {
+  for (const [width, height] of [[1280, 800], [390, 844], [320, 568], [844, 390]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#title-screen img').evaluateAll(images =>
+      Promise.all(images.map(image => (image as HTMLImageElement).decode())));
+    const overflow = await page.evaluate(() => {
+      const title = document.querySelector<HTMLElement>('#title-screen')!;
+      const animations = [...document.querySelectorAll('.dust i')].flatMap(el => el.getAnimations());
+      animations.forEach(animation => animation.pause());
+      // Inspect entry, travel and the loop boundary without missing a short flash.
+      return [0, .005, .02, .5, .995, 1, 1.005].map(progress => {
+        for (const animation of animations) {
+          const timing = animation.effect!.getTiming();
+          animation.currentTime = (timing.delay ?? 0) + Number(timing.duration) * progress;
+        }
+        return { progress, x: title.scrollWidth - title.clientWidth, y: title.scrollHeight - title.clientHeight };
+      }).filter(sample => sample.x > 0 || sample.y > 0);
+    });
+    expect(overflow, `title overflow at ${width}×${height}`).toEqual([]);
+  }
+});
+
 test('menu grid navigation and native audio controls work with the keyboard', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('ArrowDown');

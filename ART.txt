@@ -1,7 +1,7 @@
 封林 — Level 6–10 artwork
 =========================
 
-The expansion's active version 3 illustrations were redrawn specifically for this game:
+The expansion's base version 3 illustrations were redrawn specifically for this game:
 6 海妖 / 沉潮王庭, 7 狐妖 / 狐火神社, 8 冰霜巨人 / 极光冰座,
 9 石像鬼 / 暮钟圣城, and 10 炎魔 / 熔冠终庭.
 
@@ -16,16 +16,16 @@ Within each chapter all three illustrations preserve the same character.
 Clear / ninety / perfect progress from layered outerwear to lighter outfits
 and relaxed poses. Updated rewards give the sea man rope-belt sailor trousers,
 the fox spirit tied charcoal hakama trousers, the frost giant a fur-edged waistwrap
-and one shin guard, the stone guardian an asymmetrical deep-plum draped wrap
-with a bronze clasp, and the lava warrior worn black leather trousers with bronze
+and one shin guard, the stone guardian dark cloth shorts,
+and the lava warrior worn black leather trousers with bronze
 fastenings. The frost giant's ninety vest is fully open, and his perfect portrait
 has a bare torso. These edits retain the v3 character identities and settings.
-The stone guardian leans casually on the parapet with bare feet and exposed lower
-legs. His knees sit apart, with the viewer-left knee turned outward and both feet
-planted separately; the wrap drapes over the new stance. The city key rests on
-the folded cape beside him. His closer framing and
-relaxed pose distinguish the perfect reward from the other two tiers;
-the other characters keep their existing poses.
+The sea man's clear and ninety outfits now share the perfect reward's blue
+trousers, rope belt, shell clasp and side lacing. His poses, coat and shirt stay
+the same. The stone guardian's ninety and perfect skin match the completed
+portrait's muted gray stone complexion, retaining warm sunset rim lighting.
+His perfect reward uses the reclining pose with one hand behind his head from
+the original v3 illustration. Other characters keep their existing poses.
 
 Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - restored.webp: the complete character and scene, 1536 × 1024.
@@ -40,8 +40,9 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
 The active perfect rewards for chapters 6, 7, 8 and 10, plus chapter 8's ninety
-reward, use their v4 directories. Chapter 9's perfect reward uses v6.
-Other reward files still use v3.
+reward, use their v4 directories. Chapter 6's restored, ninety, sealed and portrait
+images use v7, retaining the v3 mask because the character silhouette is unchanged.
+Both chapter 9 reward images use v7. Other expansion files still use v3.
 src/levels.ts selects the active image for each tier.
 
 Illustrations, sealed scenes and portraits are committed as WebP. The filters
@@ -53,8 +54,8 @@ node scripts/pack-character-art.mjs /path/to/generated_images to encode the
 three illustrations and normalize their masks; it requires ffmpeg/ffprobe.
 For the v4 reward illustrations, use the separate reward-only manifest:
 node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v4-reward-sources.json
-For the stone guardian's v6 perfect reward with an open seated stance, use:
-node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v6-reward-sources.json
+For chapter 6's matching trousers and chapter 9's gray stone skin, use:
+node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v7-sources.json
 These encode only the listed rewards, without regenerating main illustrations,
 character masks, sealed scenes or portraits.
 The source images remain intact. The committed WebPs/PNGs are sufficient for
@@ -62,9 +63,13 @@ all ordinary builds; original generation files are not a build dependency.
 
 scripts/build-expansion-assets.py prepares matching seal and portrait SVGs from
 the committed restored.webp and mask.png files (Python 3 standard library only).
-The intermediate files are written to the ignored art/expansion/build/ directory.
+The intermediate files are written to the ignored art/expansion/build/{version}/{level}/ directory.
 Then run scripts/bake-expansion-art.mjs with Node to render those files into the
 runtime WebP assets. It uses Playwright Chromium (or CHROMIUM_PATH) and ffmpeg.
+For the current chapter 6 supporting images, reuse its unchanged v3 mask:
+python scripts/build-expansion-assets.py --levels 6 --version v7 --mask-version v3
+CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 6 --version v7
+Both scripts default to all expansion chapters and version v3.
 Pass --music to build-expansion-assets.py to intentionally rebuild the existing
 music loops; that optional operation also requires NumPy and ffmpeg. Illustrations and segmentation are
 generated source artwork and are not recreated by this script.
@@ -81,8 +86,12 @@ new redraws. Normal npm builds use the committed files and need no image/audio t
 src/faces.ts records newly measured head regions for opening protection, and
 review/faces.html exposes those regions for visual inspection.
 
-Existing level 1–5 character artwork and UI artwork remain in their original
-paths. Chapter 1 and 4 small enemies were redrawn with lighter body planes and
+Level 1–5 main illustrations and ninety rewards remain in their original paths.
+Chapter 2 and 3 perfect rewards use v2: a short simple linen waistwrap for the
+mummy, and knee-length stitched cloth shorts for Frankenstein, preserving their
+poses and 4:3 composition. Their source images are 1448 × 1086; package with:
+node scripts/pack-character-art.mjs /path/to/generated_images art/early/v2-reward-sources.json
+Chapter 1 and 4 small enemies were redrawn with lighter body planes and
 readable pale/lavender and rose/gold palettes respectively. Their five-sprite
 atlases are art/early/{1,4}-sprites-v3.webp; package with
 node scripts/pack-enemy-sprites.mjs --early. The sixth atlas cell is empty and

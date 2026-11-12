@@ -1,0 +1,15 @@
+{
+  "version": "v7",
+  "width": 1536,
+  "height": 1024,
+  "levels": {
+    "6": {
+      "restored": "exec-8b033e66-6700-48db-9d84-6cd7b47d7cc1.png",
+      "ninety": "exec-313d0302-25e7-4709-8341-9a868cdad996.png"
+    },
+    "9": {
+      "ninety": "exec-af56c414-ffc8-469e-8653-1d5a698a74e8.png",
+      "perfect": "exec-9ea96cac-5ed8-44cf-b8a7-26ec632bde47.png"
+    }
+  }
+}

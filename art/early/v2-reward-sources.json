@@ -1,0 +1,13 @@
+{
+  "version": "v2",
+  "width": 1448,
+  "height": 1086,
+  "levels": {
+    "2": {
+      "perfect": "exec-bf840f97-a7a5-485c-af17-e1d26d5478ac.png"
+    },
+    "3": {
+      "perfect": "exec-da6a41c5-a7f5-4eb7-821b-46754f49c070.png"
+    }
+  }
+}
