@@ -82,7 +82,7 @@ export const LEVELS: LevelDef[] = [
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
     restored: 'levels/3/v8/restored.webp', sealed: 'levels/3/v8/sealed.webp', mask: 'levels/3/v8/mask.png', music: 'storm-lab',
     portraitSealed: 'levels/3/portrait_sealed.png', portraitRescued: 'levels/3/portrait_rescued.png',
-    rewardNinety: 'levels/3/v10/ninety.webp', rewardPerfect: 'levels/3/v8/perfect.webp',
+    rewardNinety: 'levels/3/v10/ninety.webp', rewardPerfect: 'levels/3/v14/perfect.webp',
     names: { straight: ['电弧', '齿轮魂', '雷鼠'], orbit: '缝偶', zigzag: '酸雾', boss: '狂电塔' },
     sprites: sheet('levels/3', ['enemy_dianhu.png', 'enemy_fengou.png', 'enemy_suanwu.png', 'enemy_chilunhun.png', 'enemy_leishu.png', 'boss_kuangdianta.png']),
     enemySpeed: 1.1, bossSpeed: 1.08, squad: { straight: 3, orbit: 3, zigzag: 2 }, reinforceInterval: 1.25, reinforceSpeed: 1.1,

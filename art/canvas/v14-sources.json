@@ -1,0 +1,11 @@
+{
+  "version": "v14",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 3 perfect reward: relaxed home setting with loose cotton boxer shorts in the original warm dark-brown palette, cushions, a knitted blanket and tea. Generated full painting; main plate and its mask are unchanged.",
+  "levels": {
+    "3": {
+      "perfect": { "origin": "generated", "file": "frankenstein-home-brown.png" }
+    }
+  }
+}

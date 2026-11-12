@@ -249,3 +249,14 @@ ninety reward, mask, seal, portraits and face bounds are unchanged.
 art/canvas/v13-sources.json records the approved generated painting.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v13-sources.json
+
+Frankenstein home reward (v14)
+------------------------------
+Chapter 3 perfect uses a full generated painting with loose cotton boxer
+shorts in the original warm dark-brown palette, soft cushions, a knitted
+blanket and tea. The castle and storm-window setting remain recognizable.
+Only the perfect reward changes; the gameplay main plate and its matching
+mask, seal, portraits and opening face bounds remain unchanged.
+art/canvas/v14-sources.json records the final source painting.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v14-sources.json
