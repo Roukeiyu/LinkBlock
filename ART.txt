@@ -275,3 +275,9 @@ No gameplay main plate, mask, seal, portrait or opening face bound changes.
 art/canvas/v15-sources.json records the nine generated source paintings.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v15-sources.json
+
+Wolf perfect reward rollback
+----------------------------
+At the user's request, chapter 1 selects its original v10 lakeside perfect
+reward again. The v15 shelter painting is retained as an unused historical
+asset. Other chapters retain their selected home/rest paintings.
