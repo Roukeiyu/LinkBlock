@@ -38,6 +38,12 @@ async function encloseRoster(page: Page) {
   await page.keyboard.up('ArrowDown'); await page.keyboard.up('Space'); await page.clock.runFor(250);
 }
 test.beforeEach(async ({ page }, info) => {
+  // Lifecycle coverage uses the actual current app, not legacy fixed-board probes.
+  if (info.title === 'pause, sound, restart and background pause') {
+    await page.goto('/');
+    await page.locator('#menu-start').click();
+    return;
+  }
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
   if ((randomOpening || islandPlay || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   if (info.title.includes('notice safe area') || info.title.includes('wide touchpad safe area')) await page.route('**/src/style.css*', async route => {
@@ -154,7 +160,7 @@ test.beforeEach(async ({ page }, info) => {
     };
   });
   await page.goto('/');
-  await page.locator('#menu-start').click();
+  await page.getByRole('button', { name: '开始探索' }).click();
   // Existing direction-pad fixtures explicitly select that mode. Dedicated wide
   // touchpad tests below exercise the unchanged production single-hand default.
   if (!info.title.includes('wide touchpad')) await page.locator('#control-mode').evaluate((e: HTMLButtonElement) => e.click());
@@ -1164,16 +1170,27 @@ for (const input of ['keyboard', 'mouse', 'touch']) test(`island coast permits f
 });
 
 test('pause, sound, restart and background pause', async ({ page }) => {
-  await firstCut(page);
-  await page.keyboard.press('KeyP'); await expect(page.getByRole('heading', { name: '风景会等你。' })).toBeVisible();
-  const time = await page.locator('#elapsed').textContent(), position = (await probe(page)).player;
+  await expect(page.locator('#state-label')).toHaveText('选择起点');
+  await page.keyboard.press('Space');
+  await expect(page.locator('#state-label')).toHaveText('探索中');
+  await expect(page.locator('#elapsed')).not.toHaveText('00:00');
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('#state-label')).toHaveText('已暂停');
+  const time = await page.locator('#elapsed').textContent();
   await page.waitForTimeout(1100);
-  await expect(page.locator('#elapsed')).toHaveText(time!); expect((await probe(page)).player).toEqual(position);
-  await page.getByRole('button', { name: '继续探索' }).click();
-  await page.getByRole('button', { name: '音效关闭' }).click();
-  await expect(page.getByRole('button', { name: '音效开启' })).toHaveAttribute('aria-pressed', 'true');
-  await page.keyboard.press('KeyR'); await expect(page.locator('#percent')).toHaveText('0.0%');
+  await expect(page.locator('#elapsed')).toHaveText(time!);
+  await page.locator('#primary').click();
+  await expect(page.locator('#state-label')).toHaveText('探索中');
+  await page.locator('#sound').click();
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#sound').click();
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('KeyR');
+  await expect(page.locator('#state-label')).toHaveText('选择起点');
   await expect(page.locator('#score')).toHaveText('000000');
+  await expect(page.locator('#elapsed')).toHaveText('00:00');
+  await expect(page.locator('audio')).toHaveCount(1);
+  await expect.poll(() => page.locator('audio').evaluate((a: HTMLAudioElement) => !a.paused && a.currentTime > 0)).toBe(true);
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expect(page.locator('#state-label')).toHaveText('已暂停');
 });
