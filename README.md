@@ -31,6 +31,8 @@
 
 `review/rewards.html` 展示全部 30 张通关、90% 和无伤图片；`review/enemies.html` 展示 10 个 Boss、50 个小怪和玩家四帧预览。两页都按当前 `LEVELS` 导出，点击图片可放大和保存原图。放大后支持左右按钮、键盘方向键和手机横向滑动，显示当前张数；筛选关卡后只在该关内循环，标题和下载链接随当前图片更新。开发启动与构建会重新生成；运行 `node scripts/export-art-review.mjs --offline /absolute/output/folder` 可另存两份内嵌图片、无需联网的 HTML，保留相同切图功能。
 
+`review/level-2-layers.html` 是第二关的独立拆分试作：一张固定背景搭配端坐、盘坐、侧坐三套透明角色，可查看合成、背景、透明角色和直接从 Alpha 导出的轮廓，支持放大、左右切换和下载。它不替换游戏或现有奖励合集，其他关卡暂不拆分。资产来源及摆放参数在 `art/canvas/level-2-layered-preview.json`；运行 `python scripts/pack-layered-preview.py /path/to/generated_images` 打包，常规构建直接使用已提交的文件。
+
 关卡配置在 `src/levels.ts`，定向弹幕在 `src/level-attacks.ts`，运动规则在 `src/enemies.ts`。`gameOptionsFor` 是页面初始进入、选关、重开和下一关共用的配置入口。基础碰撞、受击保护、暂停、跳跃及胜负清场规则保持共用。
 
 验证：`npm test` 覆盖预警锁定、真实圈地切换阶段、补怪继承规则、暂停、重开、连续运动、十关连续解锁与奖励持久化；`CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- tests/level-combat.spec.ts tests/progress.spec.ts tests/expansion.spec.ts` 覆盖十关在桌面、竖屏、窄屏和横屏上的选择、弹幕、攻略与重开，以及首次进入、旧存档升级、实际资源加载、下一关和最终通关。
