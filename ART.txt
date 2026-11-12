@@ -202,22 +202,3 @@ Both online and offline enlarged viewers support previous/next buttons, arrow
 keys and horizontal touch swipes. They wrap within the selected chapter (or the
 whole catalog when unfiltered), updating image, caption, position and download
 together. Vertical scrolling and pinch gestures do not advance the image.
-
-Chapter-two layered experiment (preview only)
--------------------------------------------
-public/levels/2/layered-preview-v1/ contains one shared background, three
-transparent RGBA character layers, three alpha-channel exports and three
-lossless flattened composites. These are not selected by src/levels.ts.
-No other chapters have been split into layers. The existing 30 illustrations
-remain active until the visual experiment has been reviewed.
-
-The three new seated poses are upright at the seat edge, cross-legged offering
-a scarab, and side-sitting looking back. A standing experiment was rejected.
-The empty plate groups foreground sandstone, middle-ground columns/river and
-soft distant mountains into quiet planes with restrained surface detail.
-art/canvas/level-2-layered-preview.json records generated source filenames and
-uniform scale/placement. scripts/pack-layered-preview.py packages those sources
-with Pillow; it does not repaint artwork. Each alpha PNG comes directly from
-the corresponding shipped character WebP alpha channel, and uncovered pixels
-in every lossless composite exactly match the shipped background.
-review/level-2-layers.html exposes all four views plus original asset downloads.
