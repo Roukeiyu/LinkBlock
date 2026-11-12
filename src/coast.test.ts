@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game, PLAYER_SPEED, type Direction } from './engine';
 import { SHORE_CONTACT_TOLERANCE, SHORE_STEP_TOLERANCE, walkCoast } from './coast';
+import { DRAW_SNAP_DISTANCE } from './snapping';
 import { area, onSegment, type Point } from './geometry';
 import type { AttackHazard } from './attacks';
 
@@ -23,7 +24,9 @@ describe('continuous coast feel and invisible steps', () => {
     move('up', 6); move('right', 4);
     expect(game.update(0.5, direction('down'), true)).toBe(false);
     const expected = rotate({ x: 20, y: 6 + PLAYER_SPEED * 0.5 });
-    expect(game.player.x).toBeCloseTo(expected.x, 5); expect(game.player.y).toBeCloseTo(expected.y, 5);
+    // Closure may now finish the last small gap immediately; the held input
+    // must still continue along the shore, with at most one magnetic advance.
+    expect(onSegment(game.player, expected, rotate({ x: 20, y: 6 + PLAYER_SPEED * 0.5 + DRAW_SNAP_DISTANCE }))).toBe(true);
     expect(game.claimed).toBeCloseTo(88); expect(game.score).toBe(320); expect(game.trail).toHaveLength(0);
     expect(game.isBoundary(game.player.x, game.player.y)).toBe(true); expect(game.events.filter(e => e === 'capture')).toHaveLength(1);
   });
@@ -34,7 +37,7 @@ describe('continuous coast feel and invisible steps', () => {
     place(14, 6); move('left', 4); move('up', 6); const score = game.score;
     expect(game.update(0.25, direction('right'), true)).toBe(false);
     const expected = rotate({ x: 10 + PLAYER_SPEED * 0.25, y: 0 });
-    expect(game.player.x).toBeCloseTo(expected.x, 5); expect(game.player.y).toBeCloseTo(expected.y, 5);
+    expect(onSegment(game.player, expected, rotate({ x: 10 + PLAYER_SPEED * 0.25 + DRAW_SNAP_DISTANCE, y: 0 }))).toBe(true);
     expect(game.claimed).toBeCloseTo(136); expect(game.score - score).toBe(310);
     game.update(1, direction('right'), false);
     expect(game.player).toEqual(rotate({ x: 18, y: 0 })); expect(game.trail).toHaveLength(0);

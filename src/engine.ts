@@ -2,6 +2,7 @@ import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partit
 import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
+import { snapDrawing } from './snapping';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -214,25 +215,34 @@ export class Game {
     for (const [a, b] of (this.island ? this.boundarySegments : wallEdges(this.territories[this.cutRegion]))) wall = Math.min(wall, rayDistance(p, v, a, b));
     const arenaReach = v.x > 0 ? this.width - p.x : v.x < 0 ? p.x : v.y > 0 ? this.height - p.y : p.y;
     const travel = Math.min(amount, wall, Math.max(0, arenaReach));
-    let next = { x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) };
-    if (this.island && wall <= travel + EPS) next = this.island.project(next) ?? next;
-    // Touching the live line bounces back along it. Returning to the departure
-    // shore is a real closure, not a bounce.
-    for (let i = 0; i < this.trail.length - 1; i++) {
-      const a = this.trail[i], b = this.trail[i + 1];
-      if (onSegment(p, a, b)) continue;
-      if (rayDistance(p, v, a, b) <= travel + EPS
-        && !(this.island && i === 0 && same(next, this.anchor) && !onSegment(b, p, next))) {
-        this.rewindAlongTrail();
-        return false;
+    const route = this.island ? snapDrawing(p, v, amount, this.boundarySegments, arenaReach) : {
+      points: [{ x: Math.max(0, Math.min(this.width, p.x + v.x * travel)), y: Math.max(0, Math.min(this.height, p.y + v.y * travel)) }],
+      closes: wall <= travel + EPS,
+    };
+    // Sweep every leg of a magnetic corner correction, just like normal line
+    // movement. Snapping must neither skip hazards nor cut through a live line.
+    let moved = false;
+    for (const target of route.points) {
+      const next = this.island ? this.island.project(target) ?? target : target;
+      const step = Math.hypot(next.x - p.x, next.y - p.y);
+      if (step <= EPS) continue;
+      const axis = { x: (next.x - p.x) / step, y: (next.y - p.y) / step };
+      // Returning to the departure shore is a closure, not a self-touch bounce.
+      for (let i = 0; i < this.trail.length - 1; i++) {
+        const a = this.trail[i], b = this.trail[i + 1];
+        if (onSegment(p, a, b)) continue;
+        if (rayDistance(p, axis, a, b) <= step + EPS
+          && !(this.island && i === 0 && same(next, this.anchor) && !onSegment(b, p, next))) {
+          this.rewindAlongTrail();
+          return false;
+        }
       }
+      this.trail = simplify([...this.trail, next]);
+      this.player = next; this.playerPath.push({ ...next }); moved = true;
+      if (this.collidesWithTrail() || this.hazardsHit(p, next)) { this.hit(); return false; }
+      p = next;
     }
-    if (travel <= EPS) return false;
-    this.trail = simplify([...this.trail, next]);
-    this.player = next; this.playerPath.push({ ...next });
-    const bodyHit = this.collidesWithTrail(), attackHit = this.hazardsHit(p, next);
-    if (bodyHit || attackHit) { this.hit(); return false; }
-    if (wall <= travel + EPS) { this.capture(); return true; }
+    if (moved && route.closes) { this.capture(); return true; }
     return false;
   }
   beginRetraction() {
