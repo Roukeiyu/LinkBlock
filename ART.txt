@@ -260,3 +260,18 @@ mask, seal, portraits and opening face bounds remain unchanged.
 art/canvas/v14-sources.json records the final source painting.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v14-sources.json
+
+Perfect reward rest environments (v15)
+--------------------------------------
+Chapters 1, 2 and 4-10 receive complete generated rest-scene paintings.
+Chapter 3 keeps its approved v14 home scene. Most existing clothing, character
+designs and poses remain. The wolf rests in a rustic branch shelter by the lake,
+wearing the original brown shorts with an added fur blanket. The fox wears an
+ivory cotton fundoshi-style wrap with a broad front panel in a private tatami
+room; its corrected foreground knee and lower-leg direction remain intact.
+The other settings are a sandstone sitting room, castle library, autumn
+farmhouse, coastal home, northern lodge, belfry reading room and obsidian lounge.
+No gameplay main plate, mask, seal, portrait or opening face bound changes.
+art/canvas/v15-sources.json records the nine generated source paintings.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v15-sources.json

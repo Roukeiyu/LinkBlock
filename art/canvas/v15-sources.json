@@ -1,0 +1,73 @@
+{
+  "version": "v15",
+  "width": 1536,
+  "height": 1024,
+  "description": "Perfect-reward rest environments for nine chapters. Preserve existing clothing except the fox's ivory cotton fundoshi-style wrap and the wolf's added fur blanket. Chapter 3 retains its approved v14 home scene. Gameplay main plates, masks, seals, portraits and face bounds are unchanged.",
+  "levels": {
+    "1": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-1.png"
+      }
+    },
+    "2": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-2.png"
+      }
+    },
+    "4": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-4.png"
+      }
+    },
+    "5": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-5.png"
+      }
+    },
+    "6": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-6.png"
+      }
+    },
+    "7": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-7.png"
+      }
+    },
+    "8": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-8.png"
+      }
+    },
+    "9": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-9.png"
+      }
+    },
+    "10": {
+      "perfect": {
+        "origin": "generated",
+        "file": "home15-level-10.png"
+      }
+    }
+  },
+  "settings": {
+    "1": "A rustic branch-and-bark shelter by the forest lake; original brown shorts with an added fur blanket for warmth.",
+    "2": "A sandstone sitting room with linen cushions and an oasis window.",
+    "4": "A private castle library with a velvet chaise and fireplace.",
+    "5": "An autumn farmhouse living room; the horse remains outside the window.",
+    "6": "A coastal home with a cushioned nautical sofa and moonlit sea view.",
+    "7": "A private tatami room; ivory cotton fundoshi-style waist ties and a broad front panel, retaining the corrected foreground knee.",
+    "8": "A northern lodge with a warm hearth and aurora view.",
+    "9": "A belfry reading room with a sofa that accommodates the wings.",
+    "10": "A quiet obsidian living room with a small enclosed hearth."
+  }
+}
