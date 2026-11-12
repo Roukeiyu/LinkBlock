@@ -18,6 +18,10 @@ const icon = (name: string) => {
     pause: '<path d="M8 5v14M16 5v14"/>',
     reset: '<path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/>',
     arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+    levels: '<path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/>',
+    gallery: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/>',
+    guide: '<path d="M12 5v16M3 3c4-1 6 0 9 2 3-2 5-3 9-2v16c-4-1-6 0-9 2-3-2-5-3-9-2V3Z"/>',
+    settings: '<path d="M4 7h5m4 0h7M4 17h9m4 0h3"/><circle cx="11" cy="7" r="2"/><circle cx="15" cy="17" r="2"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 };
@@ -26,22 +30,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="title-screen" class="title-screen">
     <div class="candle-glow" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => `<i style="left:${6 + (i * 7) % 88}%;animation-delay:-${i * 0.8}s;animation-duration:${9 + (i % 5)}s"></i>`).join('')}</div>
-    <div class="menu-page">
-      <img class="menu-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" />
+    <div class="menu-layout">
+    <div class="menu-hero">
+      <div class="menu-brandmark"><img class="menu-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /></div>
+      <p class="menu-tagline">沿岸而行，以线解封。</p>
       <img class="ink-rule" src="${ui('ink_divider.png')}" alt="" />
-      <div id="seal-row" class="seal-row"></div>
-      <p id="seal-count" class="seal-count"></p>
-      <button id="menu-start" class="menu-btn is-selected" type="button" aria-current="true">开始游戏</button>
-      <button id="menu-levels" class="menu-btn" type="button">选择关卡</button>
-      <button id="menu-gallery" class="menu-btn" type="button">图鉴</button>
-      <button id="menu-guide" class="menu-btn" type="button">关卡攻略</button>
-      <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false">设置</button>
+    </div>
+    <div class="menu-page" aria-label="主菜单">
+      <p class="menu-invitation">翻开新的一页</p>
+      <button id="menu-start" class="menu-btn menu-primary is-selected" type="button" aria-current="true"><img src="${ui('wax_seal_red.png')}" alt="" /><span>开始游戏</span>${icon('arrow')}</button>
+      <nav class="menu-links" aria-label="探索选项">
+        <button id="menu-levels" class="menu-btn" type="button">${icon('levels')}<span>选择关卡<small aria-hidden="true">十处秘境</small></span></button>
+        <button id="menu-gallery" class="menu-btn" type="button">${icon('gallery')}<span>图鉴<small aria-hidden="true">珍藏画像</small></span></button>
+        <button id="menu-guide" class="menu-btn" type="button">${icon('guide')}<span>关卡攻略<small aria-hidden="true">探索指引</small></span></button>
+        <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-settings-panel">${icon('settings')}<span>设置<small aria-hidden="true">音乐与音效</small></span></button>
+      </nav>
       <div id="menu-settings-panel" class="menu-settings" hidden>
         <button id="menu-music" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle" aria-hidden="true"></span></button>
         <button id="menu-sfx" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音效开启</span><span class="toggle" aria-hidden="true"></span></button>
         <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
         <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
       </div>
+      <div class="menu-progress"><div class="menu-progress-heading"><span>封印进度</span><p id="seal-count" class="seal-count"></p></div><div id="seal-row" class="seal-row"></div></div>
+    </div>
     </div>
   </div>
   <header class="site-header">
@@ -269,7 +280,7 @@ function paintAudio() {
   ($('#menu-music-volume') as HTMLInputElement).value = String(Math.round(musicVolume * 100));
   ($('#menu-sfx-volume') as HTMLInputElement).value = String(Math.round(sfxVolume * 100));
 }
-const menuItems = () => [...document.querySelectorAll<HTMLButtonElement>('.menu-page > .menu-btn')];
+const menuItems = () => [...document.querySelectorAll<HTMLButtonElement>('.menu-page .menu-btn')];
 const menuConsumed = new Set<string>();
 function paintMenu(index?: number) {
   const buttons = menuItems();
@@ -979,18 +990,28 @@ paintMenu(0);
 $('.menu-page').addEventListener('pointerover', event => {
   if (!menuOpen()) return;
   const button = (event.target as Element | null)?.closest('button');
-  if (!button || button.parentElement !== $('.menu-page')) return;
+  if (!button?.classList.contains('menu-btn')) return;
   const index = menuItems().indexOf(button as HTMLButtonElement);
+  if (index >= 0) paintMenu(index);
+});
+$('.menu-page').addEventListener('focusin', event => {
+  const index = menuItems().indexOf(event.target as HTMLButtonElement);
   if (index >= 0) paintMenu(index);
 });
 window.addEventListener('keydown', event => {
   if (!menuOpen() || isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+  if (event.target instanceof Element && event.target.closest('#menu-settings-panel')) return;
   const buttons = menuItems();
-  const index = Math.max(0, buttons.findIndex(button => button.classList.contains('is-selected')));
-  if (event.code === 'ArrowUp' || event.code === 'KeyW') { event.preventDefault(); paintMenu(index - 1); return; }
-  if (event.code === 'ArrowDown' || event.code === 'KeyS') { event.preventDefault(); paintMenu(index + 1); return; }
-  if (event.code === 'ArrowLeft') { event.preventDefault(); paintMenu(0); return; }
-  if (event.code === 'ArrowRight') { event.preventDefault(); paintMenu(buttons.length - 1); return; }
+  const focused = buttons.indexOf(event.target as HTMLButtonElement);
+  const index = focused >= 0 ? focused : Math.max(0, buttons.findIndex(button => button.classList.contains('is-selected')));
+  const moves: Record<string, number[]> = { ArrowUp: [3, 0, 0, 1, 2], ArrowDown: [1, 3, 4, 0, 0], ArrowLeft: [0, 2, 1, 4, 3], ArrowRight: [0, 2, 1, 4, 3] };
+  const key = ({ KeyW: 'ArrowUp', KeyS: 'ArrowDown', KeyA: 'ArrowLeft', KeyD: 'ArrowRight' } as Record<string, string>)[event.code] ?? event.code;
+  if (moves[key]) {
+    event.preventDefault();
+    const next = moves[key][index]; paintMenu(next);
+    buttons[next]?.focus({ preventScroll: true }); buttons[next]?.scrollIntoView({ block: 'nearest' });
+    return;
+  }
   if (event.code === 'Space' || event.code === 'Enter' || event.code === 'NumpadEnter') {
     event.preventDefault();
     menuConsumed.add(event.code);

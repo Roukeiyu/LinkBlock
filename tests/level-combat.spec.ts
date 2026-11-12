@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Game } from '../src/engine';
 
-declare global { interface Window { battle: () => Game } }
+declare global { interface Window { battle: () => Game; firedProjectiles: number } }
 
 test.beforeEach(async ({ page }) => {
   // Test-only inspection; the shipped application has no debug entry point.
@@ -37,7 +37,22 @@ for (const [screen, width, height] of [['desktop', 1280, 800], ['portrait', 390,
       expect(await page.evaluate(() => window.battle().enemies.length)).toBe(id <= 5 ? id + 5 : id + 7);
       expect(await page.evaluate(() => window.battle().bossAttack?.name)).toBe(names[id - 1]);
       // Keep the scene alive to observe the first real warning and volley.
-      await page.evaluate(() => { window.battle().protection = 1000; });
+      await page.evaluate(() => {
+        const game = window.battle();
+        game.protection = 1000;
+        window.firedProjectiles = 0;
+        const attack = game.bossAttack!, update = attack.update.bind(attack);
+        // Count real emissions: a volley near an arena edge may leave the
+        // screen before a later snapshot, despite having fired correctly.
+        attack.update = (seconds, context) => update(seconds, {
+          ...context,
+          spawn: hazard => {
+            const emitted = context.spawn(hazard);
+            if (emitted) window.firedProjectiles++;
+            return emitted;
+          },
+        });
+      });
       const interval = await page.evaluate(() => (window.battle().bossAttack as unknown as { interval: number }).interval);
       await page.clock.runFor((interval - 0.5) * 1000);
       expect(await page.evaluate(() => window.battle().bossAttack!.warning)).toBeGreaterThan(0);
@@ -47,13 +62,15 @@ for (const [screen, width, height] of [['desktop', 1280, 800], ['portrait', 390,
       expect(help!.x).toBeGreaterThanOrEqual(0); expect(help!.x + help!.width).toBeLessThanOrEqual(width);
       await page.locator('#combat-help').click();
       const elapsed = await page.evaluate(() => window.battle().elapsed);
+      const beforePause = await page.evaluate(() => window.firedProjectiles);
       await page.keyboard.press('KeyR'); await page.keyboard.press('KeyP');
       await page.clock.runFor(1000);
       expect(await page.evaluate(() => window.battle().elapsed)).toBe(elapsed);
+      expect(await page.evaluate(() => window.firedProjectiles)).toBe(beforePause);
       await page.locator('#combat-guide-close').click();
       await page.locator('#primary').click();
       await page.clock.runFor(700);
-      expect(await page.evaluate(() => window.battle().hazards.length)).toBeGreaterThan(0);
+      expect(await page.evaluate(() => window.firedProjectiles), `level ${id} should fire its first volley`).toBeGreaterThan(0);
       await page.locator('#restart').click();
       await expect(page.locator('#state-label')).toHaveText('选择起点');
       expect(await page.evaluate(() => window.battle().hazards.length)).toBe(0);
