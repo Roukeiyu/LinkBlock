@@ -1,3 +1,4 @@
+import './export-face-review.mjs';
 /** Export the active artwork catalog. Optional: --offline /absolute/output/folder */
 import { build } from 'esbuild';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

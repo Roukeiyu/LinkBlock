@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { Game } from './engine';
 import { advanceEnemy, createEnemy } from './enemies';
 import { area, distance, inside, wallEdges, type Polygon } from './geometry';
-import { openingFraction, openingRectangle, OPENING_SECONDS } from './opening';
+import { openingFraction, openingRectangle, openingTouchesFace, openingFaceGap, OPENING_SECONDS } from './opening';
 import { lakeBossConfig, safeLanding } from './boss';
 import { MAX_HAZARDS, Projectile } from './attacks';
+import { FACE_REGIONS, faceProtection } from './faces';
+import { LEVELS, gameOptionsFor } from './levels';
 
 function seeded(seed = 13) { return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
 function openingGame(seed = 13) { return new Game(72, 48, { opening: true, random: seeded(seed) }); }
@@ -16,12 +18,67 @@ function ringGame() {
 function place(game: Game, x: number, y: number) { game.player = { x, y }; game.anchor = { ...game.player }; }
 
 describe('rectangle selection and deferred entry', () => {
-  it('has no actors before selection, rotates at 15 Hz and commits exactly the current candidate on confirmation', () => {
+  it('rejects face overlap, enclosure, edge contact and corner contact at confirmation', () => {
+    const face = { left: .4, top: .2, right: .6, bottom: .4 };
+    const rectangle = (left: number, top: number, right: number, bottom: number): Polygon =>
+      [{ x: left, y: top }, { x: right, y: top }, { x: right, y: bottom }, { x: left, y: bottom }];
+    for (const region of [rectangle(1, 2, 4, 4), rectangle(6, 2, 8, 4), rectangle(4, .5, 6, 2),
+      rectangle(4, 4, 6, 6), rectangle(1, .5, 4, 2), rectangle(1, 1, 9, 9), rectangle(4.5, 2.5, 5.5, 3.5)]) {
+      expect(openingTouchesFace(region, 10, 10, face)).toBe(true);
+      const game = new Game(10, 10, { opening: true, openingFace: face, boss: null, enemies: [] });
+      game.start(); game.opening!.region = region;
+      expect(game.confirmOpening()).toBe(false); expect(game.captured).toEqual([]);
+      expect(game.phase).toBe('opening'); expect(game.actorsReady).toBe(false);
+    }
+    expect(openingTouchesFace(rectangle(1, 2, 4 - 1e-5, 4), 10, 10, face)).toBe(false);
+  });
+  it.each(LEVELS)('$title never reveals the padded face in previews or confirmed openings', level => {
+    const source = FACE_REGIONS[level.restored], protectedFace = faceProtection(level.restored);
+    expect((protectedFace.right - protectedFace.left) * source.imageWidth).toBeCloseTo((protectedFace.bottom - protectedFace.top) * source.imageHeight);
+    expect(protectedFace.left * source.imageWidth).toBeLessThanOrEqual(source.x);
+    expect(protectedFace.top * source.imageHeight).toBeLessThanOrEqual(source.y);
+    expect(protectedFace.right * source.imageWidth).toBeGreaterThanOrEqual(source.x + source.width);
+    expect(protectedFace.bottom * source.imageHeight).toBeGreaterThanOrEqual(source.y + source.height);
+    for (const [width, height] of [[72, 48], [6, 6]]) for (let seed = 0; seed < 20; seed++) {
+      const game = new Game(width, height, { ...gameOptionsFor(level), random: seeded(seed) });
+      const face = faceProtection(level.restored);
+      const check = (region: Polygon) => {
+        const xs = region.map(p => p.x), ys = region.map(p => p.y);
+        expect(Math.max(...xs) <= face.left * width + 1e-7
+          || Math.min(...xs) >= face.right * width - 1e-7
+          || Math.max(...ys) <= face.top * height + 1e-7
+          || Math.min(...ys) >= face.bottom * height - 1e-7).toBe(true);
+        expect(openingTouchesFace(region, width, height, face)).toBe(false);
+        const gap = Math.max(face.left * width - Math.max(...xs), Math.min(...xs) - face.right * width,
+          face.top * height - Math.max(...ys), Math.min(...ys) - face.bottom * height);
+        expect(gap).toBeGreaterThanOrEqual(openingFaceGap(width, height) - 1e-7);
+        expect(area(region)).toBeGreaterThan(0);
+        expect(Math.min(...xs)).toBeGreaterThan(0); expect(Math.max(...xs)).toBeLessThan(width);
+        expect(Math.min(...ys)).toBeGreaterThan(0); expect(Math.max(...ys)).toBeLessThan(height);
+      };
+      game.start(); check(game.opening!.region);
+      for (let tick = 1; tick < 150; tick++) { game.update(1 / 30); check(game.opening!.region); }
+      if (width === 72) {
+        // Both explicit confirmation and the timeout must commit a safe island.
+        if (seed % 2) game.confirmOpening(); else game.update(1 / 30);
+        expect(game.phase).toBe('playing'); game.captured.forEach(check);
+      }
+    }
+    // An extreme draw shrinks if needed instead of crossing the face.
+    const maximal = [0.5, 0.5, 0.5, 0, 0, 0, 0, 0, 0];
+    const rectangle = openingRectangle(72, 48, () => maximal.shift() ?? 0.5, undefined, faceProtection(level.restored));
+    expect(area(rectangle)).toBeLessThanOrEqual(72 * 48 * 0.3 + 1e-7);
+    expect(area(rectangle)).toBeGreaterThan(72 * 48 * 0.28);
+    const face = faceProtection(level.restored);
+    expect(rectangle[1].x <= face.left * 72 + 1e-7 || rectangle[0].x >= face.right * 72 - 1e-7
+      || rectangle[2].y <= face.top * 48 + 1e-7 || rectangle[0].y >= face.bottom * 48 - 1e-7).toBe(true);
+  });
+  it('has no actors before selection, rotates at 30 Hz and commits exactly the current candidate on confirmation', () => {
     const game = openingGame(); expect(game.enemies).toHaveLength(0); expect(game.boss).toBeUndefined();
     game.start(); expect(game.phase).toBe('opening'); expect(game.opening!.candidates).toBe(1);
-    const first = structuredClone(game.opening!.region); game.update(1 / 15 - 0.001);
+    const first = structuredClone(game.opening!.region); game.update(1 / 30 - 0.001);
     expect(game.opening!.region).toEqual(first); game.update(0.001); expect(game.opening!.candidates).toBe(2);
-    game.update(1 - 1 / 15); expect(game.opening!.candidates).toBe(16);
+    game.update(1 - 1 / 30); expect(game.opening!.candidates).toBe(31);
     expect(game.enemies).toHaveLength(0); expect(game.boss).toBeUndefined(); expect(game.bossAttack).toBeUndefined();
     expect(game.percent).toBe(0); expect(game.elapsed).toBe(0); game.move('down', true, 10); expect(game.trail).toHaveLength(0);
     const selected = structuredClone(game.opening!.region); expect(game.confirmOpening()).toBe(true);
@@ -33,12 +90,12 @@ describe('rectangle selection and deferred entry', () => {
   });
   it('auto-confirms after 5 seconds without using that interval for combat or the game timer', () => {
     const game = openingGame(); game.start(); game.update(4.999);
-    expect(game.phase).toBe('opening'); expect(game.opening!.candidates).toBe(75); expect(game.enemies).toHaveLength(0);
+    expect(game.phase).toBe('opening'); expect(game.opening!.candidates).toBe(150); expect(game.enemies).toHaveLength(0);
     const last = structuredClone(game.opening!.region); game.update(0.001);
     expect(game.phase).toBe('playing'); expect(game.opening!.region).toEqual(last); expect(game.enemies).toHaveLength(9);
     expect(game.elapsed).toBe(0); expect(game.hazards).toHaveLength(0); expect(game.bossAttack!.warning).toBe(0);
     const whole = openingGame(); whole.start(); whole.update(10);
-    expect(whole.opening!.candidates).toBe(75); expect(whole.elapsed).toBe(0);
+    expect(whole.opening!.candidates).toBe(150); expect(whole.elapsed).toBe(0);
   });
   it('is frame-rate independent, pauses the countdown and reproduces seeds while fresh runs advance randomness', () => {
     const a = openingGame(), b = openingGame(); a.start(); b.start(); a.update(2);
@@ -60,7 +117,7 @@ describe('rectangle selection and deferred entry', () => {
   });
   it('keeps rectangles, players and all initial actors legal over 128 seeded confirmations', () => {
     for (let seed = 0; seed < 128; seed++) {
-      const game = openingGame(seed); game.start(); game.update((seed % 74) / 15); game.confirmOpening();
+      const game = openingGame(seed); game.start(); game.update((seed % 149) / 30); game.confirmOpening();
       const rectangle = game.captured[0]; expect(game.percent).toBeGreaterThanOrEqual(0.1 - 1e-7); expect(game.percent).toBeLessThanOrEqual(30 + 1e-7);
       expect(game.enemies).toHaveLength(9); expect(game.player.x).toBeGreaterThan(0); expect(game.player.y).toBeGreaterThan(0);
       for (const body of [...game.enemies, game.boss!]) {

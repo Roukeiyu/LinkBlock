@@ -1,6 +1,6 @@
 import { area, closestPoint, distance, wallEdges, EPS, inside, onSegment, partitionRegion, rayDistance, segmentDistance, same, simplify, type Point, type Polygon } from './geometry';
 import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
-import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, type Opening } from './opening';
+import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
@@ -10,7 +10,7 @@ export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
-export interface GameOptions { opening?: boolean; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion }
+export interface GameOptions { opening?: boolean; openingFace?: OpeningFace; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
@@ -140,16 +140,15 @@ export class Game {
   start() {
     if (this.phase !== 'ready') return;
     if (this.options.opening) {
-      const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined);
-      const side = Math.min(this.width, this.height) * 0.08;
-      const starting = region ?? [{ x: 0.5, y: 0.5 }, { x: 0.5 + side, y: 0.5 }, { x: 0.5 + side, y: 0.5 + side }, { x: 0.5, y: 0.5 + side }];
-      this.opening = { region: starting, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return;
+      const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined, this.options.openingFace);
+      this.opening = { region, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return;
     }
     this.phase = 'playing'; this.events.push('start');
   }
   confirmOpening() {
     if (this.phase !== 'opening' || !this.opening) return false;
     const region = this.opening.region;
+    if (this.options.openingFace && openingTouchesFace(region, this.width, this.height, this.options.openingFace)) return false;
     this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region, ...this.island.sealedGaps];
     this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
     this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.recomputeCompletion(); this.checkWin(); return true;
@@ -440,8 +439,7 @@ export class Game {
     if (this.phase === 'opening' && this.opening && Number.isFinite(seconds) && seconds > 0) {
       const next = Math.min(OPENING_SECONDS, this.opening.elapsed + seconds);
       while (this.opening.nextAt <= next + EPS && this.opening.nextAt < OPENING_SECONDS - EPS) {
-        const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined);
-        if (region) this.opening.region = region;
+        this.opening.region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined, this.options.openingFace);
         this.opening.nextAt += 1 / OPENING_HZ; this.opening.candidates++;
       }
       this.opening.elapsed = next;

@@ -1,6 +1,7 @@
 import { lakeBossConfig, type BossConfig } from './boss';
 import { LevelAttack, type AttackPattern } from './level-attacks';
 import type { EnemyMotion } from './enemies';
+import { faceProtection, type FaceArtwork } from './faces';
 import type { GameOptions } from './engine';
 import type { SpriteSheet } from './render-enemies';
 
@@ -18,7 +19,7 @@ export interface LevelDef {
   attackPattern?: AttackPattern;
   theme: string;
   title: string;
-  restored: string;
+  restored: FaceArtwork;
   sealed: string;
   mask: string;
   /** File stem in public/audio/, without extension. Opus is preferred, mp3 is the fallback. */
@@ -192,7 +193,7 @@ export function bossConfigFor(level: LevelDef): BossConfig {
 
 /** Shared by the page and simulation tests, including restart and next-level. */
 export function gameOptionsFor(level: LevelDef): GameOptions {
-  return { opening: true, bossConfig: bossConfigFor(level), squad: level.squad,
+  return { opening: true, openingFace: faceProtection(level.restored), bossConfig: bossConfigFor(level), squad: level.squad,
     speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion };
 }
 
