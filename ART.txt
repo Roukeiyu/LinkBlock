@@ -21,7 +21,9 @@ with a bronze clasp, and the lava warrior worn black leather trousers with bronz
 fastenings. The frost giant's ninety vest is fully open, and his perfect portrait
 has a bare torso. These edits retain the v3 character identities and settings.
 The stone guardian leans casually on the parapet with bare feet and exposed lower
-legs; the city key rests on the folded cape beside him. His closer framing and
+legs. His knees sit apart, with the viewer-left knee turned outward and both feet
+planted separately; the wrap drapes over the new stance. The city key rests on
+the folded cape beside him. His closer framing and
 relaxed pose distinguish the perfect reward from the other two tiers;
 the other characters keep their existing poses.
 
@@ -38,7 +40,7 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
 The active perfect rewards for chapters 6, 7, 8 and 10, plus chapter 8's ninety
-reward, use their v4 directories. Chapter 9's perfect reward uses v5.
+reward, use their v4 directories. Chapter 9's perfect reward uses v6.
 Other reward files still use v3.
 src/levels.ts selects the active image for each tier.
 
@@ -51,8 +53,8 @@ node scripts/pack-character-art.mjs /path/to/generated_images to encode the
 three illustrations and normalize their masks; it requires ffmpeg/ffprobe.
 For the v4 reward illustrations, use the separate reward-only manifest:
 node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v4-reward-sources.json
-For the relaxed stone guardian's v5 perfect reward, use:
-node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v5-reward-sources.json
+For the stone guardian's v6 perfect reward with an open seated stance, use:
+node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v6-reward-sources.json
 These encode only the listed rewards, without regenerating main illustrations,
 character masks, sealed scenes or portraits.
 The source images remain intact. The committed WebPs/PNGs are sufficient for
