@@ -50,3 +50,23 @@ redraw. Normal npm builds use the committed files and need no image/audio tools.
 Existing level 1–5 artwork and UI artwork remain in their original paths.
 Earlier expansion files are retained for already-open clients; the active level
 catalog exclusively selects the v2 redraw and its matching supporting assets.
+
+Player and dialog update
+------------------------
+art/ui/player-spirit-atlas.webp is the generated transparent 2 × 2 source atlas
+for the golden spirit flame (no animal features). scripts/pack-player-spirit.mjs
+aligns each bright core using its weighted pixel centroid, translates without
+cropping visible pixels, and uniformly packages four 128 × 128 cells into
+public/sprites/player-spirit.webp. Run with Node, ffprobe and ffmpeg. The runtime
+uses the fixed center anchor and 6 frames per second; no collision rule changes.
+
+public/ui/torn-parchment.webp is a newly generated solid blank aged sheet with
+transparent irregular tears on all four edges. Dialogs use a nine-slice with
+center fill and no opaque rectangular background, keeping the tears transparent
+on both narrow portrait and wide landscape layouts. Existing title and board
+artwork keep their original paths. Both additions were generated for this game.
+
+scripts/export-art-review.mjs reads the current level catalog and exports the
+30 reward images and 60 enemy images, plus a four-frame player preview. Normal
+development/build writes linked review pages; --offline additionally embeds
+the exact current files into two portable HTML files for art review.

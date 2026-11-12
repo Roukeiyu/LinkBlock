@@ -1,12 +1,12 @@
 import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
 import { ENEMY_STYLES } from './enemies';
-import { renderEnemy, renderWolfSpirit } from './render-enemies';
+import { renderEnemy, renderPlayerSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
-import { LEVELS, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
+import { LEVELS, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio } from './audio';
@@ -111,7 +111,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="combat-guide" class="gallery" hidden>
     <div class="gallery-card combat-guide-card" role="dialog" aria-labelledby="combat-guide-title">
       <div class="gallery-head"><h2 id="combat-guide-title">关卡攻略</h2><button id="combat-guide-close" class="ink-tab" type="button">返回</button></div>
-      ${LEVELS.map(level => `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p></section>`).join('')}
+      ${LEVELS.map(level => {
+        const rule = bossConfigFor(level).phases?.at(-1)?.reinforcements;
+        const population = rule?.batchSize === 1 ? `<p>场上最多 ${rule.targetCount} 只小怪；首领二阶段起每 ${rule.interval} 秒最多补 1 只，残血不增加数量上限。</p>` : '';
+        return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
+      }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
     </div>
   </div>
@@ -159,6 +163,7 @@ let controlModeIndex = 2;
 let joystickPointer: number | undefined;
 let joystickPoint: { x: number; y: number } | undefined;
 let joystickOrigin: { x: number; y: number } | undefined;
+let playerFacing = Math.PI;
 const joystickInput = new DragJoystick();
 const joystickKeys = new Set<string>();
 const restored = new Image();
@@ -844,8 +849,9 @@ function render(now: number) {
     if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
       ctx.save();
       const { x, y } = game.player;
-      const facing = { left: Math.PI, right: 0, up: -Math.PI / 2, down: Math.PI / 2 }[[...held].at(-1) ?? 'left'];
-      renderWolfSpirit(ctx, x, y, facing, game.trail.length > 0);
+      const direction = [...held].at(-1);
+      if (direction) playerFacing = { left: Math.PI, right: 0, up: -Math.PI / 2, down: Math.PI / 2 }[direction];
+      renderPlayerSpirit(ctx, x, y, playerFacing, game.trail.length > 0, game.elapsed, reducedMotion.matches);
       ctx.restore();
     }
   }

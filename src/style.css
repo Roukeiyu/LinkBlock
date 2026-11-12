@@ -285,7 +285,8 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .life-wax{width:22px;height:22px;object-fit:contain}
 .life-wax.spent{opacity:.28}
 .gallery,.viewer{background:transparent}
-.gallery-card,.overlay-card{color:var(--ink);border:18px solid transparent;border-image-source:var(--page-frame);border-image-slice:78;border-image-repeat:stretch;box-shadow:none}
+/* The nine-slice fill is the page itself: no rectangular background behind its tears. */
+.gallery-card,.overlay-card{color:var(--ink);background:none;border:24px solid transparent;border-radius:0;border-image-source:url('/ui/torn-parchment.webp');border-image-slice:170 fill;border-image-repeat:stretch;box-shadow:none;filter:drop-shadow(0 6px 16px #0006)}
 #modal-shade{position:fixed;inset:0;background:rgba(18,8,4,.78);pointer-events:auto}
 #modal-shade[hidden]{display:none}
 #overlay.overlay{position:fixed;inset:0;z-index:32;display:flex;align-items:safe center;justify-content:center;padding:12px;overflow:auto;background:transparent;backdrop-filter:none}
@@ -307,6 +308,9 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .primary-button:hover{filter:none;background:#f3e2bc}
 .ghost-button{background:transparent;border-color:#6b4a2a}
 .overlay-seal{width:96px;height:96px;object-fit:contain;display:block;margin:0 auto}
+.overlay-card>*{flex-shrink:0}
+.overlay-card>#reward-note:empty{display:none}
+@media(max-height:480px){.overlay-card{border-width:20px;padding:6px 10px;gap:6px}.overlay-card .territory-symbol,.overlay-card .overlay-hint{display:none}.overlay-card>h2{font-size:20px;line-height:1.2}.overlay-card>p:not(.eyebrow){font-size:11px;line-height:1.4}.overlay-card .primary-button{height:32px}.overlay-card .ghost-button.ink-tab{height:28px;margin-top:0}}
 .overlay-seal.breaking{animation:seal-break .7s ease}
 .territory-symbol{width:auto;height:auto;background:none;border:0}
 @keyframes seal-break{0%{transform:scale(1.2) rotate(-8deg);filter:brightness(1.35)}100%{transform:none;filter:none}}

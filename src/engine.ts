@@ -91,6 +91,7 @@ export class Game {
       const rule = phase.reinforcements;
       if (rule && (!Number.isInteger(rule.targetCount) || rule.targetCount < 0 || rule.targetCount > MAX_ENEMIES
         || !Number.isFinite(rule.interval) || rule.interval <= 0 || !Number.isFinite(rule.speed) || rule.speed <= 0
+        || (rule.batchSize !== undefined && (!Number.isInteger(rule.batchSize) || rule.batchSize < 1 || rule.batchSize > MAX_ENEMIES))
         || (rule.motion !== undefined && !['vertical', 'axes'].includes(rule.motion)))) throw new Error('Invalid reinforcement rule');
     }
     if (width < 6 || height < 6) throw new Error('Board must be at least 6 × 6');
@@ -371,8 +372,9 @@ export class Game {
     this.reinforcementClock += seconds;
     if (this.reinforcementClock < rule.interval - EPS) return false;
     this.reinforcementClock = Math.max(0, this.reinforcementClock - rule.interval);
+    const target = Math.min(rule.targetCount, this.enemies.length + (rule.batchSize ?? MAX_ENEMIES));
     let spawned = false;
-    while (this.enemies.length < rule.targetCount) {
+    while (this.enemies.length < target) {
       const horizontal = rule.motion === 'axes' && this.reinforcementSerial % 2 === 0;
       const speed = (this.random() < 0.5 ? -1 : 1) * rule.speed;
       const enemy = createEnemy('straight', { x: 0, y: 0 }, { x: horizontal ? speed : 0, y: horizontal ? 0 : speed });

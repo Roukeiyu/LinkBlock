@@ -2,7 +2,7 @@ import { distance, EPS, inside, wallEdges, type Point, type Polygon } from './ge
 
 export type EnemyKind = 'straight' | 'orbit' | 'zigzag' | 'boss';
 export interface EnemyMotion {
-  straight: 'surge' | 'corner' | 'curve' | 'reverse';
+  straight: 'steady' | 'surge' | 'corner' | 'curve' | 'reverse';
   period: number;
   orbitRate: number;
   zigzagInterval: number;
@@ -107,7 +107,7 @@ export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], 
       pace = phase < 0.6 ? 0.45 : 1.7;
     } else if (motion.straight === 'corner' || motion.straight === 'reverse') {
       for (let turns = Math.floor(after / motion.period); turns > 0; turns--) rotate(enemy, motion.straight === 'reverse' ? Math.PI : enemy.turnSign * Math.PI / 2);
-    } else {
+    } else if (motion.straight === 'curve') {
       const wave = (t: number) => Math.sin(t * Math.PI * 2 / motion.period) * 0.65;
       rotate(enemy, (wave(after) - wave(before)) * enemy.turnSign);
     }

@@ -35,7 +35,7 @@ export interface LevelDef {
   enemySpeed: number;
   bossSpeed: number;
   squad: Squad;
-  /** Multipliers on the level-1 reinforcement interval and speed. */
+  /** Multipliers on the base reinforcement interval (4 seconds) and speed (8). */
   reinforceInterval: number;
   reinforceSpeed: number;
   /** UI accent for this level. Chrome stays the same; only this tint changes. */
@@ -59,23 +59,23 @@ export const LEVELS: LevelDef[] = [
     portraitSealed: 'sprites/portrait_sealed.png', portraitRescued: 'sprites/portrait_rescued.png',
     names: { straight: ['腐风', '灰孢', '咒鸦'], orbit: '荆蚀', zigzag: '残魂', boss: '蚀根' },
     sprites: { ...sheet('sprites', ['enemy_fufeng.png', 'enemy_jingshi.png', 'enemy_canhun.png', 'enemy_huibao.png', 'enemy_zhouya.png', 'boss_shigen.png']), turn: ['crow'] },
-    enemySpeed: 1, bossSpeed: 1, squad: { straight: 3, orbit: 3, zigzag: 3 }, reinforceInterval: 1, reinforceSpeed: 1,
+    enemySpeed: 1, bossSpeed: 1, squad: { straight: 2, orbit: 2, zigzag: 2 }, reinforceInterval: 1.5, reinforceSpeed: 1,
     accent: '#c5d4e6',
   },
   {
-    difficulty: '进阶', tactic: '小怪先慢行再冲刺；首领瞄准扇射。预警出现后侧移，利用慢行窗口圈地。',
-    enemyMotion: { straight: 'surge', period: 2.8, orbitRate: 0.5, zigzagInterval: 1.1, zigzagAngle: Math.PI / 3 }, attackPattern: 'sand',
+    difficulty: '进阶', tactic: '小怪匀速巡游；首领瞄准扇射。预警出现后侧移，趁发射间隔圈地。',
+    enemyMotion: { straight: 'steady', period: 2.8, orbitRate: 0.5, zigzagInterval: 1.1, zigzagAngle: Math.PI / 3 }, attackPattern: 'sand',
     id: 2, theme: '木乃伊', title: '第二关 · 沙漠神殿',
     restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png', music: 'desert-temple',
     portraitSealed: 'levels/2/portrait_sealed.png', portraitRescued: 'levels/2/portrait_rescued.png',
     rewardNinety: 'levels/2/mummy-90.webp', rewardPerfect: 'levels/2/mummy-perfect.webp',
     names: { straight: ['流沙', '缠布', '豺影'], orbit: '圣甲', zigzag: '罐灵', boss: '沙傀王' },
     sprites: sheet('levels/2', ['enemy_liusha.png', 'enemy_shengjia.png', 'enemy_guanling.png', 'enemy_chanbu.png', 'enemy_chaiying.png', 'boss_shakuiwang.png']),
-    enemySpeed: 1.05, bossSpeed: 1.04, squad: { straight: 4, orbit: 3, zigzag: 3 }, reinforceInterval: 0.92, reinforceSpeed: 1.05,
+    enemySpeed: 1.05, bossSpeed: 1.04, squad: { straight: 3, orbit: 2, zigzag: 2 }, reinforceInterval: 1.375, reinforceSpeed: 1.05,
     accent: '#e0c27a',
   },
   {
-    difficulty: '挑战', tactic: '小怪定时直角转向；电弧每轮旋转，残血六向齐射。避免长时间停在旧空隙。',
+    difficulty: '挑战', tactic: '小怪匀速巡游，定时直角转向；电弧每轮旋转，残血六向齐射。避免长时间停在旧空隙。',
     enemyMotion: { straight: 'corner', period: 1.1, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: Math.PI / 2 }, attackPattern: 'storm',
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
     restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png', music: 'storm-lab',
@@ -83,11 +83,11 @@ export const LEVELS: LevelDef[] = [
     rewardNinety: 'levels/3/frankenstein-90.webp', rewardPerfect: 'levels/3/frankenstein-perfect.webp',
     names: { straight: ['电弧', '齿轮魂', '雷鼠'], orbit: '缝偶', zigzag: '酸雾', boss: '狂电塔' },
     sprites: sheet('levels/3', ['enemy_dianhu.png', 'enemy_fengou.png', 'enemy_suanwu.png', 'enemy_chilunhun.png', 'enemy_leishu.png', 'boss_kuangdianta.png']),
-    enemySpeed: 1.1, bossSpeed: 1.08, squad: { straight: 4, orbit: 4, zigzag: 3 }, reinforceInterval: 0.85, reinforceSpeed: 1.1,
+    enemySpeed: 1.1, bossSpeed: 1.08, squad: { straight: 3, orbit: 3, zigzag: 2 }, reinforceInterval: 1.25, reinforceSpeed: 1.1,
     accent: '#2ed3c6',
   },
   {
-    difficulty: '高难', tactic: '小怪弧线游走；双翼弹幕夹击预警方向两侧。辨认中央通道，短线分次圈地。',
+    difficulty: '高难', tactic: '小怪匀速沿弧线游走；双翼弹幕夹击预警方向两侧。辨认中央通道，短线分次圈地。',
     enemyMotion: { straight: 'curve', period: 2.4, orbitRate: 1.15, zigzagInterval: 0.6, zigzagAngle: Math.PI * 0.55 }, attackPattern: 'rose',
     id: 4, theme: '吸血鬼', title: '第四关 · 玫瑰古堡',
     restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png', music: 'rose-waltz',
@@ -95,7 +95,7 @@ export const LEVELS: LevelDef[] = [
     rewardNinety: 'levels/4/vampire-90.webp', rewardPerfect: 'levels/4/vampire-perfect.webp',
     names: { straight: ['血蝠', '棘玫瑰', '棺鸦'], orbit: '红雾', zigzag: '镜影', boss: '血月石像' },
     sprites: sheet('levels/4', ['enemy_xuefu.png', 'enemy_hongwu.png', 'enemy_jingying.png', 'enemy_jimeigui.png', 'enemy_guanya.png', 'boss_xueyueshixiang.png']),
-    enemySpeed: 1.15, bossSpeed: 1.12, squad: { straight: 4, orbit: 4, zigzag: 4 }, reinforceInterval: 0.78, reinforceSpeed: 1.15,
+    enemySpeed: 1.15, bossSpeed: 1.12, squad: { straight: 3, orbit: 3, zigzag: 3 }, reinforceInterval: 1.125, reinforceSpeed: 1.15,
     accent: '#e25b78',
   },
   {
@@ -107,7 +107,7 @@ export const LEVELS: LevelDef[] = [
     rewardNinety: 'levels/5/horseman-90.webp', rewardPerfect: 'levels/5/horseman-perfect.webp',
     names: { straight: ['鬼火', '铁蹄', '断缰'], orbit: '南瓜灵', zigzag: '落叶旋', boss: '秋猎魔骑' },
     sprites: sheet('levels/5', ['enemy_guihuo.png', 'enemy_nangualing.png', 'enemy_luoyexuan.png', 'enemy_tieti.png', 'enemy_duanjiang.png', 'boss_qiuliemoqi.png']),
-    enemySpeed: 1.2, bossSpeed: 1.16, squad: { straight: 5, orbit: 4, zigzag: 4 }, reinforceInterval: 0.72, reinforceSpeed: 1.2,
+    enemySpeed: 1.2, bossSpeed: 1.16, squad: { straight: 4, orbit: 3, zigzag: 3 }, reinforceInterval: 1, reinforceSpeed: 1.2,
     accent: '#f08a3c',
   },
   {
@@ -169,9 +169,10 @@ export const LEVELS: LevelDef[] = [
 
 export const levelById = (id: number) => LEVELS.find(level => level.id === id) ?? LEVELS[0];
 
-/** Level 1 returns the live config object so its phases are not copied or retuned. */
+/** Early levels retain their starting population cap through every boss phase. */
 export function bossConfigFor(level: LevelDef): BossConfig {
-  if (level.id === 1) return lakeBossConfig;
+  const early = level.id <= 5;
+  const count = level.squad.straight + level.squad.orbit + level.squad.zigzag;
   return {
     maxHealth: lakeBossConfig.maxHealth,
     jumpDuration: lakeBossConfig.jumpDuration,
@@ -180,7 +181,8 @@ export function bossConfigFor(level: LevelDef): BossConfig {
       createAttack: level.attackPattern ? () => new LevelAttack(level.attackPattern!, stage) : phase.createAttack,
       reinforcements: phase.reinforcements ? {
         ...phase.reinforcements,
-        targetCount: stage === 2 ? 13 + level.id : 8 + level.id,
+        targetCount: early ? count : stage === 2 ? 13 + level.id : 8 + level.id,
+        batchSize: early ? 1 : phase.reinforcements.batchSize,
         interval: phase.reinforcements.interval * level.reinforceInterval,
         speed: phase.reinforcements.speed * level.reinforceSpeed,
       } : undefined,

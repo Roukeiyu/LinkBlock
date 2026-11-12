@@ -99,15 +99,17 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
 }
 
 let spirit: HTMLImageElement | undefined;
-export function renderWolfSpirit(ctx: CanvasRenderingContext2D, x: number, y: number, facing: number, drawing: boolean) {
-  spirit ??= Object.assign(new Image(), { src: `${import.meta.env.BASE_URL}sprites/player_wolfspirit.png`, decoding: 'async' as const });
+export function renderPlayerSpirit(ctx: CanvasRenderingContext2D, x: number, y: number, facing: number, drawing: boolean, elapsed: number, reducedMotion = false) {
+  spirit ??= Object.assign(new Image(), { src: `${import.meta.env.BASE_URL}sprites/player-spirit.webp`, decoding: 'async' as const });
   if (!spirit.complete || !spirit.naturalWidth) return;
-  const height = 1.35;
-  const width = height * (spirit.naturalWidth / spirit.naturalHeight);
+  // Four equal cells share the same bright-core anchor. Game time freezes on pause.
+  const frame = reducedMotion ? 0 : Math.floor(elapsed * 6) % 4;
+  const cell = spirit.naturalWidth / 4;
+  const size = 2.4;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(facing - Math.PI);
   if (drawing) ctx.filter = 'brightness(1.25)';
-  ctx.drawImage(spirit, -width / 2, -height / 2, width, height);
+  ctx.drawImage(spirit, frame * cell, 0, cell, spirit.naturalHeight, -size / 2, -size / 2, size, size);
   ctx.restore();
 }

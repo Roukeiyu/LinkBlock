@@ -18,13 +18,30 @@ function hit(game: Game) {
   game.boss!.x = 62; game.boss!.y = 36; game.boss!.previous = { x: 62, y: 36 };
   expect(game.move('down', true, 48)).toBe(true);
 }
-function replenishing(targetCount = 9, interval = 1, motion: 'axes' | 'vertical' = 'axes') {
-  const config: BossConfig = { phases: [{ id: '测试补怪', when: { healthAtMost: 5 }, reinforcements: { targetCount, interval, speed: 8, motion } }] };
+function replenishing(targetCount = 9, interval = 1, motion: 'axes' | 'vertical' = 'axes', batchSize?: number) {
+  const config: BossConfig = { phases: [{ id: '测试补怪', when: { healthAtMost: 5 }, reinforcements: { targetCount, interval, speed: 8, motion, batchSize } }] };
   const game = new Game(72, 48, { enemies: [], bossConfig: config, random: seeded(), victory: { territoryPercent: 100 } });
   game.start(); game.protection = 1000; return game;
 }
 
 describe('lake boss phases and axis reinforcements', () => {
+  it('paces limited waves across pauses and deferred spawns without accumulating a burst', () => {
+    const game = replenishing(4, 1, 'axes', 1);
+    game.update(0.5); game.togglePause(); game.update(10);
+    expect(game.enemies).toHaveLength(0);
+    game.togglePause(); game.update(0.51); expect(game.enemies).toHaveLength(1);
+    game.enemies = []; game.territories = [[{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 48 }, { x: 0, y: 48 }]];
+    game.update(5); expect(game.enemies).toHaveLength(0);
+    game.territories = [game.outline.map(p => ({ ...p }))];
+    game.update(1); expect(game.enemies).toHaveLength(1);
+    game.update(1); expect(game.enemies).toHaveLength(2);
+    game.update(5); expect(game.enemies).toHaveLength(4);
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, MAX_ENEMIES + 1])('rejects an invalid reinforcement batch size: %s', batchSize => {
+    expect(() => replenishing(9, 1, 'axes', batchSize)).toThrow('Invalid reinforcement rule');
+  });
+
   it('changes at 3 and 1 health, retaining the same skill within a phase and allowing a fresh restart', () => {
     const game = lake(); expect(game.bossPhase).toBe('一阶段'); expect(game.bossAttack?.directions).toBe(4);
     expect(game.reinforcementTarget).toBeUndefined();

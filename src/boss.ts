@@ -3,7 +3,14 @@ import type { Enemy } from './enemies';
 import { AlternatingCrossAttack, EightWayAttack, type BossAttackFactory } from './attacks';
 
 export const MAX_ENEMIES = 32;
-export interface ReinforcementRule { targetCount: number; interval: number; speed: number; motion?: 'vertical' | 'axes' }
+export interface ReinforcementRule {
+  targetCount: number;
+  interval: number;
+  speed: number;
+  motion?: 'vertical' | 'axes';
+  /** Maximum new enemies per interval; omitted fills the entire deficit. */
+  batchSize?: number;
+}
 
 export interface BossPhase {
   id: string;

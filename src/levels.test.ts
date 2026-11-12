@@ -2,15 +2,42 @@ import { describe, expect, it } from 'vitest';
 import { lakeBossConfig } from './boss';
 import { ENEMY_STYLES } from './enemies';
 import { Game } from './engine';
-import { LEVELS, bossConfigFor, noteClear, readLevelProgress, writeLevelProgress } from './levels';
+import { LEVELS, bossConfigFor, gameOptionsFor, noteClear, readLevelProgress, writeLevelProgress } from './levels';
 
 describe('level catalog', () => {
-  it('keeps level 1 on the original speeds, squad and boss phases', () => {
+  it('keeps level 1 speeds and boss attacks while reducing its population', () => {
     const first = LEVELS[0];
     expect(first.enemySpeed).toBe(1);
     expect(first.bossSpeed).toBe(1);
-    expect(first.squad).toEqual({ straight: 3, orbit: 3, zigzag: 3 });
-    expect(bossConfigFor(first)).toBe(lakeBossConfig);
+    expect(first.squad).toEqual({ straight: 2, orbit: 2, zigzag: 2 });
+    const phases = bossConfigFor(first).phases!;
+    expect(phases.map(p => p.createAttack)).toEqual(lakeBossConfig.phases!.map(p => p.createAttack));
+    expect(phases.map(p => p.when)).toEqual(lakeBossConfig.phases!.map(p => p.when));
+    expect(lakeBossConfig.phases![2].reinforcements?.targetCount).toBe(15);
+    expect(lakeBossConfig.phases![2].reinforcements?.interval).toBe(4);
+  });
+
+  it.each(LEVELS.slice(0, 5))('$title starts with a mixed roster and keeps that cap in both reinforcement phases', level => {
+    const game = new Game(72, 48, { ...gameOptionsFor(level), random: () => 0.37 });
+    game.start(); game.confirmOpening();
+    expect(game.enemies).toHaveLength(level.id + 5);
+    for (const kind of ['straight', 'orbit', 'zigzag'] as const) {
+      expect(game.enemies.filter(enemy => enemy.kind === kind)).toHaveLength(level.squad[kind]);
+      expect(level.squad[kind]).toBeGreaterThanOrEqual(2);
+    }
+    const phases = bossConfigFor(level).phases!;
+    expect(phases[0].reinforcements).toBeUndefined();
+    for (const phase of phases.slice(1)) expect(phase.reinforcements).toMatchObject({
+      targetCount: level.id + 5, batchSize: 1, interval: 6.5 - level.id * 0.5,
+    });
+  });
+
+  it.each(LEVELS.slice(5))('$title retains its later-game population and full refill waves', level => {
+    expect(level.squad.straight + level.squad.orbit + level.squad.zigzag).toBe(level.id + 7);
+    const phases = bossConfigFor(level).phases!;
+    expect(phases[1].reinforcements?.targetCount).toBe(level.id + 8);
+    expect(phases[2].reinforcements?.targetCount).toBe(level.id + 13);
+    expect(phases[2].reinforcements?.batchSize).toBeUndefined();
   });
 
   it('ramps later levels gently and names every cast', () => {
@@ -63,7 +90,7 @@ describe('level progress', () => {
 });
 
 describe('level difficulty reaches the simulation only when asked', () => {
-  it('leaves a default game at the level-1 squad and speed', () => {
+  it('keeps the legacy engine defaults when no level configuration is supplied', () => {
     const game = new Game(72, 48, { random: () => 0.37 });
     expect(game.enemies.filter(enemy => enemy.kind === 'straight')).toHaveLength(3);
     expect(game.enemies).toHaveLength(9);
