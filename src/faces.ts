@@ -2,12 +2,17 @@
  * Pixel bounds include the whole head (ears/horns/pumpkin included) and chin.
  * Keep the source path and dimensions here so new artwork cannot inherit another face.
  */
+// Early plates keep their scene coordinates and scale uniformly from 1152 × 768.
+const earlyFace = (x: number, y: number, width: number, height: number) => ({
+  imageWidth: 1536, imageHeight: 1024,
+  x: x * 4 / 3, y: y * 4 / 3, width: width * 4 / 3, height: height * 4 / 3,
+});
 export const FACE_REGIONS = {
-  'wolf-restored.webp': { imageWidth: 1152, imageHeight: 768, x: 440, y: 16, width: 210, height: 250 },
-  'levels/2/mummy-restored.webp': { imageWidth: 1152, imageHeight: 768, x: 472, y: 22, width: 190, height: 236 },
-  'levels/3/frankenstein-restored.webp': { imageWidth: 1152, imageHeight: 768, x: 330, y: 24, width: 220, height: 245 },
-  'levels/4/vampire-restored.webp': { imageWidth: 1152, imageHeight: 768, x: 350, y: 26, width: 220, height: 245 },
-  'levels/5/horseman-restored.webp': { imageWidth: 1152, imageHeight: 768, x: 270, y: 8, width: 245, height: 255 },
+  'levels/1/v8/restored.webp': earlyFace(440, 16, 210, 250),
+  'levels/2/v8/restored.webp': earlyFace(472, 22, 190, 236),
+  'levels/3/v8/restored.webp': earlyFace(330, 24, 220, 245),
+  'levels/4/v8/restored.webp': earlyFace(350, 26, 220, 245),
+  'levels/5/v8/restored.webp': earlyFace(270, 8, 245, 255),
   'levels/6/v7/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 480, y: 0, width: 330, height: 320 },
   'levels/7/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 515, y: 0, width: 295, height: 315 },
   'levels/8/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 550, y: 14, width: 230, height: 258 },

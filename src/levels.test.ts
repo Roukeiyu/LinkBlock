@@ -50,14 +50,10 @@ describe('level catalog', () => {
     expect(LEVELS[3].names.boss).toBe('血月石像');
     expect(LEVELS[4].names.boss).toBe('秋猎魔骑');
     expect(LEVELS.slice(0, 5).map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
-    expect(LEVELS[0].rewardNinety).toBeUndefined();
-    expect(LEVELS[0].rewardPerfect).toBeUndefined();
-    expect(LEVELS.slice(1, 5).map(level => [level.rewardNinety, level.rewardPerfect])).toEqual([
-      ['levels/2/mummy-90.webp', 'levels/2/v2/perfect.webp'],
-      ['levels/3/frankenstein-90.webp', 'levels/3/v2/perfect.webp'],
-      ['levels/4/vampire-90.webp', 'levels/4/vampire-perfect.webp'],
-      ['levels/5/horseman-90.webp', 'levels/5/horseman-perfect.webp'],
-    ]);
+    for (const level of LEVELS.slice(0, 5)) {
+      expect(level.rewardNinety).toBe(`levels/${level.id}/v8/ninety.webp`);
+      expect(level.rewardPerfect).toBe(`levels/${level.id}/v8/perfect.webp`);
+    }
     for (let i = 1; i < LEVELS.length; i++) {
       const level = LEVELS[i], previous = LEVELS[i - 1];
       const count = level.squad.straight + level.squad.orbit + level.squad.zigzag;

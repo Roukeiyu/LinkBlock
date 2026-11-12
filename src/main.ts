@@ -189,19 +189,18 @@ const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
 let codex: Codex = codexForProgress(readCodex(), progress.cleared);
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
-interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string; sheet?: boolean }
+interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string }
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
-    { level: 1, id: 'clear', title: '阿澈 · 解封', src: 'wolf-restored.webp', blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
-    { level: 1, id: 'ninety', title: '九成净化', src: 'reward-90.webp', blurb: '净化达到 90%', locked: '未解锁 · 净化达到 90%', sheet: true },
-    { level: 1, id: 'perfect', title: '无伤', src: 'reward-perfect.webp', blurb: '全程未受伤并通关', locked: '未解锁 · 全程未受伤并通关', sheet: true },
+    { level: 1, id: 'clear', title: '阿澈 · 解封', src: LEVELS[0].restored, blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
+    { level: 1, id: 'ninety', title: '九成净化', src: LEVELS[0].rewardNinety, blurb: '净化达到 90%', locked: '未解锁 · 净化达到 90%' },
+    { level: 1, id: 'perfect', title: '无伤', src: LEVELS[0].rewardPerfect, blurb: '全程未受伤并通关', locked: '未解锁 · 全程未受伤并通关' },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
     level: level.id,
     id,
     title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '九成净化' : '无伤'}`,
     src: id === 'clear' ? level.restored : id === 'ninety' ? level.rewardNinety! : level.rewardPerfect!,
-    sheet: id !== 'clear',
     blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '全程未受伤并通关',
     locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 全程未受伤并通关',
   })));
@@ -251,7 +250,7 @@ function renderGallery() {
     const items = cards.filter(card => card.level === level.id).map(item => {
       const open = rewardOpen(level.id, item.id);
       const picture = open
-        ? `<img ${item.sheet ? 'class="sheet"' : ''} src="${asset(item.src)}" alt="" loading="lazy" decoding="async" />`
+        ? `<img src="${asset(item.src)}" alt="" loading="lazy" decoding="async" />`
         : `<span class="sealed-plate" aria-hidden="true"><img src="${asset('ui/wax_seal_red.png')}" alt="" /></span>`;
       const note = open ? item.blurb : item.locked;
       return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'} aria-label="${item.title}，${note}">${picture}<span>${item.title}</span><small>${note}</small></button>`;
@@ -1033,7 +1032,6 @@ $('#gallery-grid').addEventListener('click', event => {
   const reward = galleryCards().find(entry => String(entry.level) === item.dataset.level && entry.id === item.dataset.reward);
   if (!reward) return;
   const image = $<HTMLImageElement>('#viewer-img');
-  image.classList.toggle('sheet', Boolean(reward.sheet));
   image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false; placeShade();
 });
 loadLevelMask(current);

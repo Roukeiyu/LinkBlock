@@ -1,0 +1,118 @@
+{
+  "version": "v8",
+  "width": 1536,
+  "height": 1024,
+  "description": "All active tiers use a 3:2 canvas. Early rewards were outpainted, then requested faces/outfits revised. Existing 3:2 plates and masks are scaled uniformly; masks use nearest-neighbor sampling. Build matching seals and portraits for levels 1, 2, 4 from the packaged plate and mask.",
+  "levels": {
+    "1": {
+      "restored": {
+        "origin": "generated",
+        "file": "exec-aadedec3-7967-48d6-a26b-46b8f170e17b.png"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-e3a11481-6240-42c8-a1eb-aa0da0158c70.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-6fc7587b-6210-4646-93e3-44fb40fc42d8.png"
+      },
+      "mask": {
+        "origin": "public",
+        "file": "char_mask.png"
+      }
+    },
+    "2": {
+      "restored": {
+        "origin": "generated",
+        "file": "exec-ee141766-2d16-40b4-92f8-7324c44f97a4.png"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-363ee5e7-36cc-4876-87ba-b965eaab44af.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-e71532fa-e8d6-49c7-b022-88c50a2f714b.png"
+      },
+      "mask": {
+        "origin": "public",
+        "file": "levels/2/char_mask.png"
+      }
+    },
+    "3": {
+      "restored": {
+        "origin": "public",
+        "file": "levels/3/frankenstein-restored.webp"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-038871ed-604a-43c7-b139-2da1c343a720.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-493a53a5-07c6-455c-967c-29bfb8d1d5de.png"
+      },
+      "mask": {
+        "origin": "public",
+        "file": "levels/3/char_mask.png"
+      },
+      "sealed": {
+        "origin": "public",
+        "file": "levels/3/frankenstein_sealed_solid.webp"
+      }
+    },
+    "4": {
+      "restored": {
+        "origin": "generated",
+        "file": "exec-c637dc1b-8f1a-4f58-af76-0a45581212de.png"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-4ec46141-ccf4-464e-8c8d-dffded6cbd35.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-bf7465ec-3dd1-42d8-8ca9-d6208c8f1bb2.png"
+      },
+      "mask": {
+        "origin": "public",
+        "file": "levels/4/char_mask.png"
+      }
+    },
+    "5": {
+      "restored": {
+        "origin": "public",
+        "file": "levels/5/horseman-restored.webp"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-3dc2e361-d9c5-4e5c-9955-187396fe205f.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-f318853f-465a-404a-b902-d57c90f19389.png"
+      },
+      "mask": {
+        "origin": "public",
+        "file": "levels/5/char_mask.png"
+      },
+      "sealed": {
+        "origin": "public",
+        "file": "levels/5/horseman_sealed_solid.webp"
+      }
+    },
+    "9": {
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-17e64d51-1c22-469f-9b65-071d240501d2.png"
+      }
+    },
+    "10": {
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-8ad13cf7-5dff-4f56-8927-739bd021b20b.png"
+      }
+    }
+  }
+}

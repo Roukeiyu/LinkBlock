@@ -34,6 +34,7 @@ describe('rectangle selection and deferred entry', () => {
   });
   it.each(LEVELS)('$title never reveals the padded face in previews or confirmed openings', level => {
     const source = FACE_REGIONS[level.restored], protectedFace = faceProtection(level.restored);
+    expect([source.imageWidth, source.imageHeight]).toEqual([1536, 1024]);
     expect((protectedFace.right - protectedFace.left) * source.imageWidth).toBeCloseTo((protectedFace.bottom - protectedFace.top) * source.imageHeight);
     expect(protectedFace.left * source.imageWidth).toBeLessThanOrEqual(source.x);
     expect(protectedFace.top * source.imageHeight).toBeLessThanOrEqual(source.y);

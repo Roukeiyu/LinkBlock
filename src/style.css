@@ -110,14 +110,12 @@ body{background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--seal) 1
 .gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .gallery-item{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;border:1px solid #2a3344;background:#10141c;color:#e7edf4;text-align:left;min-width:0}
 .gallery-item span,.gallery-item small{overflow-wrap:anywhere}
-.gallery-item img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;background:#000}
-.gallery-item img.sheet{aspect-ratio:4/3;object-fit:contain}
+.gallery-item img{display:block;width:100%;aspect-ratio:3/2;object-fit:contain;border-radius:8px;background:#000}
 .gallery-item.locked img{filter:brightness(0) contrast(1.2);opacity:.55}
 .gallery-item small{color:#b5a394}
 @media(max-height:420px){.gallery{padding:8px}.gallery-card{max-height:calc(100dvh - 16px);padding:12px}.gallery-head{margin:-12px -12px 10px;padding:12px 12px 8px}.gallery-grid{gap:8px}.gallery-level h3{font-size:12px}}
 .viewer{position:fixed;inset:0;z-index:31;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
 .viewer img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100dvh - 96px);object-fit:contain;object-position:center;border-radius:8px}
-.viewer img.sheet{aspect-ratio:4/3;max-width:min(100%, calc((100dvh - 96px) * 4 / 3))}
 @media(max-width:620px){.portrait{width:40px;height:40px}.gallery-grid{grid-template-columns:1fr}.board-footer{height:auto;min-height:28px}.charm{width:30px;height:30px;font-size:7px}}
 
 /* Landscape-first playfield. A plain seal rail keeps the hole 3:2 and as large as the viewport. */

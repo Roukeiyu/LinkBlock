@@ -240,7 +240,7 @@ export function sealBreak(reducedMotion: boolean): CaptureEffect {
 }
 
 export const lakeTheme: GameTheme = {
-  id: 'quiet-lake', landscape: 'wolf-restored.webp', ruinedLandscape: 'wolf-sealed.webp', danger: '#09131c', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
+  id: 'quiet-lake', landscape: 'levels/1/v8/restored.webp', ruinedLandscape: 'levels/1/v8/sealed.webp', danger: '#09131c', arenaBorder: '#63869c', boundary: '#79edc9', trail: '#ffcf75',
   createCaptureEffect: lakeDissolve, createDefeatEffect: enemyCelebration, createBossHitEffect: bossHitPulse, createBossAttack: () => new AlternatingCrossAttack(),
   bossConfig: lakeBossConfig,
 };

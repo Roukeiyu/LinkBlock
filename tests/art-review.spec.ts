@@ -18,6 +18,17 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
       return images.filter(image => !(image as HTMLImageElement).naturalWidth).map(image => (image as HTMLImageElement).src);
     });
     expect(broken).toEqual([]);
+    if (pageName === 'rewards') {
+      const sizes = await page.locator('#levels img').evaluateAll(images => images.map(image => {
+        const img = image as HTMLImageElement, box = img.getBoundingClientRect();
+        return { source: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
+      }));
+      for (const size of sizes) {
+        expect(size.source).toEqual([1536, 1024]);
+        expect(size.ratio).toBeCloseTo(1.5, 2);
+      }
+      await expect(page.locator('.dimensions')).toHaveText(Array(30).fill('1536 × 1024'));
+    }
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
     const original = await page.locator('#levels section:visible img').first().getAttribute('src');
@@ -37,6 +48,46 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await page.setViewportSize({ width: 320, height: 568 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
     expect(errors).toEqual([]);
+  });
+}
+
+for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+  test(`gallery cards and enlarged rewards keep the same canvas at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      const ids = Array.from({ length: 10 }, (_, i) => i + 1);
+      const earned = { clear: true, ninety: true, perfect: true };
+      localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: ids }));
+      localStorage.setItem('linkblock.fenglin.codex', JSON.stringify({ ...earned,
+        levels: Object.fromEntries(ids.slice(1).map(id => [id, earned])) }));
+    });
+    await page.goto('/');
+    await page.locator('#menu-gallery').click();
+    const images = page.locator('.gallery-item > img');
+    await expect(images).toHaveCount(30);
+    const sizes = await images.evaluateAll(async images => Promise.all(images.map(async image => {
+      const img = image as HTMLImageElement; img.loading = 'eager'; await img.decode();
+      const box = img.getBoundingClientRect();
+      return { src: img.getAttribute('src'), natural: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
+    })));
+    const paths = LEVELS.flatMap(level => [level.restored, level.rewardNinety, level.rewardPerfect]);
+    for (let i = 0; i < sizes.length; i++) {
+      expect(sizes[i].src).toContain(paths[i]);
+      expect(sizes[i].natural).toEqual([1536, 1024]);
+      expect(sizes[i].ratio).toBeCloseTo(1.5, 2);
+    }
+    for (const index of [0, 1, 2, 26, 29]) {
+      await page.locator('.gallery-item').nth(index).click();
+      await expect(page.locator('#viewer')).toBeVisible();
+      const bounds = await page.locator('#viewer-img').evaluate(async (img: HTMLImageElement) => {
+        await img.decode(); const box = img.getBoundingClientRect();
+        return { width: box.width, height: box.height };
+      });
+      expect(bounds.width / bounds.height).toBeCloseTo(1.5, 2);
+      expect(bounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(bounds.height).toBeLessThanOrEqual(viewport.height - 96);
+      await page.locator('#viewer-close').click();
+    }
   });
 }
 

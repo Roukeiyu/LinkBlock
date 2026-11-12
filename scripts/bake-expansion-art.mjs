@@ -17,7 +17,7 @@ const levelsAt = args.indexOf('--levels');
 const levelsEnd = args.findIndex((arg, i) => i > levelsAt && arg.startsWith('--'));
 const levelArgs = levelsAt < 0 ? ['6', '7', '8', '9', '10'] : args.slice(levelsAt + 1, levelsEnd < 0 ? undefined : levelsEnd);
 const levels = levelArgs.map(Number);
-if (!version || !/^v\d+$/.test(version) || !levels.length || levels.some(level => !Number.isInteger(level) || level < 6 || level > 10)) throw new Error('Expected --version vN and --levels 6 7 ... 10');
+if (!version || !/^v\d+$/.test(version) || !levels.length || levels.some(level => !Number.isInteger(level) || level < 1 || level > 10)) throw new Error('Expected --version vN and --levels 1 2 ... 10');
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
   args: process.env.CHROMIUM_PATH ? ['--no-sandbox'] : [],

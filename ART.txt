@@ -16,16 +16,15 @@ Within each chapter all three illustrations preserve the same character.
 Clear / ninety / perfect progress from layered outerwear to lighter outfits
 and relaxed poses. Updated rewards give the sea man rope-belt sailor trousers,
 the fox spirit tied charcoal hakama trousers, the frost giant a fur-edged waistwrap
-and one shin guard, the stone guardian dark cloth shorts,
-and the lava warrior worn black leather trousers with bronze
-fastenings. The frost giant's ninety vest is fully open, and his perfect portrait
+and one shin guard, the stone guardian a separate burgundy velvet lap cloth,
+and the lava warrior wine-red lounge briefs with a gold and gemstone waistband. The frost giant's ninety vest is fully open, and his perfect portrait
 has a bare torso. These edits retain the v3 character identities and settings.
 The sea man's clear and ninety outfits now share the perfect reward's blue
 trousers, rope belt, shell clasp and side lacing. His poses, coat and shirt stay
 the same. The stone guardian's ninety and perfect skin match the completed
 portrait's muted gray stone complexion, retaining warm sunset rim lighting.
-His perfect reward uses the reclining pose with one hand behind his head from
-the original v3 illustration. Other characters keep their existing poses.
+His perfect reward retains the hand-behind-head reclining direction, with the
+waist, pelvis and leg connections reworked before adding the draped cloth.
 
 Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - restored.webp: the complete character and scene, 1536 × 1024.
@@ -39,10 +38,11 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
   veil and subdued violet rim, using the same mask as completion scoring.
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
-The active perfect rewards for chapters 6, 7, 8 and 10, plus chapter 8's ninety
+The active perfect rewards for chapters 6, 7 and 8, plus chapter 8's ninety
 reward, use their v4 directories. Chapter 6's restored, ninety, sealed and portrait
 images use v7, retaining the v3 mask because the character silhouette is unchanged.
-Both chapter 9 reward images use v7. Other expansion files still use v3.
+Chapter 9's ninety reward uses v7; chapter 9 and 10 perfect rewards use v8.
+Other expansion files still use v3.
 src/levels.ts selects the active image for each tier.
 
 Illustrations, sealed scenes and portraits are committed as WebP. The filters
@@ -86,11 +86,41 @@ new redraws. Normal npm builds use the committed files and need no image/audio t
 src/faces.ts records newly measured head regions for opening protection, and
 review/faces.html exposes those regions for visual inspection.
 
-Level 1–5 main illustrations and ninety rewards remain in their original paths.
-Chapter 2 and 3 perfect rewards use v2: a short simple linen waistwrap for the
-mummy, and knee-length stitched cloth shorts for Frankenstein, preserving their
-poses and 4:3 composition. Their source images are 1448 × 1086; package with:
-node scripts/pack-character-art.mjs /path/to/generated_images art/early/v2-reward-sources.json
+Unified canvas and early character update (v8)
+----------------------------------------------
+All 30 active reward images are 1536 × 1024 (3:2). The earlier 4:3 reward
+compositions were expanded horizontally with generated scenery, preserving
+complete figures instead of stretching or cropping. Unchanged early main plates
+and their masks/seals are uniformly resampled to the new resolution; masks use
+nearest-neighbor sampling so the character/background classification stays sharp.
+The first five chapters' active main/reward/mask/seal files live in v8.
+
+Chapters 1, 2 and 4 have consistent distinct identities across all three tiers:
+the wolf has a broad square jaw, dense brows and rugged short beard/sideburns;
+the Egyptian guardian has compact curly hair and a neatly trimmed full beard;
+the vampire has a clean-shaven narrow face, high cheekbones and silver-gray hair.
+Chapter 2 ninety retains extra ragged linen strips and its perfect reward uses
+the original irregular wrapped shorts. Chapter 3 retains stitched knee-length
+shorts. Chapter 4 perfect wears an open-front ivory one-piece lounge suit.
+Chapter 5 perfect wears tan short overalls with the bib folded down and straps
+hanging loose at the hips. Their established poses and settings are retained.
+
+art/canvas/v8-sources.json records final PNG sources and unchanged public inputs.
+Run node scripts/pack-canvas-art.mjs /path/to/generated_images; it rejects any
+input that is not already 3:2 and never crops or stretches to force a match.
+Rebuild seals and matching 320 × 320 portraits for the three revised faces:
+python scripts/build-expansion-assets.py --levels 1 2 4 --version v8
+CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 1 2 4 --version v8
+The original PNGs remain untouched; normal builds use the committed files.
+The face bounds are scaled into the new canvas and checked against the new heads.
+Older v2/v3/v4/v7 sources and files remain available for previous clients.
+
+npm run build checks all 30 reward canvases and 20 sealed/mask canvases using
+scripts/check-artwork.mjs. It reads PNG/WebP headers without ffmpeg or browser
+dependencies. The browser review tests additionally decode all 30 images and
+check the rendered ratio of review cards, game gallery cards and enlarged views
+on desktop and phone. Review captions show each file's actual decoded dimensions.
+
 Chapter 1 and 4 small enemies were redrawn with lighter body planes and
 readable pale/lavender and rose/gold palettes respectively. Their five-sprite
 atlases are art/early/{1,4}-sprites-v3.webp; package with

@@ -26,9 +26,9 @@ export interface LevelDef {
   music: string;
   portraitSealed: string;
   portraitRescued: string;
-  /** Dedicated gallery sheets. Level 1 keeps its own cards and leaves these unset. */
-  rewardNinety?: string;
-  rewardPerfect?: string;
+  /** Every tier uses the same 1536 × 1024 canvas. */
+  rewardNinety: string;
+  rewardPerfect: string;
   /** Three straight-moving looks, then the orbiter, the zigzag, and the boss. */
   names: { straight: [string, string, string]; orbit: string; zigzag: string; boss: string };
   sprites: SpriteSheet;
@@ -56,8 +56,9 @@ export const LEVELS: LevelDef[] = [
   {
     difficulty: '入门', tactic: '小怪匀速巡游；首领十字与 X 交替，残血改为八向散射。看清空隙再出线。',
     id: 1, theme: '狼人', title: '第一关 · 月下封林',
-    restored: 'wolf-restored.webp', sealed: 'wolf-sealed.webp', mask: 'char_mask.png', music: 'moonlit-grove',
-    portraitSealed: 'sprites/portrait_sealed.png', portraitRescued: 'sprites/portrait_rescued.png',
+    restored: 'levels/1/v8/restored.webp', sealed: 'levels/1/v8/sealed.webp', mask: 'levels/1/v8/mask.png', music: 'moonlit-grove',
+    portraitSealed: 'levels/1/v8/portrait-sealed.webp', portraitRescued: 'levels/1/v8/portrait.webp',
+    rewardNinety: 'levels/1/v8/ninety.webp', rewardPerfect: 'levels/1/v8/perfect.webp',
     names: { straight: ['腐风', '灰孢', '咒鸦'], orbit: '荆蚀', zigzag: '残魂', boss: '蚀根' },
     sprites: { ...sheet('levels/1/v3', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']), tree: 'sprites/boss_shigen.png', turn: ['crow'] },
     enemySpeed: 1, bossSpeed: 1, squad: { straight: 2, orbit: 2, zigzag: 2 }, reinforceInterval: 1.5, reinforceSpeed: 1,
@@ -67,9 +68,9 @@ export const LEVELS: LevelDef[] = [
     difficulty: '进阶', tactic: '小怪匀速巡游；首领瞄准扇射。预警出现后侧移，趁发射间隔圈地。',
     enemyMotion: { straight: 'steady', period: 2.8, orbitRate: 0.5, zigzagInterval: 1.1, zigzagAngle: Math.PI / 3 }, attackPattern: 'sand',
     id: 2, theme: '木乃伊', title: '第二关 · 沙漠神殿',
-    restored: 'levels/2/mummy-restored.webp', sealed: 'levels/2/mummy_sealed_solid.webp', mask: 'levels/2/char_mask.png', music: 'desert-temple',
-    portraitSealed: 'levels/2/portrait_sealed.png', portraitRescued: 'levels/2/portrait_rescued.png',
-    rewardNinety: 'levels/2/mummy-90.webp', rewardPerfect: 'levels/2/v2/perfect.webp',
+    restored: 'levels/2/v8/restored.webp', sealed: 'levels/2/v8/sealed.webp', mask: 'levels/2/v8/mask.png', music: 'desert-temple',
+    portraitSealed: 'levels/2/v8/portrait-sealed.webp', portraitRescued: 'levels/2/v8/portrait.webp',
+    rewardNinety: 'levels/2/v8/ninety.webp', rewardPerfect: 'levels/2/v8/perfect.webp',
     names: { straight: ['流沙', '缠布', '豺影'], orbit: '圣甲', zigzag: '罐灵', boss: '沙傀王' },
     sprites: sheet('levels/2', ['enemy_liusha.png', 'enemy_shengjia.png', 'enemy_guanling.png', 'enemy_chanbu.png', 'enemy_chaiying.png', 'boss_shakuiwang.png']),
     enemySpeed: 1.05, bossSpeed: 1.04, squad: { straight: 3, orbit: 2, zigzag: 2 }, reinforceInterval: 1.375, reinforceSpeed: 1.05,
@@ -79,9 +80,9 @@ export const LEVELS: LevelDef[] = [
     difficulty: '挑战', tactic: '小怪匀速巡游，定时直角转向；电弧每轮旋转，残血六向齐射。避免长时间停在旧空隙。',
     enemyMotion: { straight: 'corner', period: 1.1, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: Math.PI / 2 }, attackPattern: 'storm',
     id: 3, theme: '弗兰肯斯坦', title: '第三关 · 雷雨实验室',
-    restored: 'levels/3/frankenstein-restored.webp', sealed: 'levels/3/frankenstein_sealed_solid.webp', mask: 'levels/3/char_mask.png', music: 'storm-lab',
+    restored: 'levels/3/v8/restored.webp', sealed: 'levels/3/v8/sealed.webp', mask: 'levels/3/v8/mask.png', music: 'storm-lab',
     portraitSealed: 'levels/3/portrait_sealed.png', portraitRescued: 'levels/3/portrait_rescued.png',
-    rewardNinety: 'levels/3/frankenstein-90.webp', rewardPerfect: 'levels/3/v2/perfect.webp',
+    rewardNinety: 'levels/3/v8/ninety.webp', rewardPerfect: 'levels/3/v8/perfect.webp',
     names: { straight: ['电弧', '齿轮魂', '雷鼠'], orbit: '缝偶', zigzag: '酸雾', boss: '狂电塔' },
     sprites: sheet('levels/3', ['enemy_dianhu.png', 'enemy_fengou.png', 'enemy_suanwu.png', 'enemy_chilunhun.png', 'enemy_leishu.png', 'boss_kuangdianta.png']),
     enemySpeed: 1.1, bossSpeed: 1.08, squad: { straight: 3, orbit: 3, zigzag: 2 }, reinforceInterval: 1.25, reinforceSpeed: 1.1,
@@ -91,9 +92,9 @@ export const LEVELS: LevelDef[] = [
     difficulty: '高难', tactic: '小怪匀速沿弧线游走；双翼弹幕夹击预警方向两侧。辨认中央通道，短线分次圈地。',
     enemyMotion: { straight: 'curve', period: 2.4, orbitRate: 1.15, zigzagInterval: 0.6, zigzagAngle: Math.PI * 0.55 }, attackPattern: 'rose',
     id: 4, theme: '吸血鬼', title: '第四关 · 玫瑰古堡',
-    restored: 'levels/4/vampire-restored.webp', sealed: 'levels/4/vampire_sealed_solid.webp', mask: 'levels/4/char_mask.png', music: 'rose-waltz',
-    portraitSealed: 'levels/4/portrait_sealed.png', portraitRescued: 'levels/4/portrait_rescued.png',
-    rewardNinety: 'levels/4/vampire-90.webp', rewardPerfect: 'levels/4/vampire-perfect.webp',
+    restored: 'levels/4/v8/restored.webp', sealed: 'levels/4/v8/sealed.webp', mask: 'levels/4/v8/mask.png', music: 'rose-waltz',
+    portraitSealed: 'levels/4/v8/portrait-sealed.webp', portraitRescued: 'levels/4/v8/portrait.webp',
+    rewardNinety: 'levels/4/v8/ninety.webp', rewardPerfect: 'levels/4/v8/perfect.webp',
     names: { straight: ['血蝠', '棘玫瑰', '棺鸦'], orbit: '红雾', zigzag: '镜影', boss: '血月石像' },
     sprites: { ...sheet('levels/4/v3', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']), tree: 'levels/4/boss_xueyueshixiang.png' },
     enemySpeed: 1.15, bossSpeed: 1.12, squad: { straight: 3, orbit: 3, zigzag: 3 }, reinforceInterval: 1.125, reinforceSpeed: 1.15,
@@ -103,9 +104,9 @@ export const LEVELS: LevelDef[] = [
     difficulty: '高阶', tactic: '小怪频繁冲锋；首领环射留下旋转缺口，残血加速。先找缺口，再趁间隔画线。',
     enemyMotion: { straight: 'surge', period: 1.6, orbitRate: 1.65, zigzagInterval: 0.42, zigzagAngle: Math.PI * 0.45 }, attackPattern: 'hunt',
     id: 5, theme: '无头骑士', title: '第五关 · 秋夜南瓜谷',
-    restored: 'levels/5/horseman-restored.webp', sealed: 'levels/5/horseman_sealed_solid.webp', mask: 'levels/5/char_mask.png', music: 'autumn-ride-suno-v1',
+    restored: 'levels/5/v8/restored.webp', sealed: 'levels/5/v8/sealed.webp', mask: 'levels/5/v8/mask.png', music: 'autumn-ride-suno-v1',
     portraitSealed: 'levels/5/portrait_sealed.png', portraitRescued: 'levels/5/portrait_rescued.png',
-    rewardNinety: 'levels/5/horseman-90.webp', rewardPerfect: 'levels/5/horseman-perfect.webp',
+    rewardNinety: 'levels/5/v8/ninety.webp', rewardPerfect: 'levels/5/v8/perfect.webp',
     names: { straight: ['鬼火', '铁蹄', '断缰'], orbit: '南瓜灵', zigzag: '落叶旋', boss: '秋猎魔骑' },
     sprites: sheet('levels/5', ['enemy_guihuo.png', 'enemy_nangualing.png', 'enemy_luoyexuan.png', 'enemy_tieti.png', 'enemy_duanjiang.png', 'boss_qiuliemoqi.png']),
     enemySpeed: 1.2, bossSpeed: 1.16, squad: { straight: 4, orbit: 3, zigzag: 3 }, reinforceInterval: 1, reinforceSpeed: 1.2,
@@ -150,7 +151,7 @@ export const LEVELS: LevelDef[] = [
     enemyMotion: { straight: 'reverse', period: 1.4, orbitRate: 1.75, zigzagInterval: 0.46, zigzagAngle: 1.4 },
     restored: 'levels/9/v3/restored.webp', sealed: 'levels/9/v3/sealed.webp', mask: 'levels/9/v3/mask.png', music: 'dusk-belfry-suno-v1',
     portraitSealed: 'levels/9/v3/portrait-sealed.webp', portraitRescued: 'levels/9/v3/portrait.webp',
-    rewardNinety: 'levels/9/v7/ninety.webp', rewardPerfect: 'levels/9/v7/perfect.webp',
+    rewardNinety: 'levels/9/v7/ninety.webp', rewardPerfect: 'levels/9/v8/perfect.webp',
     names: { straight: ['碎翼', '钟尘', '石鸦'], orbit: '铜环', zigzag: '影像', boss: '暮钟石卫' },
     sprites: sheet('levels/9/v2', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
     enemySpeed: 1.36, bossSpeed: 1.29, squad: { straight: 6, orbit: 5, zigzag: 5 }, reinforceInterval: 0.61, reinforceSpeed: 1.28, accent: '#b8a4eb',
@@ -161,7 +162,7 @@ export const LEVELS: LevelDef[] = [
     enemyMotion: { straight: 'surge', period: 1.35, orbitRate: 1.8, zigzagInterval: 0.4, zigzagAngle: 1.5 },
     restored: 'levels/10/v3/restored.webp', sealed: 'levels/10/v3/sealed.webp', mask: 'levels/10/v3/mask.png', music: 'ember-crown-suno-v1',
     portraitSealed: 'levels/10/v3/portrait-sealed.webp', portraitRescued: 'levels/10/v3/portrait.webp',
-    rewardNinety: 'levels/10/v3/ninety.webp', rewardPerfect: 'levels/10/v4/perfect.webp',
+    rewardNinety: 'levels/10/v3/ninety.webp', rewardPerfect: 'levels/10/v8/perfect.webp',
     names: { straight: ['烬火', '熔爪', '焰鸦'], orbit: '火环', zigzag: '灰魂', boss: '熔冠魔像' },
     sprites: sheet('levels/10/v2', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
     enemySpeed: 1.4, bossSpeed: 1.32, squad: { straight: 6, orbit: 6, zigzag: 5 }, reinforceInterval: 0.58, reinforceSpeed: 1.3, accent: '#ff805a',
