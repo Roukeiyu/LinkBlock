@@ -237,3 +237,15 @@ bounds are unchanged; this revision adds no layered rendering workflow.
 art/canvas/v12-sources.json records all six generated full paintings.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v12-sources.json
+
+Chapter 7 knee placement correction (v13)
+----------------------------------------
+The red circle in the user's reference identifies the foreground knee, not the
+hip. The perfect reward now places that knee at the lower centre of the canvas,
+foreshortens the thigh toward the viewer and extends the calf to image-right.
+The user reviewed and approved the longer opaque ivory festival wrap in this
+correction. Upper-body pose and shrine setting are retained. The main plate,
+ninety reward, mask, seal, portraits and face bounds are unchanged.
+art/canvas/v13-sources.json records the approved generated painting.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v13-sources.json

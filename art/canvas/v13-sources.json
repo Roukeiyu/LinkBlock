@@ -1,0 +1,11 @@
+{
+  "version": "v13",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 7 perfect: relocate the foreground knee to the user's lower-centre mark (approximately 49.5% width, 88% height), foreshorten the thigh toward the viewer and extend the calf rightward. The user approved the longer opaque ivory festival wrap shown in this correction. Other tiers and main masks are unchanged.",
+  "levels": {
+    "7": {
+      "perfect": { "origin": "generated", "file": "exec-936addf6-7922-48e6-a6e8-d0f5c372c7d7.png" }
+    }
+  }
+}
