@@ -55,3 +55,48 @@ test('all six MP3 fallbacks decode and play in the actual music controller', asy
     await page.locator('#home').click();
   }
 });
+
+for (const [width, format] of [[1280, 'ogg'], [390, 'mp3']] as const) {
+  test(`dedicated menu music preserves controls and switches on start and resume (${format})`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    if (format === 'mp3') await page.addInitScript(() => {
+      const canPlay = HTMLMediaElement.prototype.canPlayType;
+      HTMLMediaElement.prototype.canPlayType = function(type: string) {
+        return type.includes('ogg') ? '' : canPlay.call(this, type);
+      };
+    });
+    const requests: string[] = [];
+    page.on('request', request => { if (request.url().includes('/audio/')) requests.push(request.url()); });
+    await page.goto('/');
+    const track = page.locator('audio');
+    await expect(track).toHaveCount(0);
+    expect(requests).toEqual([]);
+    await page.locator('#menu-settings').click();
+    await expect(track).toHaveCount(1);
+    await expect(track).toHaveAttribute('src', new RegExp(`curious-pages-suno-v1\\.${format}$`));
+    await expect.poll(() => track.evaluate((a: HTMLAudioElement) => !a.paused && a.currentTime > 0)).toBe(true);
+    expect(await track.evaluate((a: HTMLAudioElement) => a.loop && a.duration > 60)).toBe(true);
+    await track.evaluate((a: HTMLAudioElement) => { a.currentTime = a.duration - .15; });
+    await expect.poll(() => track.evaluate((a: HTMLAudioElement) => a.currentTime)).toBeLessThan(3);
+    await page.locator('#menu-music').click();
+    await expect.poll(() => track.evaluate((a: HTMLAudioElement) => a.paused)).toBe(true);
+    await page.locator('#menu-music-volume').evaluate((el: HTMLInputElement) => { el.value = '35'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.locator('#menu-music').click();
+    await expect.poll(() => track.evaluate((a: HTMLAudioElement) => !a.paused)).toBe(true);
+    await page.locator('#menu-gallery').click();
+    await expect(track).toHaveAttribute('src', /curious-pages-suno-v1/);
+    await page.locator('#gallery-close').click();
+    await page.locator('#menu-start').click();
+    await expect(track).toHaveAttribute('src', new RegExp(`moonlit-grove\\.${format}$`));
+    await page.locator('#home').click();
+    await expect(page.locator('#title-screen')).toBeVisible();
+    await expect(track).toHaveAttribute('src', /curious-pages-suno-v1/);
+    await page.locator('#menu-start').click();
+    await expect(track).toHaveAttribute('src', /moonlit-grove/);
+    await expect(track).toHaveCount(1);
+    await page.reload();
+    await page.locator('#menu-settings').click();
+    await expect(page.locator('#menu-music-volume')).toHaveValue('35');
+    await expect(track).toHaveAttribute('src', /curious-pages-suno-v1/);
+  });
+}

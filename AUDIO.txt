@@ -83,3 +83,19 @@ synthesized at runtime by src/audio.ts with the Web Audio API. Those
 effects are original and dedicated to the public domain under CC0 1.0:
 https://creativecommons.org/publicdomain/zero/1.0/
 
+
+Dedicated main menu — 谜趣之门 Curious Threshold
+------------------------------------------------
+Approved by the owner after audition on 2026-11-12.
+Source: https://suno.com/song/9ed7e5b5-0983-4857-8169-c9fc50ddc778
+The Suno original is 148.584 seconds. curious-pages-suno-v1 is a 145.56-second
+loop using the same 3-second crossfade and normalization procedure described
+above. Output metrics and hashes: public/audio/menu-suno-source.json.
+The original has owner listening approval; the processed join has objective
+decoding/boundary checks, not a claimed subjective listening review.
+Rebuild: python3 scripts/prepare-menu-audio.py ORIGINAL_MP3 SOURCE_URL
+
+The title screen and its settings/gallery use this dedicated track; starting
+or resuming a level selects that level's music, and returning home restores
+the menu track. Playback still requires the first user gesture and honors
+music mute, remembered volume and tab visibility. No level audio is replaced.

@@ -9,7 +9,7 @@ import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type
 import { LEVELS, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
-import { lakeAudio } from './audio';
+import { lakeAudio, MENU_MUSIC } from './audio';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -307,17 +307,20 @@ function placeShade() {
   shade.style.zIndex = String(40 + (open.length - 1) * 2 - 1);
   shade.hidden = false;
 }
-function hideMenu() { $('#title-screen').hidden = true; }
+function hideMenu() {
+  $('#title-screen').hidden = true;
+  lakeAudio.useTrack(current.music);
+}
 function showMenu() {
   paintSealRow();
   paintMenu(0);
-  lakeAudio.useTrack(LEVELS[0].music);
+  lakeAudio.useTrack(MENU_MUSIC);
   $('#title-screen').hidden = false;
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
   else { overlay.hidden = true; placeShade(); }
 }
 function followAudio() {
-  lakeAudio.setMood(game.phase === 'won' ? 'bright' : game.boss ? 'tense' : 'calm');
+  lakeAudio.setMood(!$('#title-screen').hidden ? 'calm' : game.phase === 'won' ? 'bright' : game.boss ? 'tense' : 'calm');
   const drawing = (drawHeld || touchDraw) && game.phase === 'playing';
   if (game.retracting && !heardRetract && drawing) lakeAudio.play('rebound');
   if (game.retracting) lakeAudio.play('rewind');
@@ -378,7 +381,6 @@ function beginLevel(id: number) {
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
   applyAccent(current);
-  lakeAudio.useTrack(current.music);
   game = new Game(72, 48, gameOptionsFor(current));
   syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;

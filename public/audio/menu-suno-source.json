@@ -1,0 +1,28 @@
+{
+  "purpose": "main menu",
+  "source_url": "https://suno.com/song/9ed7e5b5-0983-4857-8169-c9fc50ddc778",
+  "source_sha256": "0deee3a55d8dba990f2b490f2eefff96901d2d54ad6ba5a032ef53d006ae1e16",
+  "original_duration_seconds": 148.584,
+  "trim_start_seconds": 0.0,
+  "trim_end_seconds": 148.56,
+  "crossfade_seconds": 3,
+  "endpoint_declick_seconds": 0.01,
+  "loop_duration_seconds": 145.56,
+  "subjective_listening_verified": false,
+  "outputs": [
+    {
+      "file": "public/audio/curious-pages-suno-v1.ogg",
+      "integrated_lufs": -20.01,
+      "true_peak_dbtp": -6.76,
+      "endpoint_sample_jump": 0.0003876704868162051,
+      "sha256": "6101b23d7d25d145b17d61202beb5a396231e72f27a66c3e23d1458f5ef51520"
+    },
+    {
+      "file": "public/audio/curious-pages-suno-v1.mp3",
+      "integrated_lufs": -20.45,
+      "true_peak_dbtp": -7.36,
+      "endpoint_sample_jump": 0.00011724950309144333,
+      "sha256": "193ae293081a65d33c5aa46d64b20467f25df039b3084ef140b60662ae6e0dfd"
+    }
+  ]
+}

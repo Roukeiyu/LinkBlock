@@ -1,8 +1,9 @@
 // Sound effects are synthesized in the browser with the Web Audio API (CC0).
-// Background music uses owner-authorized tracks, one per level, loaded on the
+// Background music uses owner-authorized menu and level tracks, loaded on the
 // first gesture. See AUDIO.txt for Suno sources and processing details.
 
 export type Mood = 'calm' | 'tense' | 'bright';
+export const MENU_MUSIC = 'curious-pages-suno-v1';
 
 export interface AudioPrefs {
   music: boolean;
@@ -56,7 +57,7 @@ export class LakeAudio {
   private noise?: AudioBuffer;
   private hum?: { osc: OscillatorNode; gain: GainNode };
   private track?: HTMLAudioElement;
-  private stem = 'moonlit-grove';
+  private stem = MENU_MUSIC;
   private mood: Mood = 'calm';
   private hidden = false;
   private started = false;
@@ -275,7 +276,7 @@ export class LakeAudio {
     this.sfxGain.gain.value = this.prefs.sfx ? this.prefs.sfxVolume : 0;
   }
 
-  /** Remember which level's loop to play. The file is fetched only once playback starts. */
+  /** Remember which menu/level loop to play. Fetch only once playback starts. */
   useTrack(stem: string) {
     if (this.stem === stem) return;
     this.stem = stem;
@@ -285,7 +286,7 @@ export class LakeAudio {
     if (this.started && this.prefs.music && !this.hidden) void this.track.play().catch(() => {});
   }
 
-  /** Fetch the current level's track only after a gesture, then loop it through the music gain. */
+  /** Fetch the selected track only after a gesture, then loop it through the music gain. */
   private startTrack() {
     const ctx = this.ctx;
     const bus = this.musicGain;
