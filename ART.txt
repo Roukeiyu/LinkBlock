@@ -222,3 +222,18 @@ Rebuild seals and portraits with both expansion-art scripts using
 --levels 2 7 --version v11. Face protection is measured from the new main
 images; opening regressions sample actual hair/ear pixels after capture,
 pause and defeat. AGENTS.md requires this mask review for every main-art edit.
+
+Reward foreground and leg revision (v12)
+---------------------------------------
+Chapters 6-10 ninety rewards use distinct near environments: broad tidal stone
+slabs and a calm pool, a cedar shrine platform, a granite bench and blue ice,
+a pale belfry ledge with a book and handbell, and quiet obsidian seating.
+The edits retain character poses, head angles, eye contact and offered objects,
+using larger foreground planes and fewer small details to preserve depth.
+Chapter 7 perfect repairs the foreground hip/thigh/knee connection following
+the user's contour guide, retaining the upper-body pose, ivory wrap and shrine.
+Other perfect rewards and all main plates, masks, seals, portraits and face
+bounds are unchanged; this revision adds no layered rendering workflow.
+art/canvas/v12-sources.json records all six generated full paintings.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v12-sources.json

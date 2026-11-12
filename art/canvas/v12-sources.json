@@ -1,0 +1,24 @@
+{
+  "version": "v12",
+  "width": 1536,
+  "height": 1024,
+  "description": "Complete-scene reward edits: chapters 6-10 ninety foregrounds differ from their clear plates through tidal slabs, cedar decking, an ice terrace, a belfry ledge and obsidian seating. Chapter 7 perfect corrects the foreground hip/thigh/knee connection along the user's guide. Main plates, masks and all other perfect paintings stay unchanged.",
+  "levels": {
+    "6": {
+      "ninety": { "origin": "generated", "file": "exec-07f4061e-4d89-4c0e-822d-7da157f42bfb.png" }
+    },
+    "7": {
+      "ninety": { "origin": "generated", "file": "exec-af088a8d-08c1-40a4-ba7f-033c7bcfb995.png" },
+      "perfect": { "origin": "generated", "file": "exec-fbc4251b-02ed-4450-90f0-a94ae8f4e6a1.png" }
+    },
+    "8": {
+      "ninety": { "origin": "generated", "file": "exec-128b634f-4524-4955-8d1b-9c804cd4cc6a.png" }
+    },
+    "9": {
+      "ninety": { "origin": "generated", "file": "exec-69bb7418-3c88-45f1-ae81-ae5d7ee7d044.png" }
+    },
+    "10": {
+      "ninety": { "origin": "generated", "file": "exec-21a635e0-2a36-4396-a9f1-e84349855e55.png" }
+    }
+  }
+}
