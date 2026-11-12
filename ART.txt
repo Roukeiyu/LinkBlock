@@ -38,10 +38,11 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
   veil and subdued violet rim, using the same mask as completion scoring.
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
-The active perfect rewards for chapters 6 and 8, plus chapter 8's ninety
-reward, use their v4 directories. Chapter 6's restored, ninety, sealed and portrait
+The active perfect reward for chapter 6 and chapter 8's ninety reward use v4.
+Chapter 8's perfect and chapter 9's ninety rewards use v10.
+Chapter 6's restored, ninety, sealed and portrait
 images use v7, retaining the v3 mask because the character silhouette is unchanged.
-Chapter 9's ninety reward uses v7; chapter 9 and 10 perfect rewards use v8.
+Chapter 9 and 10 perfect rewards use v8.
 Chapter 7's perfect reward uses v9, with the weight-bearing hip and foreground
 leg reconstructed following the user's drawn pose guide before fitting the wrap.
 Other expansion files still use v3.
@@ -95,11 +96,10 @@ compositions were expanded horizontally with generated scenery, preserving
 complete figures instead of stretching or cropping. Unchanged early main plates
 and their masks/seals are uniformly resampled to the new resolution; masks use
 nearest-neighbor sampling so the character/background classification stays sharp.
-Chapters 3 and 5 retain their v8 main/reward/mask/seal files; chapters 1, 2 and 4
-now use v9, described below.
+This section records the v8 baseline; later selected replacements are listed below.
 
-Chapter 3 retains stitched knee-length
-shorts. Chapter 4 perfect wears an open-front ivory one-piece lounge suit.
+Chapter 3 perfect retains stitched knee-length shorts.
+Chapter 4 perfect wears an open-front ivory one-piece lounge suit.
 Chapter 5 perfect wears tan short overalls with the bib folded down and straps
 hanging loose at the hips. Their established poses and settings are retained.
 
@@ -151,6 +151,26 @@ node scripts/pack-enemy-sprites.mjs --early. The sixth atlas cell is empty and
 the existing bosses are preserved. Runtime sprites live in levels/{1,4}/v3.
 Earlier files remain available for already-open clients; LEVELS selects the
 current character/supporting assets and enemy sprites independently.
+
+Realistic wolf and offered keepsakes (v10)
+----------------------------------------------
+Chapter 1's three scenes retain the v9 compositions, poses, character design and
+blue/violet/cyan night palette, with realistic painterly skin, fur, leather, rocks
+and lighting. Its registered character mask, sealed plate and portraits are
+rebuilt for the new main plate; the foreground calf still exits the bottom edge.
+Chapters 2, 3, 4 and 5 ninety rewards preserve their major body shapes and use
+one hand to offer a gold scarab, green alchemical sphere, red rose and miniature
+pumpkin lantern respectively. Chapter 9 keeps its already outstretched hand and
+adds a glowing rune crystal above the palm. Chapter 3 ninety has an image-right
+green iris and image-left amber iris, matching the other two reward tiers.
+Chapter 5 perfect removes both boots while retaining the tan short overalls;
+chapter 8 perfect removes the single shin guard, retaining the fur waist wrap
+and subtle blue skin. Chapter 6's wardrobe is unchanged.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v10-sources.json
+node scripts/pack-character-art.mjs /path/to/generated_images art/canvas/v10-mask-sources.json
+python scripts/build-expansion-assets.py --levels 1 --version v10
+CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 1 --version v10
 
 Player and dialog update
 ------------------------

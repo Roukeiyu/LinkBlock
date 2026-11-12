@@ -8,7 +8,7 @@ const earlyFace = (x: number, y: number, width: number, height: number) => ({
   x: x * 4 / 3, y: y * 4 / 3, width: width * 4 / 3, height: height * 4 / 3,
 });
 export const FACE_REGIONS = {
-  'levels/1/v9/restored.webp': earlyFace(440, 16, 210, 250),
+  'levels/1/v10/restored.webp': earlyFace(440, 16, 210, 250),
   'levels/2/v9/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 640, y: 40, width: 220, height: 280 },
   'levels/3/v8/restored.webp': earlyFace(330, 24, 220, 245),
   'levels/4/v9/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 480, y: 32, width: 188, height: 240 },

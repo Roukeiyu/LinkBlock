@@ -4,6 +4,60 @@ import { expect, test } from '@playwright/test';
 const faceCentres = [[.47, .18], [.49, .19], [.37, .20], [.37, .20], [.34, .17],
   [.44, .17], [.44, .19], [.44, .16], [.48, .16], [.45, .16]];
 
+test('vampire white hair stays sealed through an adjacent capture, pause and defeat', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [] })));
+  await page.route('**/src/main.ts*', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}
+      window.captureBesideVampire = () => {
+        game = new Game(72, 48, { opening: true, enemies: [], boss: null, victory: { territoryPercent: 99 } });
+        game.start();
+        game.opening.region = [{x:4,y:30},{x:14,y:30},{x:14,y:42},{x:4,y:42}];
+        game.confirmOpening(); game.player = {x:14,y:30}; game.anchor = {...game.player};
+        const before = game.claimed;
+        game.move('up', true, 22); game.move('right', true, 6);
+        game.move('down', true, 22); game.move('left', true, 6);
+        game.events = []; sync(); render(performance.now());
+        return game.claimed - before;
+      };
+      window.loseVampire = () => {
+        game.protection = 0; game.lives = 1; game.hit(); game.events = [];
+        sync(); render(performance.now());
+      };` });
+  });
+  await page.goto('/');
+  await page.clock.install();
+  await page.locator('#menu-levels').click();
+  await page.locator('#level-list [data-level="4"]').click();
+  await page.evaluate(async () => {
+    const image = new Image(); image.src = 'levels/4/v9/sealed.webp'; await image.decode();
+  });
+  await page.clock.runFor(32);
+  const hair = () => page.locator('#board').evaluate(canvas => {
+    const board = canvas as HTMLCanvasElement, context = board.getContext('2d')!;
+    const scale = Math.min((board.width - 24) / 72, (board.height - 24) / 48);
+    const ox = (board.width - 72 * scale) / 2, oy = (board.height - 48 * scale) / 2;
+    return [[520, 100], [570, 65], [615, 110]].map(([x, y]) => Array.from(context.getImageData(
+      Math.round(ox + x / 1536 * 72 * scale), Math.round(oy + y / 1024 * 48 * scale), 1, 1).data).slice(0, 3));
+  });
+  const expectSealed = async () => {
+    for (const pixel of await hair()) {
+      expect(Math.max(...pixel)).toBeLessThan(55);
+      expect(Math.min(...pixel)).toBeGreaterThan(20);
+    }
+  };
+  await expectSealed();
+  const captured = await page.evaluate(() => (window as unknown as { captureBesideVampire: () => number }).captureBesideVampire());
+  expect(captured).toBeGreaterThan(0);
+  await page.clock.runFor(32); await expectSealed();
+  await page.locator('#pause').click(); await expectSealed();
+  await page.locator('#primary').click();
+  await page.evaluate(() => (window as unknown as { loseVampire: () => void }).loseVampire());
+  await expect(page.locator('#overlay-title')).toHaveText('下一次，再远一点。');
+  await expectSealed();
+  await page.screenshot({ path: 'test-results/vampire-sealed-after-capture.png', fullPage: true });
+});
+
 for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
   test(`all level openings keep faces hidden at 30 Hz on ${viewport.width}px screens`, async ({ page }) => {
     test.setTimeout(120000);

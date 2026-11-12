@@ -1,0 +1,22 @@
+{
+  "version": "v10",
+  "width": 1536,
+  "height": 1024,
+  "description": "Realistic painterly wolf materials preserving composition; chapter-specific offered keepsakes in ninety rewards; barefoot pumpkin knight and frost giant perfect rewards. Chapter 3 ninety also restores the image-right green iris, retaining the amber other eye.",
+  "levels": {
+    "1": {
+      "restored": { "origin": "generated", "file": "exec-c8974a38-52ce-4cc2-b2cd-157a0e49cf25.png" },
+      "ninety": { "origin": "generated", "file": "exec-b7076ffc-82bd-45a0-8766-0fb9eb0fa21e.png" },
+      "perfect": { "origin": "generated", "file": "exec-91b74098-c425-42cc-9ead-73479556ae64.png" }
+    },
+    "2": { "ninety": { "origin": "generated", "file": "exec-7b084452-0101-403b-a734-9c0cbb613c3c.png" } },
+    "3": { "ninety": { "origin": "generated", "file": "exec-e9789d66-b337-4b60-8d98-bea90f1b99cb.png" } },
+    "4": { "ninety": { "origin": "generated", "file": "exec-ab9d391c-cfd6-450d-a58b-843b8e964496.png" } },
+    "5": {
+      "ninety": { "origin": "generated", "file": "exec-40fe7a6b-d4d4-48ce-b3ee-df1efd753db5.png" },
+      "perfect": { "origin": "generated", "file": "exec-36cf8d18-9769-4826-ac4c-9c3af1c70594.png" }
+    },
+    "8": { "perfect": { "origin": "generated", "file": "exec-a1843482-fbdb-4e0f-8278-f367fcdf5084.png" } },
+    "9": { "ninety": { "origin": "generated", "file": "exec-0fe3a18a-2f44-4d53-9d23-a08691ce6f08.png" } }
+  }
+}

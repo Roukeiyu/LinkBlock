@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
-test('all new art, masks, enemies, rewards and audio load from real bundled files', async ({ page, request }) => {
+test('all chapter art, masks, enemies, rewards and audio load from real bundled files', async ({ page, request }) => {
   await page.goto('/');
-  for (const level of LEVELS.slice(5)) {
+  for (const level of LEVELS) {
     const paths = [level.restored, level.sealed, level.mask, level.portraitSealed, level.portraitRescued,
       level.rewardNinety!, level.rewardPerfect!, level.sprites.mist, level.sprites.thorn, level.sprites.ghost,
       level.sprites.spore, level.sprites.crow, level.sprites.tree];

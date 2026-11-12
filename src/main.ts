@@ -823,10 +823,11 @@ function render(now: number) {
     ctx.save(); ctx.globalAlpha = rescue.cover ?? 0;
     drawLandscape(ctx, ruined, game.width, game.height); ctx.restore();
   }
-  // A separate, unlit frame marks the arena limit without looking like a shore.
-  // The small exterior gap keeps a frame-touching mint island edge legible.
-  ctx.save(); ctx.strokeStyle = theme.arenaBorder; ctx.lineWidth = 2 / scale;
-  ctx.strokeRect(-4 / scale, -4 / scale, game.width + 8 / scale, game.height + 8 / scale); ctx.restore();
+  // A faint guide sits on the actual arena limit. The bright, walkable shore
+  // is drawn over it, so reaching the edge never leaves a second offset line.
+  ctx.save(); ctx.strokeStyle = theme.arenaBorder; ctx.lineWidth = 1 / scale;
+  ctx.globalAlpha = 0.25; ctx.shadowBlur = 0;
+  ctx.strokeRect(0, 0, game.width, game.height); ctx.restore();
   for (const effect of effects) effect.render(ctx);
   if (game.phase === 'opening' && game.opening) {
     ctx.save(); polygonPath(ctx, game.opening.region); ctx.clip();

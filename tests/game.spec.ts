@@ -45,6 +45,10 @@ test.beforeEach(async ({ page }, info) => {
     return;
   }
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
+  if (info.title.includes('stays visible and walkable at the frame')) await page.route('**/src/main.ts*', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.frameClaimed = () => game.claimed;` });
+  });
   if ((randomOpening || islandPlay || info.title.includes('enclosed image')) && info.title.includes('phone')) await page.setViewportSize({ width: 390, height: 844 });
   if (info.title.includes('notice safe area') || info.title.includes('wide touchpad safe area')) await page.route('**/src/style.css*', async route => {
     const response = await route.fetch();
@@ -77,7 +81,7 @@ test.beforeEach(async ({ page }, info) => {
         // frame timing cannot reliably land within 2.5e-8 world units of shore.
         body += '\nconst confirmForSeam = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForSeam.call(this); if (selected) { this.player={x:30,y:22}; this.anchor={...this.player}; this.move("right",true,4); this.move("down",true,4); this.move("left",true,4-2.5e-8); } return selected; };';
       }
-      if (info.title.includes('frame departure') || info.title.includes('resumes retraction') || info.title.includes('manual reverse')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
+      if (info.title.includes('frame departure') || info.title.includes('resumes retraction') || info.title.includes('manual reverse') || info.title.includes('stays visible and walkable at the frame')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
       if (info.title.includes('enclosed image')) body = body
         .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
         .replace('this.boss = options.boss === null ?', 'this.boss = true ?');
@@ -115,6 +119,16 @@ test.beforeEach(async ({ page }, info) => {
         return Reflect.apply(original, this, args);
       } as never;
     }
+    // The current player is an animated sprite; observe its bright-core anchor
+    // instead of relying only on the old vector player's circle.
+    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function(...args: Parameters<typeof drawImage>) {
+      if (this.canvas.id === 'board' && args[0] instanceof HTMLImageElement && args[0].src.endsWith('/sprites/player-spirit.webp')) {
+        const point = translations.get(this);
+        if (point) { state.player = { ...point }; state.positions.push({ ...point, time: performance.now() }); }
+      }
+      return Reflect.apply(drawImage, this, args);
+    };
     let warningScheduled = false;
     const scale = CanvasRenderingContext2D.prototype.scale;
     CanvasRenderingContext2D.prototype.scale = function(x, y) {
@@ -160,7 +174,7 @@ test.beforeEach(async ({ page }, info) => {
     };
   });
   await page.goto('/');
-  await page.getByRole('button', { name: '开始探索' }).click();
+  await page.locator('#menu-start').click();
   // Existing direction-pad fixtures explicitly select that mode. Dedicated wide
   // touchpad tests below exercise the unchanged production single-hand default.
   if (!info.title.includes('wide touchpad')) await page.locator('#control-mode').evaluate((e: HTMLButtonElement) => e.click());
@@ -1068,18 +1082,28 @@ for (const phone of [false, true]) test(`island coast is the only shore, frame c
   await page.screenshot({ path: `test-results/island-growth-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
 });
 
-for (const phone of [false, true]) test(`island coast stays visible and walkable at the frame, with a separate arena border on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+for (const phone of [false, true]) test(`island coast stays visible and walkable at the frame, with a faint aligned arena guide on ${phone ? 'phone' : 'desktop'}`, async ({ page }) => {
+  const claimed = () => page.evaluate(() => (window as unknown as { frameClaimed: () => number }).frameClaimed());
   await page.keyboard.press('Space'); await page.clock.runFor(32);
   await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => Math.abs(p.y) < 1e-6);
   await moveClock(page, 'ArrowRight', p => p.x >= 28); const right = (await probe(page)).player.x;
   await moveClock(page, 'ArrowDown', p => Math.abs(p.y - 18) < 1e-6); await page.keyboard.up('Space');
   await page.clock.runFor(1300);
   const areaBefore = Number(await page.locator('.progress-track').getAttribute('aria-valuenow')), scoreBefore = await page.locator('#score').textContent();
+  const claimedBefore = await claimed();
   expect((await probe(page)).boundary.some((p, i, points) => i % 2 === 0 && Math.abs(p.y) < 1e-6 && Math.abs(points[i + 1].y) < 1e-6 && Math.min(p.x, points[i + 1].x) <= 26 && Math.max(p.x, points[i + 1].x) >= 26)).toBe(true);
   expect((await worldPixel(page, 26, 0))[1]).toBeGreaterThan(180);
   const gap = 4 / 11.5;
+  // The former offset frame is gone on all four sides.
   for (const [x, y] of [[48, -gap], [-gap, 24], [72 + gap, 24], [48, 48 + gap]]) {
-    expect(await worldPixel(page, x, y)).toEqual([99, 134, 156]);
+    expect(await worldPixel(page, x, y)).toEqual([14, 32, 43]);
+  }
+  // Sample the outer half of the one-pixel guide at the real world limit:
+  // visible against the canvas surround, but much dimmer than the mint shore.
+  for (const [x, y] of [[48, -0.75 / 11.5], [-0.75 / 11.5, 24], [72 + 0.25 / 11.5, 24], [48, 48 + 0.25 / 11.5]]) {
+    const pixel = await worldPixel(page, x, y);
+    expect(pixel[1]).toBeGreaterThan(32);
+    expect(pixel[1]).toBeLessThan(60);
   }
   if (phone) {
     const session = await page.context().newCDPSession(page);
@@ -1110,7 +1134,9 @@ for (const phone of [false, true]) test(`island coast stays visible and walkable
   await page.keyboard.down('Space'); await moveClock(page, 'ArrowUp', p => p.y <= 12); const y = (await probe(page)).player.y;
   await moveClock(page, 'ArrowRight', p => Math.abs(p.x - 24) < 1e-6); await page.keyboard.up('Space');
   await page.clock.runFor(1300);
-  expect(Number(await page.locator('.progress-track').getAttribute('aria-valuenow'))).toBeCloseTo(areaBefore + (24 - x) * (18 - y) / (72 * 48) * 100, 7);
+  // Purity now weights character/background pixels; validate geometric area
+  // directly rather than treating the HUD percentage as unweighted area.
+  expect(await claimed()).toBeCloseTo(claimedBefore + (24 - x) * (18 - y), 7);
   expect((await worldPixel(page, 26, 0))[1]).toBeGreaterThan(180);
   await expect(page.locator('#lives')).toHaveAttribute('aria-label', '剩余 3 条生命');
   await page.screenshot({ path: `test-results/continuous-frame-shore-${phone ? 'phone' : 'desktop'}.png`, fullPage: true });
