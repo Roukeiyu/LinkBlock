@@ -26,7 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Test game rules
-        run: npm test
+        # Avoid CPU contention between the geometry and opening stress suites.
+        run: npm test -- --maxWorkers=1
       - name: Install browser for audio regression tests
         run: npx playwright install --with-deps chromium
       - name: Test music playback and campaign assets
