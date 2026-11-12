@@ -13,6 +13,9 @@ if (!sourceRoot) throw new Error('Supply the directory containing the generated 
 const manifestPath = process.argv[3] ?? 'art/expansion/v3-sources.json';
 const manifest = JSON.parse(readFileSync(resolve(root, manifestPath), 'utf8'));
 const { width, height, version } = manifest;
+// Intricate wraps can enclose real background gaps; newer masks opt into a smaller limit.
+const maxInteriorHoleArea = manifest.maxInteriorHoleArea ?? 8192;
+if (!Number.isInteger(maxInteriorHoleArea) || maxInteriorHoleArea < 0) throw new Error('Invalid maxInteriorHoleArea');
 
 for (const [level, sources] of Object.entries(manifest.levels)) {
   const folder = resolve(root, 'public/levels', level, version);
@@ -47,7 +50,7 @@ for (const [level, sources] of Object.entries(manifest.levels)) {
           visited[next] = 1; queue[tail++] = next;
         }
       }
-      if (!touchesEdge && tail <= 8192) {
+      if (!touchesEdge && tail <= maxInteriorHoleArea) {
         for (let i = 0; i < tail; i++) mask[queue[i]] = 255;
         filled += tail;
       }

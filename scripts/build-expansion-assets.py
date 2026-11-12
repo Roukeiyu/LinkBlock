@@ -16,7 +16,7 @@ import wave
 ROOT = Path(__file__).resolve().parents[1]
 # Square UI framing around each generated character's face, in source pixels.
 PORTRAITS = {1: (545, 0, 420), 2: (600, 0, 350), 4: (460, 0, 400),
-             6: (440, 0, 430), 7: (460, 0, 410), 8: (475, 0, 400),
+             6: (440, 0, 430), 7: (520, 0, 380), 8: (475, 0, 400),
              9: (530, 0, 400), 10: (450, 0, 440)}
 
 

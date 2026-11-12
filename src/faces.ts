@@ -9,12 +9,12 @@ const earlyFace = (x: number, y: number, width: number, height: number) => ({
 });
 export const FACE_REGIONS = {
   'levels/1/v10/restored.webp': earlyFace(440, 16, 210, 250),
-  'levels/2/v9/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 640, y: 40, width: 220, height: 280 },
+  'levels/2/v11/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 690, y: 20, width: 180, height: 250 },
   'levels/3/v8/restored.webp': earlyFace(330, 24, 220, 245),
   'levels/4/v9/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 480, y: 32, width: 188, height: 240 },
   'levels/5/v8/restored.webp': earlyFace(270, 8, 245, 255),
   'levels/6/v7/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 480, y: 0, width: 330, height: 320 },
-  'levels/7/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 515, y: 0, width: 295, height: 315 },
+  'levels/7/v11/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 560, y: 0, width: 300, height: 310 },
   'levels/8/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 550, y: 14, width: 230, height: 258 },
   'levels/9/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 630, y: 0, width: 205, height: 280 },
   'levels/10/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 510, y: 0, width: 320, height: 270 },

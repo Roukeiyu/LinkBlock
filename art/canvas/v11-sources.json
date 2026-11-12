@@ -1,0 +1,62 @@
+{
+  "version": "v11",
+  "width": 1536,
+  "height": 1024,
+  "description": "Complete painted scenes: chapter 2 uses distinct upright, cross-legged and side-sitting poses; chapters 7-10 vary subtle head tilt while retaining eye contact. Chapter 7 perfect stays v9, with its main and ninety changed instead. No background/character layering.",
+  "levels": {
+    "2": {
+      "restored": {
+        "origin": "generated",
+        "file": "exec-8621d07c-b15a-4128-8785-30fe3ec09206.png"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-7090ab08-0a05-4079-ba33-f76a551871b2.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-7da018dd-ad6f-4bfe-9ebc-8880de7dc323.png"
+      }
+    },
+    "7": {
+      "restored": {
+        "origin": "generated",
+        "file": "exec-d9e44b03-9e76-46c8-9621-62436f655c1f.png"
+      },
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-82ad4c7a-4003-45aa-b40e-710405f2ae42.png"
+      }
+    },
+    "8": {
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-cadd342c-3fd1-4d74-b6d0-fe60cf0e23f0.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-79f286be-6608-43c2-9849-88650b0a8e33.png"
+      }
+    },
+    "9": {
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-612b8a77-735a-4a7e-bbc8-9b8b8c6554d4.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-855cb97f-551c-4e55-8f02-203a2fc5f427.png"
+      }
+    },
+    "10": {
+      "ninety": {
+        "origin": "generated",
+        "file": "exec-58fb668a-c2e1-4a58-96a0-9adec70b813b.png"
+      },
+      "perfect": {
+        "origin": "generated",
+        "file": "exec-068e35bb-ccac-43b0-bb7e-924dbf13ba03.png"
+      }
+    }
+  }
+}

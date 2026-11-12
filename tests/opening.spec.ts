@@ -2,62 +2,70 @@ import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
 // Face centres measured from the actual artwork, independent of opening bounds.
-const faceCentres = [[.47, .18], [.49, .19], [.37, .20], [.37, .20], [.34, .17],
-  [.44, .17], [.44, .19], [.44, .16], [.48, .16], [.45, .16]];
+const faceCentres = [[.47, .18], [.51, .17], [.37, .20], [.37, .20], [.34, .17],
+  [.44, .17], [.46, .18], [.44, .16], [.48, .16], [.45, .16]];
 
-test('vampire white hair stays sealed through an adjacent capture, pause and defeat', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [] })));
-  await page.route('**/src/main.ts*', async route => {
-    const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}
-      window.captureBesideVampire = () => {
-        game = new Game(72, 48, { opening: true, enemies: [], boss: null, victory: { territoryPercent: 99 } });
-        game.start();
-        game.opening.region = [{x:4,y:30},{x:14,y:30},{x:14,y:42},{x:4,y:42}];
-        game.confirmOpening(); game.player = {x:14,y:30}; game.anchor = {...game.player};
-        const before = game.claimed;
-        game.move('up', true, 22); game.move('right', true, 6);
-        game.move('down', true, 22); game.move('left', true, 6);
-        game.events = []; sync(); render(performance.now());
-        return game.claimed - before;
-      };
-      window.loseVampire = () => {
-        game.protection = 0; game.lives = 1; game.hit(); game.events = [];
-        sync(); render(performance.now());
-      };` });
+// Independently chosen hair/ear points on the shipped artwork catch stale silhouettes.
+for (const sample of [
+  { level: 2, name: 'mummy hair and ears', edge: 26, points: [[740, 50], [710, 130], [850, 145]] },
+  { level: 4, name: 'vampire white hair', edge: 14, points: [[520, 100], [570, 65], [615, 110]] },
+  { level: 7, name: 'fox ears and hair', edge: 20, points: [[688, 42], [638, 145], [820, 90]] },
+]) {
+  test(`${sample.name} stays sealed through an adjacent capture, pause and defeat`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [] })));
+    await page.route('**/src/main.ts*', async route => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: `${await response.text()}
+        window.captureBesideCharacter = () => {
+          game = new Game(72, 48, { opening: true, enemies: [], boss: null, victory: { territoryPercent: 99 } });
+          game.start();
+          game.opening.region = [{x:${sample.edge - 10},y:30},{x:${sample.edge},y:30},{x:${sample.edge},y:42},{x:${sample.edge - 10},y:42}];
+          game.confirmOpening(); game.player = {x:${sample.edge},y:30}; game.anchor = {...game.player};
+          const before = game.claimed;
+          game.move('up', true, 28); game.move('right', true, 5);
+          game.move('down', true, 28); game.move('left', true, 5);
+          game.events = []; sync(); render(performance.now());
+          return game.claimed - before;
+        };
+        window.loseCharacter = () => {
+          game.protection = 0; game.lives = 1; game.hit(); game.events = [];
+          sync(); render(performance.now());
+        };` });
+    });
+    await page.goto('/');
+    await page.clock.install();
+    await page.locator('#menu-levels').click();
+    await page.locator(`#level-list [data-level="${sample.level}"]`).click();
+    await page.evaluate(async sealed => {
+      const image = new Image(); image.src = sealed; await image.decode();
+    }, LEVELS[sample.level - 1].sealed);
+    await page.clock.runFor(32);
+    const hair = () => page.locator('#board').evaluate((canvas, points) => {
+      const board = canvas as HTMLCanvasElement, context = board.getContext('2d')!;
+      const scale = Math.min((board.width - 24) / 72, (board.height - 24) / 48);
+      const ox = (board.width - 72 * scale) / 2, oy = (board.height - 48 * scale) / 2;
+      return points.map(([x, y]) => Array.from(context.getImageData(
+        Math.round(ox + x / 1536 * 72 * scale), Math.round(oy + y / 1024 * 48 * scale), 1, 1).data).slice(0, 3));
+    }, sample.points);
+    const expectSealed = async () => {
+      for (const pixel of await hair()) {
+        expect(Math.max(...pixel)).toBeLessThan(55);
+        expect(Math.min(...pixel)).toBeGreaterThan(20);
+      }
+    };
+    await expectSealed();
+    const captured = await page.evaluate(() => (window as unknown as { captureBesideCharacter: () => number }).captureBesideCharacter());
+    expect(captured).toBeGreaterThan(0);
+    await page.clock.runFor(32); await expectSealed();
+    await page.screenshot({ path: `test-results/level-${sample.level}-during-capture.png`, fullPage: true });
+    await page.locator('#pause').click(); await expectSealed();
+    await page.locator('#primary').click();
+    await page.evaluate(() => (window as unknown as { loseCharacter: () => void }).loseCharacter());
+    await expect(page.locator('#overlay-title')).toHaveText('下一次，再远一点。');
+    await expectSealed();
+    await page.screenshot({ path: `test-results/level-${sample.level}-sealed-after-capture.png`, fullPage: true });
   });
-  await page.goto('/');
-  await page.clock.install();
-  await page.locator('#menu-levels').click();
-  await page.locator('#level-list [data-level="4"]').click();
-  await page.evaluate(async sealed => {
-    const image = new Image(); image.src = sealed; await image.decode();
-  }, LEVELS[3].sealed);
-  await page.clock.runFor(32);
-  const hair = () => page.locator('#board').evaluate(canvas => {
-    const board = canvas as HTMLCanvasElement, context = board.getContext('2d')!;
-    const scale = Math.min((board.width - 24) / 72, (board.height - 24) / 48);
-    const ox = (board.width - 72 * scale) / 2, oy = (board.height - 48 * scale) / 2;
-    return [[520, 100], [570, 65], [615, 110]].map(([x, y]) => Array.from(context.getImageData(
-      Math.round(ox + x / 1536 * 72 * scale), Math.round(oy + y / 1024 * 48 * scale), 1, 1).data).slice(0, 3));
-  });
-  const expectSealed = async () => {
-    for (const pixel of await hair()) {
-      expect(Math.max(...pixel)).toBeLessThan(55);
-      expect(Math.min(...pixel)).toBeGreaterThan(20);
-    }
-  };
-  await expectSealed();
-  const captured = await page.evaluate(() => (window as unknown as { captureBesideVampire: () => number }).captureBesideVampire());
-  expect(captured).toBeGreaterThan(0);
-  await page.clock.runFor(32); await expectSealed();
-  await page.locator('#pause').click(); await expectSealed();
-  await page.locator('#primary').click();
-  await page.evaluate(() => (window as unknown as { loseVampire: () => void }).loseVampire());
-  await expect(page.locator('#overlay-title')).toHaveText('下一次，再远一点。');
-  await expectSealed();
-  await page.screenshot({ path: 'test-results/vampire-sealed-after-capture.png', fullPage: true });
-});
+}
 
 for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
   test(`all level openings keep faces hidden at 30 Hz on ${viewport.width}px screens`, async ({ page }) => {

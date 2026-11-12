@@ -1,0 +1,14 @@
+{
+  "version": "v11",
+  "width": 1536,
+  "height": 1024,
+  "maxInteriorHoleArea": 512,
+  "levels": {
+    "2": {
+      "mask": "exec-8cc7a10d-4949-4590-b6c9-c5332e414ea1.png"
+    },
+    "7": {
+      "mask": "exec-c768953c-64bf-4ef7-a513-e61dbf5f01a3.png"
+    }
+  }
+}

@@ -202,3 +202,23 @@ Both online and offline enlarged viewers support previous/next buttons, arrow
 keys and horizontal touch swipes. They wrap within the selected chapter (or the
 whole catalog when unfiltered), updating image, caption, position and download
 together. Vertical scrolling and pinch gestures do not advance the image.
+
+Pose and head-angle revision (v11)
+---------------------------------
+The chapter-two layered experiment was removed. All v11 illustrations are
+complete painted scenes, not separately composited backgrounds and characters.
+Chapter 2 replaces all three poses: upright seated, cross-legged offering the
+scarab, and side-sitting looking back. Chapter 7 replaces restored/ninety; its
+v9 perfect remains. Chapters 8–10 replace ninety/perfect. Head angles vary
+subtly within each trio while the eyes continue to meet the viewer.
+
+art/canvas/v11-sources.json records the eleven generated paintings. Package
+with scripts/pack-canvas-art.mjs. The new main plates for 2 and 7 each have a
+fresh registered mask in art/canvas/v11-mask-sources.json; package those with
+scripts/pack-character-art.mjs. This manifest lowers maxInteriorHoleArea to
+512 pixels to preserve real gaps enclosed by the mummy's hanging linen.
+The fox mask includes the dark robe between forearm and torso.
+Rebuild seals and portraits with both expansion-art scripts using
+--levels 2 7 --version v11. Face protection is measured from the new main
+images; opening regressions sample actual hair/ear pixels after capture,
+pause and defeat. AGENTS.md requires this mask review for every main-art edit.
