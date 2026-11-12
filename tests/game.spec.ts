@@ -14,6 +14,12 @@ function expectRuined(pixel: number[]) {
   expect(luma, `ruined plate ${JSON.stringify(pixel)}`).toBeLessThan(150);
 }
 async function moveClock(page: Page, key: string, done: (p: Probe['player']) => boolean) {
+  // Coordinates come from the spirit sprite's drawImage call. Until its first
+  // decoded frame, the probe's default (0, 0) is not a real player position.
+  if (!(await probe(page)).positions.length) await expect.poll(async () => {
+    await page.clock.runFor(16);
+    return (await probe(page)).positions.length;
+  }, { intervals: [16, 32, 50] }).toBeGreaterThan(0);
   await page.keyboard.down(key);
   for (let i = 0; i < 200 && !done((await probe(page)).player); i++) await page.clock.runFor(16);
   expect(done((await probe(page)).player), JSON.stringify({ player: (await probe(page)).player, trail: (await probe(page)).trail, progress: await page.locator('#percent').textContent(), lives: await page.locator('#lives').getAttribute('aria-label') })).toBe(true);
@@ -45,6 +51,13 @@ test.beforeEach(async ({ page }, info) => {
     return;
   }
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
+  // Exercise slow first-sprite loading: moving to y=0 must not accept the
+  // probe's uninitialized coordinates and skip the upward drawing stroke.
+  if (info.title.includes('stays visible and walkable at the frame')) await page.route('**/sprites/player-spirit.webp', async route => {
+    const response = await route.fetch();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await route.fulfill({ response });
+  });
   if (info.title.includes('stays visible and walkable at the frame')) await page.route('**/src/main.ts*', async route => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.frameClaimed = () => game.claimed;` });
