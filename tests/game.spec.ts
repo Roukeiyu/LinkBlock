@@ -154,7 +154,7 @@ test.beforeEach(async ({ page }, info) => {
     };
   });
   await page.goto('/');
-  await page.getByRole('button', { name: '开始探索' }).click();
+  await page.locator('#menu-start').click();
   // Existing direction-pad fixtures explicitly select that mode. Dedicated wide
   // touchpad tests below exercise the unchanged production single-hand default.
   if (!info.title.includes('wide touchpad')) await page.locator('#control-mode').evaluate((e: HTMLButtonElement) => e.click());
