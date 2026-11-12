@@ -28,11 +28,11 @@ def svg(body, view='0 0 1536 1024', width=1536, height=1024):
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="{view}">{body}</svg>'
 
 
-def build_art(levels=None, version='v3', mask_version=None):
+def build_art(levels=None, version='v3', mask_version=None, plate_version=None):
     for level in levels or range(6, 11):
         x, y, size = PORTRAITS[level]
-        folder = ROOT / 'public' / 'levels' / str(level) / version
-        plate = embed(folder / 'restored.webp', 'image/webp')
+        plate_folder = ROOT / 'public' / 'levels' / str(level) / (plate_version or version)
+        plate = embed(plate_folder / 'restored.webp', 'image/webp')
         mask_folder = ROOT / 'public' / 'levels' / str(level) / (mask_version or version)
         mask = embed(mask_folder / 'mask.png', 'image/png')
         art = f'<image width="1536" height="1024" href="{plate}"/>'
@@ -99,7 +99,8 @@ if __name__ == '__main__':
     parser.add_argument('--levels', type=int, nargs='+', choices=PORTRAITS, help='only package these chapters')
     parser.add_argument('--version', default='v3', help='source and output artwork version')
     parser.add_argument('--mask-version', help='reuse a mask from an earlier version when the silhouette is unchanged')
+    parser.add_argument('--plate-version', help='reuse an unchanged main plate when rebuilding its mask and sealed assets')
     args = parser.parse_args()
-    build_art(args.levels, args.version, args.mask_version)
+    build_art(args.levels, args.version, args.mask_version, args.plate_version)
     if args.music:
         build_music()

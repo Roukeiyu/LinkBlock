@@ -2,5 +2,8 @@
   "version": "v10",
   "width": 1536,
   "height": 1024,
-  "levels": { "1": { "mask": "exec-e5f0b65f-8e64-4ed8-b8ff-09fc7c53d81a.png" } }
+  "levels": {
+    "1": { "mask": "exec-e5f0b65f-8e64-4ed8-b8ff-09fc7c53d81a.png" },
+    "4": { "mask": "exec-1f349caf-0b0b-4a98-ad87-133622a6c0e9.png" }
+  }
 }

@@ -172,6 +172,13 @@ node scripts/pack-character-art.mjs /path/to/generated_images art/canvas/v10-mas
 python scripts/build-expansion-assets.py --levels 1 --version v10
 CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 1 --version v10
 
+Chapter 4's v10 mask is freshly extracted from the unchanged v9 restored plate,
+aligning the short white hair, raised collar, cape, hands and boots. The game uses
+this same revised mask for scoring and the rebuilt sealed plate/portraits, with
+new asset paths. Its clear/perfect illustrations are unchanged.
+python scripts/build-expansion-assets.py --levels 4 --version v10 --plate-version v9
+CHROMIUM_PATH=/path/to/chromium node scripts/bake-expansion-art.mjs --levels 4 --version v10
+
 Player and dialog update
 ------------------------
 art/ui/player-spirit-atlas.webp is the generated transparent 2 × 2 source atlas

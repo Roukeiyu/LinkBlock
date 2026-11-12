@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { LEVELS } from '../src/levels';
 
 // Face centres measured from the actual artwork, independent of opening bounds.
 const faceCentres = [[.47, .18], [.49, .19], [.37, .20], [.37, .20], [.34, .17],
@@ -29,9 +30,9 @@ test('vampire white hair stays sealed through an adjacent capture, pause and def
   await page.clock.install();
   await page.locator('#menu-levels').click();
   await page.locator('#level-list [data-level="4"]').click();
-  await page.evaluate(async () => {
-    const image = new Image(); image.src = 'levels/4/v9/sealed.webp'; await image.decode();
-  });
+  await page.evaluate(async sealed => {
+    const image = new Image(); image.src = sealed; await image.decode();
+  }, LEVELS[3].sealed);
   await page.clock.runFor(32);
   const hair = () => page.locator('#board').evaluate(canvas => {
     const board = canvas as HTMLCanvasElement, context = board.getContext('2d')!;
