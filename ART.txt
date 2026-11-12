@@ -13,9 +13,12 @@ The sea man has restrained iridescent scale patches on exposed skin; the blond
 frost giant has a subtle icy-blue complexion; the lava warrior has short black
 hair and beard, dark red skin, swept-back black horns and sparse ember fissures.
 Within each chapter all three illustrations preserve the same character.
-Clear / ninety / perfect progress from layered outerwear and long trousers to
-lighter outfits and relaxed poses. The frost giant uses clothed lighter-outfit
-variants (vest without mantle/boots, then a linen top and shorts).
+Clear / ninety / perfect progress from layered outerwear to lighter outfits
+and relaxed poses. Updated v4 rewards give the sea man rope-belt sailor trousers,
+the fox spirit tied charcoal hakama trousers, the frost giant a fur-edged waistwrap
+and one shin guard, and the lava warrior worn black leather trousers with bronze
+fastenings. The frost giant's ninety vest is fully open, and his perfect portrait
+has a bare torso. These clothing edits retain the v3 faces, poses and scenery.
 
 Each public/levels/{6,7,8,9,10}/v3/ directory contains:
 - restored.webp: the complete character and scene, 1536 × 1024.
@@ -29,6 +32,9 @@ Each public/levels/{6,7,8,9,10}/v3/ directory contains:
   veil and subdued violet rim, using the same mask as completion scoring.
 - portrait.webp / portrait-sealed.webp: matching character portraits.
 The expansion's six enemy sprites per chapter remain in their v2 directories.
+The active perfect rewards for chapters 6, 7, 8 and 10, plus chapter 8's ninety
+reward, now use their v4 directories. Other reward files still use v3, including
+both stone guardian rewards. src/levels.ts selects the active image for each tier.
 
 Illustrations, sealed scenes and portraits are committed as WebP. The filters
 are rasterized during asset preparation so gameplay draws ordinary cached images
@@ -37,6 +43,10 @@ without repeatedly evaluating large SVG filters. No remote image service is used
 art/expansion/v3-sources.json records the generated source PNGs. Run
 node scripts/pack-character-art.mjs /path/to/generated_images to encode the
 three illustrations and normalize their masks; it requires ffmpeg/ffprobe.
+For the five clothing updates, use the separate reward-only manifest:
+node scripts/pack-character-art.mjs /path/to/generated_images art/expansion/v4-reward-sources.json
+This encodes only the listed v4 rewards, without regenerating main illustrations,
+character masks, sealed scenes or portraits.
 The source images remain intact. The committed WebPs/PNGs are sufficient for
 all ordinary builds; original generation files are not a build dependency.
 
@@ -56,8 +66,8 @@ requires ffmpeg and ffprobe. Atlas order: three straight-moving looks, orbiter,
 zigzag, boss. The script maps that order to the renderer's legacy look keys.
 Atlases are kept outside public so the game downloads only individual sprites.
 
-The v3 asset paths prevent cached older illustrations from mixing with this
-redraw. Normal npm builds use the committed files and need no image/audio tools.
+Versioned v3/v4 asset paths prevent cached older illustrations from mixing with
+new redraws. Normal npm builds use the committed files and need no image/audio tools.
 src/faces.ts records newly measured head regions for opening protection, and
 review/faces.html exposes those regions for visual inspection.
 

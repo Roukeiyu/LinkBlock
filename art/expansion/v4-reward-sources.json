@@ -1,0 +1,20 @@
+{
+  "version": "v4",
+  "width": 1536,
+  "height": 1024,
+  "levels": {
+    "6": {
+      "perfect": "exec-e4a3020a-c091-4818-91fd-7fe43fba4f58.png"
+    },
+    "7": {
+      "perfect": "exec-b2ab898a-ef9a-44d5-b5a0-28cc55deff53.png"
+    },
+    "8": {
+      "ninety": "exec-bec8cdaf-6d2f-4102-9e9d-a315a5ee08b2.png",
+      "perfect": "exec-6a208c76-0ffe-463a-9c04-5c05bbf1029b.png"
+    },
+    "10": {
+      "perfect": "exec-8ff7dd4b-f5d3-4249-8dd1-acad115ffbe8.png"
+    }
+  }
+}

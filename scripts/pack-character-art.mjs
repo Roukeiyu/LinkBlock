@@ -1,5 +1,5 @@
 /** Encode generated character plates and normalize their authored masks.
- * Usage: node scripts/pack-character-art.mjs /path/to/generated_images
+ * Usage: node scripts/pack-character-art.mjs /path/to/generated_images [manifest.json]
  * Creative artwork is generated separately; this only packages its pixels.
  */
 import { execFileSync } from 'node:child_process';
@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = process.argv[2];
 if (!sourceRoot) throw new Error('Supply the directory containing the generated source PNGs.');
-const manifest = JSON.parse(readFileSync(resolve(root, 'art/expansion/v3-sources.json'), 'utf8'));
+const manifestPath = process.argv[3] ?? 'art/expansion/v3-sources.json';
+const manifest = JSON.parse(readFileSync(resolve(root, manifestPath), 'utf8'));
 const { width, height, version } = manifest;
 
 for (const [level, sources] of Object.entries(manifest.levels)) {
