@@ -53,8 +53,8 @@ describe('level catalog', () => {
     expect(LEVELS[0].rewardNinety).toBeUndefined();
     expect(LEVELS[0].rewardPerfect).toBeUndefined();
     expect(LEVELS.slice(1, 5).map(level => [level.rewardNinety, level.rewardPerfect])).toEqual([
-      ['levels/2/mummy-90.webp', 'levels/2/mummy-perfect.webp'],
-      ['levels/3/frankenstein-90.webp', 'levels/3/frankenstein-perfect.webp'],
+      ['levels/2/mummy-90.webp', 'levels/2/v2/perfect.webp'],
+      ['levels/3/frankenstein-90.webp', 'levels/3/v2/perfect.webp'],
       ['levels/4/vampire-90.webp', 'levels/4/vampire-perfect.webp'],
       ['levels/5/horseman-90.webp', 'levels/5/horseman-perfect.webp'],
     ]);
