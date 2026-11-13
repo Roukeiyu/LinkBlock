@@ -27,6 +27,7 @@ test.beforeEach(async ({ page }, info) => {
         if (this.opening) this.opening.region = [{x:18,y:18},{x:30,y:18},{x:30,y:30},{x:18,y:30}];
         const selected = confirmForJunction.call(this);
         if (selected) {
+          this.options.powerUps=false; this.powerUp=undefined;
           this.enemies=[]; this.boss=undefined; this.bossAttack=undefined;
           this.player={x:30,y:18}; this.anchor={...this.player};
           this.move('up',true,10); this.move('right',true,10);

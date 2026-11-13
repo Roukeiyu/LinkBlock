@@ -195,7 +195,7 @@ export function bossConfigFor(level: LevelDef): BossConfig {
 /** Shared by the page and simulation tests, including restart and next-level. */
 export function gameOptionsFor(level: LevelDef, monster = false): GameOptions {
   return { opening: true, openingFace: monster ? monsterFaceProtection(level.id) : faceProtection(level.restored), bossConfig: bossConfigFor(level), squad: level.squad,
-    speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion };
+    speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion, powerUps: true };
 }
 
 export interface LevelProgress { unlocked: number; cleared: number[] }

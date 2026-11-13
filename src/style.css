@@ -348,6 +348,16 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .menu-settings button{height:32px;background:transparent;border:1px solid #6b4a2a;color:var(--ink)}
 .menu-settings .audio-slider{grid-column:1/-1;justify-content:space-between;color:var(--ink);border-top-color:#6b4a2a55}
 .menu-settings .audio-slider input[type="range"]{width:65%}
+.menu-settings .clear-progress-button{grid-column:1/-1;color:#762e27;border-color:#9c5647}
+.confirm-progress{align-items:center;justify-content:center;padding:12px}
+.confirm-progress .gallery-card{width:min(410px,calc(100vw - 24px));padding:12px 16px;text-align:center;color:var(--ink)}
+.confirm-progress h2{margin:4px 0 12px;font-size:21px}
+.confirm-progress p{font-size:14px;line-height:1.7}
+.confirm-progress #clear-progress-error{color:#9b2828}
+.confirm-actions{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.confirm-actions button{min-width:100px}
+.powerup-status{position:absolute;top:8px;left:8px;z-index:2;pointer-events:none;padding:4px 8px;border:1px solid #d9bd7c99;border-radius:5px;background:#182329e8;color:#fbe2a9;font-size:12px;font-weight:700;letter-spacing:.04em;text-shadow:0 1px 2px #000}
+.powerup-status[hidden]{display:none}
 .candle-glow{position:absolute;right:4%;top:4%;width:22vw;height:36vh;background:radial-gradient(circle,#ffd7a655,transparent 68%);mix-blend-mode:screen;pointer-events:none;animation:flicker 2.6s ease-in-out infinite}
 /* Clip entering particles here so animation restarts cannot grow the scrollable menu. */
 .dust{position:absolute;inset:0;pointer-events:none;overflow:hidden}

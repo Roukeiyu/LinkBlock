@@ -3,6 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
+import { POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RADIUS, powerUpPosition, type PowerUp, type PowerUpKind } from './powerups';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -10,8 +11,8 @@ import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type 
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
-export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual };
-export interface GameOptions { opening?: boolean; openingFace?: OpeningFace; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion }
+export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual } | { type: 'powerup'; kind: PowerUpKind };
+export interface GameOptions { opening?: boolean; openingFace?: OpeningFace; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion; powerUps?: boolean }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 22.222222;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
@@ -74,6 +75,9 @@ export class Game {
   private completion?: CompletionReading;
   score = 0;
   elapsed = 0;
+  powerUp: PowerUp | undefined;
+  readonly powerUpEffects: Record<PowerUpKind, number> = { slow: 0, stop: 0, speed: 0 };
+  private powerUpWait = 0;
   protection = 0;
   events: GameEvent[] = [];
 
@@ -119,7 +123,7 @@ export class Game {
   }
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.completion?.percent ?? this.claimed / (this.width * this.height) * 100; }
-  get lineSpeed() { return PLAYER_SPEED * (this.characterComplete ? LINE_SPEED_BOOST : 1); }
+  get lineSpeed() { return PLAYER_SPEED * (this.characterComplete ? LINE_SPEED_BOOST : 1) * (this.powerUpEffects.speed > 0 ? 1.5 : 1); }
   setOpeningFace(face: GameOptions['openingFace']) {
     this.options.openingFace = face;
     if (this.opening && (this.phase === 'opening' || this.phase === 'paused' && this.resumePhase === 'opening')
@@ -151,7 +155,7 @@ export class Game {
       const region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined, this.options.openingFace);
       this.opening = { region, elapsed: 0, nextAt: 1 / OPENING_HZ, candidates: 1 }; this.phase = 'opening'; return;
     }
-    this.phase = 'playing'; this.events.push('start');
+    this.phase = 'playing'; this.events.push('start'); if (this.options.powerUps) this.spawnPowerUp();
   }
   confirmOpening() {
     if (this.phase !== 'opening' || !this.opening) return false;
@@ -159,7 +163,35 @@ export class Game {
     if (this.options.openingFace && openingTouchesFace(region, this.width, this.height, this.options.openingFace)) return false;
     this.island = new Island(this.outline, region); this.territories = this.island.regions; this.captured = [region, ...this.island.sealedGaps];
     this.player = openingSpawn(region, this.random); this.anchor = { ...this.player };
-    this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.recomputeCompletion(); this.checkWin(); return true;
+    this.phase = 'playing'; this.spawnActors(); this.events.push('start'); this.recomputeCompletion(); this.checkWin();
+    if (this.options.powerUps && this.phase === 'playing') this.spawnPowerUp();
+    return true;
+  }
+  private spawnPowerUp() {
+    if (!this.options.powerUps || this.powerUp) return;
+    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
+    let point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
+    if (!point) {
+      // If the remaining water is too crowded or narrow for a safe interior
+      // spot, keep the promised spawn time by choosing a reachable real shore.
+      const shore = this.boundarySegments.map(([a, b]) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }));
+      const apart = shore.filter(p => Math.hypot(p.x - this.player.x, p.y - this.player.y) > POWER_UP_RADIUS + PLAYER_RADIUS);
+      const choices = apart.length ? apart : shore;
+      if (choices.length) point = choices[Math.min(choices.length - 1, Math.floor(this.random() * choices.length))];
+    }
+    if (!point) { this.powerUpWait = 0.5; return; }
+    const index = Math.min(POWER_UP_KINDS.length - 1, Math.floor(this.random() * POWER_UP_KINDS.length));
+    this.powerUp = { ...point, kind: POWER_UP_KINDS[index] };
+  }
+  private collectPowerUp() {
+    if (!this.powerUp) return;
+    const kind = this.powerUp.kind;
+    this.powerUp = undefined;
+    this.powerUpEffects[kind] = POWER_UP_DURATION[kind];
+    // Leave a small margin for the next physics/render frame so the visible
+    // spawn remains strictly under 20 seconds after pickup.
+    this.powerUpWait = 10 + Math.min(1 - Number.EPSILON, Math.max(0, this.random())) * 9.9;
+    this.events.push({ type: 'powerup', kind });
   }
   togglePause() {
     if (this.phase === 'playing' || this.phase === 'opening') { this.resumePhase = this.phase; this.phase = 'paused'; }
@@ -327,6 +359,10 @@ export class Game {
     if (!this.island) this.territories.splice(this.cutRegion, 1, ...remaining);
     this.cutRegion = -1;
     this.captured.push(...this.lastCapture, ...this.island?.sealedGaps ?? []);
+    // A pickup enclosed by a successful capture remains obtainable even when
+    // the water underneath it becomes land.
+    if (this.powerUp && [...this.lastCapture, ...this.island?.sealedGaps ?? []].some(region =>
+      inside(this.powerUp!, region) || wallEdges(region).some(([a, b]) => onSegment(this.powerUp!, a, b)))) this.collectPowerUp();
     this.trail = [];
     if (!this.isBoundary(this.player.x, this.player.y)) {
       // Finishing an entire disconnected room can erase the closure point too.
@@ -467,20 +503,37 @@ export class Game {
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     const pace = this.options.enemyMotion?.straight === 'surge' ? 1.7 : 1;
-    const maxSpeed = Math.max(RETRACT_SPEED, ...bodies.map(body => Math.hypot(body.vx, body.vy) * pace), ...this.bossSettings.phases.map(phase => (phase.reinforcements?.speed ?? 0) * pace));
+    const maxSpeed = Math.max(RETRACT_SPEED * (this.options.powerUps ? 1.5 : 1), ...bodies.map(body => Math.hypot(body.vx, body.vy) * pace), ...this.bossSettings.phases.map(phase => (phase.reinforcements?.speed ?? 0) * pace));
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
     let gestureEnded = false;
     let walls = this.territories.map(wallEdges);
     for (let i = 0; i < steps && this.phase === 'playing'; i++) {
+      const itemAtStart = this.powerUp;
+      // Integrate partial expiry within the substep so durations and speeds
+      // stay consistent across frame rates and overlapping effects.
+      const stopped = Math.min(dt, this.powerUpEffects.stop);
+      const active = dt - stopped;
+      const slowed = Math.max(0, Math.min(dt, this.powerUpEffects.slow) - stopped);
+      const enemyTime = active - slowed * 0.3;
+      const playerTime = dt + Math.min(dt, this.powerUpEffects.speed) * 0.5;
+      for (const kind of POWER_UP_KINDS) {
+        const remaining = this.powerUpEffects[kind] - dt;
+        this.powerUpEffects[kind] = remaining > EPS ? remaining : 0;
+      }
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
-      this.updateBossJump(dt);
-      if (this.updateReinforcements(dt)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-      for (const body of bodies) if (body !== this.boss || !this.bossJump) advanceEnemy(body, dt, this.territories, walls, body === this.boss ? undefined : this.options.enemyMotion);
-      if (this.boss && this.bossAttack && !this.bossJump) this.bossAttack.update(dt, {
+      if (enemyTime > 0) this.updateBossJump(enemyTime);
+      if (active > 0 && this.updateReinforcements(active)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
+      for (const body of bodies) {
+        if (enemyTime > 0 && (body !== this.boss || !this.bossJump)) advanceEnemy(body, enemyTime, this.territories, walls, body === this.boss ? undefined : this.options.enemyMotion);
+        else body.previous = { x: body.x, y: body.y };
+      }
+      if (active > 0 && this.boss && this.bossAttack && !this.bossJump) this.bossAttack.update(active, {
         origin: this.boss, target: this.player, arena: this, spawn: hazard => this.spawnHazard(hazard), cast: () => this.events.push('bossAttack'),
       });
-      for (const hazard of this.hazards) hazard.update(dt, this);
+      // update(0) refreshes each projectile's previous position without moving
+      // it, so frozen projectiles stay dangerous but do not replay an old sweep.
+      for (const hazard of this.hazards) hazard.update(active, this);
       this.boundaryRelocated = false;
       const lives = this.lives, playerBefore = { ...this.player };
       const bodyHit = this.collidesWithTrail(true), attackHit = this.hazardsHit(playerBefore, playerBefore);
@@ -490,7 +543,7 @@ export class Game {
         this.playerPath = [playerBefore];
         let boundaryChanged = false;
         if (this.retracting) {
-          const finished = this.retract(RETRACT_SPEED * dt);
+          const finished = this.retract(RETRACT_SPEED * playerTime);
           // Back at the stroke's start. A direction still held while drawing
           // leaves immediately; the press that started the rewind does not
           // have to be repeated. Later substeps of this update perform it.
@@ -498,7 +551,7 @@ export class Game {
           if (finished && this.trailRewind) this.trailRewind = false;
           gestureEnded = finished && !depart;
         } else if (direction && !this.trailRewind) {
-          let remaining = this.lineSpeed * dt;
+          let remaining = PLAYER_SPEED * (this.characterComplete ? LINE_SPEED_BOOST : 1) * playerTime;
           const route = [playerBefore];
           for (let pass = 0; pass < 8 && remaining > EPS; pass++) {
             const closed = this.move(direction, drawing, remaining);
@@ -515,10 +568,15 @@ export class Game {
         const path = this.boundaryRelocated ? [this.player, this.player] : this.playerPath.length > 1 ? this.playerPath : [playerBefore, this.player];
         if (path.slice(1).some((p, i) => this.hazardsHit(path[i], p))) this.hit();
         if (lives !== this.lives) gestureEnded = true;
+        if (!gestureEnded && this.powerUp && path.slice(1).some((p, i) => distance(this.powerUp!, path[i], p) <= POWER_UP_RADIUS + PLAYER_RADIUS)) this.collectPowerUp();
         if (boundaryChanged || gestureEnded) {
           walls = this.territories.map(wallEdges);
           bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
         }
+      }
+      if (this.options.powerUps && !itemAtStart && !this.powerUp) {
+        this.powerUpWait -= dt;
+        if (this.powerUpWait <= 0) this.spawnPowerUp();
       }
       this.hazards = this.hazards.filter(hazard => !hazard.expired);
     }

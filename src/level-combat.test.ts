@@ -67,7 +67,7 @@ function hitBoss(game: Game) {
 }
 describe('actual level battle lifecycle', () => {
   it.each(LEVELS)('$title uses its own skill, advances through real captures, pauses and resets', level => {
-    const options = { ...gameOptionsFor(level), opening: false, victory: { territory: false }, random: seeded() };
+    const options = { ...gameOptionsFor(level), opening: false, powerUps: false, victory: { territory: false }, random: seeded() };
     const game = new Game(72, 48, options); game.start(); game.protection = 1000;
     const name = game.bossAttack!.name;
     expect(name).toBe(['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎', '快慢双潮', '三方狐火', '冰晶排射', '四翼石羽', '熔冠轮舞'][level.id - 1]);
@@ -95,7 +95,7 @@ describe('actual level battle lifecycle', () => {
   });
 
   it.each(LEVELS.slice(0, 5))('$title replaces at most one enemy per interval and does not raise the cap at low health', level => {
-    const game = new Game(72, 48, { ...gameOptionsFor(level), opening: false, victory: { territory: false }, random: seeded() });
+    const game = new Game(72, 48, { ...gameOptionsFor(level), opening: false, powerUps: false, victory: { territory: false }, random: seeded() });
     game.start(); hitBoss(game); hitBoss(game);
     const cap = 5 + level.id, interval = bossConfigFor(level).phases![1].reinforcements!.interval;
     // Finish the 0.9s jump, leaving 0.1s of the first refill interval elapsed.

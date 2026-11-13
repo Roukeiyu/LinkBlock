@@ -78,10 +78,13 @@ test.beforeEach(async ({ page }, info) => {
     await page.route('**/src/engine.ts', async route => {
       const response = await route.fetch();
       let body = await response.text();
+      // These fixed input/capture scenes are independent of random pickups;
+      // power-up gameplay has its own browser and rules tests.
+      body = body.replaceAll('this.options.powerUps', 'false');
       if (islandPlay) body = body
         .replace('const region = this.opening.region;', 'const region = [{x:18,y:18},{x:30,y:18},{x:30,y:30},{x:18,y:30}];')
         .replace('this.player = openingSpawn(region, this.random);', 'this.player = {x:24,y:18};')
-        .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)');
+        .replace('advanceEnemy(body, enemyTime, this.territories, walls,', 'advanceEnemy(body, 0, this.territories, walls,');
       else body = body.replace('options.opening ?? false', 'false').replaceAll('this.options.opening', 'false')
         .replace('defaultBoss(this.width, this.height)', "createEnemy('boss', { x: this.width * 0.84, y: this.height * 0.76 })");
       body = body.replace('defaultEnemies(this.width, this.height, this.boss, this.random,', 'fixtureEnemies(this.width, this.height, this.boss, this.random,');
@@ -94,9 +97,9 @@ test.beforeEach(async ({ page }, info) => {
         // frame timing cannot reliably land within 2.5e-8 world units of shore.
         body += '\nconst confirmForSeam = Game.prototype.confirmOpening; Game.prototype.confirmOpening = function() { const selected = confirmForSeam.call(this); if (selected) { this.player={x:30,y:22}; this.anchor={...this.player}; this.move("right",true,4); this.move("down",true,4); this.move("left",true,4-2.5e-8); } return selected; };';
       }
-      if (info.title.includes('frame departure') || info.title.includes('resumes retraction') || info.title.includes('manual reverse') || info.title.includes('stays visible and walkable at the frame')) body = body.replace('this.bossAttack.update(dt,', 'this.bossAttack.update(0,');
+      if (info.title.includes('frame departure') || info.title.includes('resumes retraction') || info.title.includes('manual reverse') || info.title.includes('stays visible and walkable at the frame')) body = body.replace('this.bossAttack.update(active,', 'this.bossAttack.update(0,');
       if (info.title.includes('enclosed image')) body = body
-        .replace('advanceEnemy(body, dt, this.territories, walls)', 'advanceEnemy(body, 0, this.territories, walls)')
+        .replace('advanceEnemy(body, enemyTime, this.territories, walls,', 'advanceEnemy(body, 0, this.territories, walls,')
         .replace('this.boss = options.boss === null ?', 'this.boss = true ?');
       if (phasePreview) body = body.replace(/this\.bossHealth = this\.bossMaxHealth/g, `this.bossHealth = ${phasePreview === '2' ? 3 : 1}`);
       await route.fulfill({ response, body });

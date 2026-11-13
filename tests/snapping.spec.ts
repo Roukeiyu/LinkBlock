@@ -19,6 +19,7 @@ for (const phone of [false, true]) for (const scenario of ['corner', 'frame']) {
           if (this.opening) this.opening.region = [{x:12,y:12},{x:20,y:12},{x:20,y:20},{x:12,y:20}];
           const confirmed = originalConfirm.call(this);
           if (confirmed) {
+            this.options.powerUps=false; this.powerUp=undefined;
             this.enemies=[]; this.boss=undefined; this.bossAttack=undefined;
             this.player={x:16,y:12}; this.anchor={...this.player};
             ${scenario === 'corner' ? "this.move('up',true,4); this.move('right',true,4.2); this.move('down',true,3.5);" : "this.move('up',true,11.5);"}

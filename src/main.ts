@@ -10,6 +10,7 @@ import { LEVELS, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelP
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
+import { POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, type PowerUp } from './powerups';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -51,6 +52,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
         <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
         <button id="menu-form" class="ink-tab form-setting" type="button" aria-pressed="false">角色形态：人形</button>
+        <button id="clear-progress" class="ink-tab clear-progress-button" type="button">清空进度</button>
       </div>
       <div class="menu-progress"><div class="menu-progress-heading"><span>封印进度</span><p id="seal-count" class="seal-count"></p></div><div id="seal-row" class="seal-row"></div></div>
     </div>
@@ -95,6 +97,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="board-shell">
           <canvas id="board" width="864" height="576" tabindex="0" aria-label="游戏场地。沿小岛岸线移动，按住空格画线并回到岛岸闭合；裸露外框不能靠岸，松开空格收线，P 暂停。">请使用支持 Canvas 的浏览器游玩 LinkBlock。</canvas>
           <span class="board-corner top-left" aria-hidden="true"></span><span class="board-corner bottom-right" aria-hidden="true"></span>
+          <div id="powerup-status" class="powerup-status" role="status" aria-live="off" hidden></div>
           <div id="opening-hint" hidden aria-label="空格或动作键确认起点，5秒后自动选定"></div>
         </div>
               </div>
@@ -129,6 +132,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
+      <p>场上会出现一枚道具，碰到或圈住即可拾取：减速让敌人移动速度降低 30%（10 秒，不影响子弹）；止步冻结敌人和子弹（3 秒）；加速让角色速度提高 50%（10 秒）。拾取后 10–20 秒出现下一枚。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -136,6 +140,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
       <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" class="ink-tab" type="button">返回</button></div>
       <div id="level-list" class="level-list"></div>
+    </div>
+  </div>
+  <div id="clear-progress-dialog" class="gallery confirm-progress" hidden>
+    <div class="gallery-card" role="alertdialog" aria-modal="true" aria-labelledby="clear-progress-title" aria-describedby="clear-progress-copy">
+      <h2 id="clear-progress-title">清空所有进度？</h2>
+      <p id="clear-progress-copy">关卡进度和图鉴奖励将被清空，无法恢复。音乐、音效和角色形态设置会保留。</p>
+      <p id="clear-progress-error" role="alert" hidden></p>
+      <div class="confirm-actions"><button id="cancel-clear-progress" class="ink-tab" type="button">取消</button><button id="confirm-clear-progress" class="ink-tab" type="button">确认清空</button></div>
     </div>
   </div>`;
 
@@ -331,7 +343,7 @@ function paintSealRow() {
 }
 function placeShade() {
   const shade = $('#modal-shade');
-  const open = ['#overlay', '#level-select', '#gallery', '#viewer', '#combat-guide'].map(selector => $(selector)).filter(el => !el.hidden);
+  const open = ['#overlay', '#level-select', '#gallery', '#viewer', '#combat-guide', '#clear-progress-dialog'].map(selector => $(selector)).filter(el => !el.hidden);
   if (!open.length) { shade.hidden = true; return; }
   open.forEach((el, index) => { el.style.zIndex = String(40 + index * 2); });
   shade.style.zIndex = String(40 + (open.length - 1) * 2 - 1);
@@ -518,7 +530,7 @@ const keyDirections: Record<string, Direction> = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
 };
 function menuOpen() {
-  return $('#combat-guide').hidden && !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
+  return $('#clear-progress-dialog').hidden && $('#combat-guide').hidden && !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
 }
 window.addEventListener('keydown', e => {
   if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -707,6 +719,9 @@ function handleEvent(event: GameEvent) {
     if (event.type === 'bossHit') {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
       notify(`${current.names.boss}受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `${current.names.boss} ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); lakeAudio.play('boss-hit');
+    } else if (event.type === 'powerup') {
+      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒' };
+      notify(`获得${POWER_UP_LABELS[event.kind]} · ${descriptions[event.kind]}`, descriptions[event.kind]); lakeAudio.play('reward');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
       const names = event.enemies.map(enemy => enemy.kind === 'straight' ? current.names.straight[0] : enemy.kind === 'boss' ? current.names.boss : current.names[enemy.kind]).join('、');
@@ -752,6 +767,10 @@ function handleEvent(event: GameEvent) {
 
 function sync() {
   const selecting = game.phase === 'opening', waiting = !game.actorsReady;
+  const status = $('#powerup-status');
+  const activeEffects = POWER_UP_KINDS.filter(kind => game.powerUpEffects[kind] > 0)
+    .map(kind => `${POWER_UP_LABELS[kind]} ${Math.ceil(game.powerUpEffects[kind])}s`).join(' · ');
+  status.hidden = !activeEffects; if (status.textContent !== activeEffects) status.textContent = activeEffects;
   $('#opening-hint').hidden = !selecting;
   if (selecting && game.opening) $('#opening-hint').textContent = `${openingPercent(game.opening, game.width, game.height).toFixed(1)}% · 空格 / 动作键确认 · ${Math.max(0, OPENING_SECONDS - game.opening.elapsed).toFixed(1)}s`;
   drawButton.setAttribute('aria-label', selecting ? '确认起点' : '按住画线，松开收线');
@@ -830,6 +849,24 @@ function sync() {
   }
 }
 
+function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: number) {
+  const appearance = {
+    slow: { color: '#9ee8bb', mark: '减' },
+    stop: { color: '#a8d9ff', mark: '止' },
+    speed: { color: '#ffd783', mark: '加' },
+  }[item.kind];
+  context.save(); context.translate(item.x, item.y);
+  const pulse = reducedMotion.matches ? 1 : 1 + 0.06 * Math.sin(elapsed * 4);
+  context.scale(pulse, pulse); context.shadowColor = appearance.color; context.shadowBlur = 8;
+  context.fillStyle = '#17252b'; context.strokeStyle = appearance.color; context.lineWidth = 0.18;
+  context.beginPath(); context.arc(0, 0, POWER_UP_RADIUS, 0, Math.PI * 2); context.fill(); context.stroke();
+  context.shadowBlur = 0; context.strokeStyle = '#fff8'; context.lineWidth = 0.07;
+  context.beginPath(); context.arc(0, 0, POWER_UP_RADIUS - 0.25, 0, Math.PI * 2); context.stroke();
+  context.fillStyle = appearance.color; context.font = 'bold 1.95px sans-serif';
+  context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(appearance.mark, 0, 0.08);
+  context.restore();
+}
+
 function render(now: number) {
   const width = canvas.width, height = canvas.height;
   const scale = Math.min((width - 24) / game.width, (height - 24) / game.height);
@@ -888,6 +925,7 @@ function render(now: number) {
       game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
       ctx.stroke(); ctx.restore();
     }
+    if (game.powerUp) drawPowerUp(ctx, game.powerUp, game.elapsed);
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
     if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions, game.bossAttack?.angleOffset, game.bossAttack?.warningAngles);
     for (const hazard of game.hazards) hazard.render(ctx);
@@ -1037,6 +1075,43 @@ $('#menu-settings').addEventListener('click', () => {
   panel.hidden = !panel.hidden;
   $('#menu-settings').setAttribute('aria-expanded', String(!panel.hidden));
 });
+function closeClearProgress() {
+  $('#clear-progress-dialog').hidden = true; placeShade();
+  $('#clear-progress').focus({ preventScroll: true });
+}
+$('#clear-progress').addEventListener('click', () => {
+  $('#clear-progress-error').hidden = true;
+  $('#clear-progress-dialog').hidden = false; placeShade();
+  $('#cancel-clear-progress').focus({ preventScroll: true });
+});
+$('#cancel-clear-progress').addEventListener('click', closeClearProgress);
+$('#confirm-clear-progress').addEventListener('click', () => {
+  const keys = ['linkblock.fenglin.levels', 'linkblock.fenglin.codex'];
+  let previous: (string | null)[] = [];
+  try {
+    previous = keys.map(key => localStorage.getItem(key));
+    for (const key of keys) localStorage.removeItem(key);
+    if (keys.some(key => localStorage.getItem(key) !== null)) throw new Error('Progress could not be removed');
+  } catch {
+    try { keys.forEach((key, i) => { if (previous[i] !== undefined && previous[i] !== null) localStorage.setItem(key, previous[i]!); }); } catch { /* Keep the warning visible when storage is unavailable. */ }
+    const error = $('#clear-progress-error'); error.textContent = '无法清空进度，请检查浏览器存储设置。'; error.hidden = false; return;
+  }
+  progress = readLevelProgress(); codex = codexForProgress(readCodex(), progress.cleared);
+  current = LEVELS[0]; game = new Game(72, 48, gameOptionsFor(current, monsterForm));
+  clearInput(); freshNote = ''; effects.length = 0; hitFlash = 0;
+  heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
+  loadLevelArt(current); applyAccent(current); syncScene(); paintSealRow(); renderLevels();
+  refreshCard = true; closeClearProgress(); sync(); render(performance.now());
+});
+window.addEventListener('keydown', event => {
+  if ($('#clear-progress-dialog').hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeClearProgress(); }
+  if (event.key === 'Tab') {
+    event.preventDefault();
+    const cancel = $('#cancel-clear-progress'), confirm = $('#confirm-clear-progress');
+    (document.activeElement === cancel && !event.shiftKey || document.activeElement !== confirm && event.shiftKey ? confirm : cancel).focus();
+  }
+}, { capture: true });
 $('#home').addEventListener('click', showMenu);
 $('#back-menu').addEventListener('click', showMenu);
 paintSealRow();
