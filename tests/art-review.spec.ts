@@ -10,7 +10,7 @@ for (const width of [1280, 390]) {
     await expect(buttons).toHaveCount(10);
     for (const monster of [false, true]) {
       if (monster) await page.locator('#form-toggle').click();
-      for (const id of [1, 4, 8, 10]) {
+      for (const id of LEVELS.map(level => level.id)) {
         await page.locator('#level-filter').selectOption(String(id));
         const card = page.locator('#levels section:visible figure').first();
         await card.locator('.mask-button').click();

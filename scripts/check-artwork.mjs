@@ -16,8 +16,12 @@ for (const level of LEVELS) {
   const digest = file => createHash('sha256').update(readFileSync(resolve(root, file))).digest('hex');
   if (contour.source !== `art/review/monster-forms/${level.id}.png` || digest(contour.source) !== contour.source_sha256)
     errors.push(`Level ${level.id}: monster source changed; review its independent mask`);
-  if (digest(`public/monster/${level.id}/mask.png`) !== contour.mask_sha256)
-    errors.push(`Level ${level.id}: monster mask does not match its reviewed contour`);
+  if (contour.version !== 2 || digest(contour.matte) !== contour.matte_sha256)
+    errors.push(`Level ${level.id}: monster extracted matte does not match its reviewed source`);
+  for (const [file, hash] of [['mask.png', contour.mask_sha256], ['sealed.webp', contour.sealed_sha256], ['portrait-sealed.webp', contour.portrait_sealed_sha256]]) {
+    if (digest(`public/monster/${level.id}/${file}`) !== hash)
+      errors.push(`Level ${level.id}: ${file} does not match its reviewed matte; rebuild monster masks and seals together`);
+  }
   for (const key of ['restored', 'rewardNinety', 'rewardPerfect', 'sealed', 'mask']) {
     const file = level[key];
     if (!file) { errors.push(`Level ${level.id}: missing ${key}`); continue; }

@@ -1,363 +1,101 @@
 {
+  "version": 2,
   "canvas": [
-    768,
-    512
-  ],
-  "outline": [
-    [
-      350,
-      43
-    ],
-    [
-      354,
-      29
-    ],
-    [
-      362,
-      20
-    ],
-    [
-      375,
-      14
-    ],
-    [
-      390,
-      14
-    ],
-    [
-      407,
-      19
-    ],
-    [
-      418,
-      28
-    ],
-    [
-      425,
-      40
-    ],
-    [
-      427,
-      57
-    ],
-    [
-      429,
-      70
-    ],
-    [
-      426,
-      84
-    ],
-    [
-      425,
-      102
-    ],
-    [
-      434,
-      118
-    ],
-    [
-      450,
-      125
-    ],
-    [
-      477,
-      131
-    ],
-    [
-      500,
-      136
-    ],
-    [
-      517,
-      148
-    ],
-    [
-      529,
-      164
-    ],
-    [
-      535,
-      184
-    ],
-    [
-      541,
-      208
-    ],
-    [
-      551,
-      228
-    ],
-    [
-      565,
-      248
-    ],
-    [
-      574,
-      267
-    ],
-    [
-      580,
-      286
-    ],
-    [
-      581,
-      305
-    ],
-    [
-      576,
-      325
-    ],
-    [
-      573,
-      341
-    ],
-    [
-      579,
-      356
-    ],
-    [
-      589,
-      369
-    ],
-    [
-      600,
-      383
-    ],
-    [
-      609,
-      399
-    ],
-    [
-      622,
-      406
-    ],
-    [
-      635,
-      414
-    ],
-    [
-      647,
-      429
-    ],
-    [
-      648,
-      444
-    ],
-    [
-      636,
-      438
-    ],
-    [
-      623,
-      428
-    ],
-    [
-      612,
-      424
-    ],
-    [
-      601,
-      421
-    ],
-    [
-      601,
-      511
-    ],
-    [
-      255,
-      511
-    ],
-    [
-      255,
-      481
-    ],
-    [
-      254,
-      456
-    ],
-    [
-      258,
-      438
-    ],
-    [
-      266,
-      421
-    ],
-    [
-      253,
-      416
-    ],
-    [
-      237,
-      418
-    ],
-    [
-      222,
-      418
-    ],
-    [
-      205,
-      418
-    ],
-    [
-      190,
-      417
-    ],
-    [
-      182,
-      415
-    ],
-    [
-      180,
-      410
-    ],
-    [
-      189,
-      403
-    ],
-    [
-      205,
-      397
-    ],
-    [
-      222,
-      393
-    ],
-    [
-      232,
-      389
-    ],
-    [
-      237,
-      375
-    ],
-    [
-      241,
-      351
-    ],
-    [
-      246,
-      329
-    ],
-    [
-      249,
-      309
-    ],
-    [
-      251,
-      292
-    ],
-    [
-      256,
-      272
-    ],
-    [
-      263,
-      257
-    ],
-    [
-      264,
-      239
-    ],
-    [
-      263,
-      220
-    ],
-    [
-      265,
-      196
-    ],
-    [
-      269,
-      174
-    ],
-    [
-      277,
-      157
-    ],
-    [
-      289,
-      147
-    ],
-    [
-      307,
-      140
-    ],
-    [
-      328,
-      134
-    ],
-    [
-      348,
-      127
-    ],
-    [
-      357,
-      116
-    ],
-    [
-      355,
-      103
-    ],
-    [
-      351,
-      88
-    ],
-    [
-      349,
-      72
-    ]
+    1536,
+    1024
   ],
   "source": "art/review/monster-forms/2.png",
   "source_sha256": "ce9471bbc9c702b05e863bb2fb28059f67f808b894b8df2181e6fa8772381990",
-  "holes": [
-    [
-      [
-        270,
-        370
+  "matte": "art/monster-masks/mattes/2.png",
+  "matte_sha256": "7be09b1033076921cb0a6f70971303998eb6b4d7a443c8efe1b24b55695b9a7a",
+  "generated_source": "exec-832e5d89-7327-45f9-8591-a1ba62b7c98f.png",
+  "method": "Full-canvas image-generated extraction; preserve reviewed background holes, fill internal linework, two-pixel edge guard",
+  "background_holes": [
+    {
+      "point": [
+        967,
+        452
       ],
-      [
-        277,
-        345
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        650,
+        466
       ],
-      [
-        282,
-        324
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        940,
+        481
       ],
-      [
-        286,
-        312
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        953,
+        512
       ],
-      [
-        291,
-        301
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        625,
+        513
       ],
-      [
-        294,
-        316
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        671,
+        513
       ],
-      [
-        292,
-        338
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        635,
+        554
       ],
-      [
-        286,
-        358
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        940,
+        562
       ],
-      [
-        281,
-        378
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        597,
+        568
       ],
-      [
-        281,
-        390
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        583,
+        656
       ],
-      [
-        264,
-        392
-      ]
-    ]
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    },
+    {
+      "point": [
+        570,
+        796
+      ],
+      "description": "Temple/river visible between separate hanging linen strips and arms"
+    }
   ],
-  "mask_sha256": "c7fb25c6b56592f28334101835a6bd6ee22d2e04b7821054d7e45129d93e3cf4"
+  "guard_pixels": 2,
+  "portrait_crop": [
+    600,
+    0,
+    370
+  ],
+  "mask_sha256": "0253259c91e81aa06da7d4e5366d19fe49e711877da4f736f4502c16cc73e1af",
+  "sealed_sha256": "a5e7412c6fa9d54eb4f5de9564320b6ff3d68265d39cfacec7387e633127f290",
+  "portrait_sealed_sha256": "7108c8a505c1ac9b406e4b3f3fbde817d5b2b52d0153626aeec4aba0cc91d962"
 }
