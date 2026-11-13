@@ -303,3 +303,17 @@ Only the perfect reward changes; gameplay plates and matching masks are intact.
 art/canvas/v17-sources.json records the complete generated painting.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v17-sources.json
+
+Character-specific rest setting refinements (v18)
+------------------------------------------------
+Chapters 4, 5, 8 and 10 replace their perfect-reward environments while
+preserving the selected outfits and principal poses. The vampire rests on
+an open castle terrace surrounded by red roses. The pumpkin rider returns
+to a maple-leaf pile inside a horse paddock, using the earlier v10 painting
+as its reference. The frost giant sits inside an ice castle filled with
+frost crystals. The inferno character occupies a half-open living area and
+terrace, with a fireplace close beside him. Chapter 7 keeps its v17 terrace.
+No gameplay main plate, mask, seal, portrait or opening face bound changes.
+art/canvas/v18-sources.json records the four generated source paintings.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v18-sources.json

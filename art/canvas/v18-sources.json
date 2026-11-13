@@ -1,0 +1,38 @@
+{
+  "version": "v18",
+  "width": 1536,
+  "height": 1024,
+  "description": "Perfect-reward environment refinements for chapters 4, 5, 8 and 10. Preserve the selected clothing, character designs and principal poses; change only the requested resting environments. Main plates and their masks remain unchanged.",
+  "levels": {
+    "4": {
+      "perfect": {
+        "origin": "generated",
+        "file": "reward-v18-level-4.png"
+      }
+    },
+    "5": {
+      "perfect": {
+        "origin": "generated",
+        "file": "reward-v18-level-5.png"
+      }
+    },
+    "8": {
+      "perfect": {
+        "origin": "generated",
+        "file": "reward-v18-level-8.png"
+      }
+    },
+    "10": {
+      "perfect": {
+        "origin": "generated",
+        "file": "reward-v18-level-10.png"
+      }
+    }
+  },
+  "settings": {
+    "4": "An open castle terrace surrounded by red roses, retaining the white homewear and velvet chaise.",
+    "5": "A maple-leaf pile inside a rustic horse paddock, based on the earlier v10 scene, retaining the loose-strapped brown shorts.",
+    "8": "An ice-castle interior filled with frost crystal clusters, retaining the fur seat, fur wrap and hot drink.",
+    "10": "A half-open living space and terrace, with a fireplace close beside the character."
+  }
+}
