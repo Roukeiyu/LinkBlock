@@ -1,6 +1,7 @@
 import './export-face-review.mjs';
 /** Export the active artwork catalog. Optional: --offline /absolute/output/folder */
 import { build } from 'esbuild';
+import sharp from 'sharp';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,19 @@ for (const level of LEVELS) {
     copyFileSync(resolve(root, 'art/review', image.file), resolve(monsterFolder, name));
   }
 }
+// Thumbnails are generated from the active originals so review cards never download
+// the full-size files. The originals remain available to the viewer and downloads.
+const previewFolder = resolve(root, 'public/review/previews');
+mkdirSync(previewFolder, { recursive: true });
+for (const level of LEVELS) {
+  for (const [kind, human] of [['restored', level.restored], ['ninety', level.rewardNinety], ['perfect', level.rewardPerfect]]) {
+    const monster = `review/monster-forms/${level.id}${kind === 'restored' ? '' : '-' + kind}.png`;
+    for (const [form, source] of [['human', human], ['monster', monster]]) {
+      await sharp(resolve(root, 'public', source)).resize(768, 512).webp({ quality: 80 })
+        .toFile(resolve(previewFolder, `${level.id}-${kind}-${form}.webp`));
+    }
+  }
+}
 const offlineAt = process.argv.indexOf('--offline');
 if (offlineAt >= 0 && !process.argv[offlineAt + 1]) throw new Error('--offline requires an output folder');
 const destinations = [{ folder: resolve(root, 'public/review'), offline: false }];
@@ -38,9 +52,9 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   }
   const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme,
     items: kind === 'rewards' ? [
-      { label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`) },
-      { label: '九成净化 · 90%', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`) },
-      { label: '无伤通关', file: ref(level.rewardPerfect), monster: ref(`review/monster-forms/${level.id}-perfect.png`) },
+      { label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`) },
+      { label: '九成净化 · 90%', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`) },
+      { label: '无伤通关', file: ref(level.rewardPerfect), monster: ref(`review/monster-forms/${level.id}-perfect.png`), preview: ref(`review/previews/${level.id}-perfect-human.webp`), monsterPreview: ref(`review/previews/${level.id}-perfect-monster.webp`) },
     ] : [
       { label: `Boss · ${level.names.boss}`, file: ref(level.sprites.tree) },
       ...['mist', 'spore', 'crow'].map((key, i) => ({ label: `直行小怪 · ${level.names.straight[i]}`, file: ref(level.sprites[key]) })),
@@ -68,6 +82,7 @@ let currentItems=[],currentIndex=0,monsterMode=false;
 try{monsterMode=localStorage.getItem('linkblock.review.monster-form')==='true';}catch{}
 const cardUpdates=[];
 function activeFile(item){return monsterMode&&item.monster?item.monster:item.file;}
+function activePreview(item){return monsterMode&&item.monsterPreview?item.monsterPreview:(item.preview||item.file);}
 function activeLabel(item){return item.label+(item.monster?' · '+(monsterMode?'魔物形态':'人形'):'');}
 function syncForm(){
   document.querySelectorAll('[data-form-toggle]').forEach(button=>{
@@ -129,6 +144,7 @@ full.addEventListener('touchend',event=>{
 },{passive:true});
 full.addEventListener('touchcancel',()=>{swipeStart=null;},{passive:true});
 viewer.addEventListener('close',()=>{swipeStart=null;});
+const preloadObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>entry.target.updatePreload(entry.isIntersecting)),{rootMargin:'400px'}):null;
 for(const level of levels){
   const section=document.createElement('section');section.dataset.level=String(level.id);
   const h=document.createElement('h2');h.textContent=level.title;
@@ -138,13 +154,30 @@ for(const level of levels){
     const figure=document.createElement('figure'),button=document.createElement('button'),img=document.createElement('img');
     const cap=document.createElement('figcaption'),label=document.createElement('span'),file=document.createElement('span'),size=document.createElement('span');
     img.loading='lazy';img.decoding='async';
-    img.onload=()=>{size.textContent=img.naturalWidth+' × '+img.naturalHeight;};
+    img.onload=()=>{size.textContent=item.preview?'1536 × 1024':img.naturalWidth+' × '+img.naturalHeight;};
     button.append(img);button.onclick=()=>openImage(level.id,item.file);
     file.className='file';size.className='dimensions';size.style.display='block';size.style.minHeight='1.65em';
+    let nearby=false, generation=0, previews=new Map();
+    function prepare(path){
+      const cache=previews;
+      if(!cache.has(path)){
+        const image=new Image();image.src=sources[path];
+        const ready=image.decode().then(()=>image).catch(()=>{cache.delete(path);return null;});
+        cache.set(path,ready);
+      }
+      return cache.get(path);
+    }
+    function preloadBoth(){if(item.preview){prepare(item.preview);prepare(item.monsterPreview);}}
+    figure.updatePreload=visible=>{nearby=visible;if(visible)preloadBoth();else previews=new Map();};
+    if(item.preview&&preloadObserver)preloadObserver.observe(figure);
     cardUpdates.push(()=>{
-      const path=activeFile(item);img.src=sources[path];img.alt=level.title+' / '+activeLabel(item);
-      label.textContent=activeLabel(item);file.textContent=path;size.textContent='';
-      if(img.complete&&img.naturalWidth)img.onload();
+      const path=activeFile(item),preview=activePreview(item),caption=activeLabel(item),token=++generation;
+      const apply=()=>{img.src=sources[preview];img.alt=level.title+' / '+caption;
+        label.textContent=caption;file.textContent=path;size.textContent='';
+        if(img.complete&&img.naturalWidth)img.onload();};
+      if(item.preview&&nearby&&img.getAttribute('src')){
+        preloadBoth();prepare(preview).then(image=>{if(image&&token===generation)apply();});
+      }else apply();
     });
     cap.append(label,size,file);figure.append(button,cap);grid.append(figure);
   }

@@ -24,20 +24,22 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
         return { source: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
       }));
       for (const size of sizes) {
-        expect(size.source).toEqual([1536, 1024]);
+        expect(size.source).toEqual([768, 512]);
         expect(size.ratio).toBeCloseTo(1.5, 2);
       }
       await expect(page.locator('.dimensions')).toHaveText(Array(30).fill('1536 × 1024'));
     }
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
-    const original = await page.locator('#levels section:visible img').first().getAttribute('src');
+    const originals = page.locator('#levels section:visible .grid .file');
+    const original = '../' + await originals.first().textContent();
     expect(original).toContain(pageName === 'rewards' ? LEVELS[9].restored : LEVELS[9].sprites.tree);
     await page.locator('#levels section:visible figure button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
     const perLevel = count / 10;
     const visibleImages = page.locator('#levels section:visible .grid img');
+    const sourceAt = async (index: number) => '../' + await originals.nth(index).textContent();
     const assertCurrent = async (index: number, total: number, source: string, label: string) => {
       await expect(page.locator('#position')).toHaveText(`${index + 1} / ${total}`);
       await expect(page.locator('#full')).toHaveAttribute('src', source);
@@ -48,11 +50,11 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     };
     // A filtered viewer loops within this level, and keeps captions/downloads in sync.
     await page.getByRole('button', { name: '上一张', exact: true }).click();
-    await assertCurrent(perLevel - 1, perLevel, (await visibleImages.last().getAttribute('src'))!, (await visibleImages.last().getAttribute('alt'))!);
+    await assertCurrent(perLevel - 1, perLevel, await sourceAt(perLevel - 1), (await visibleImages.last().getAttribute('alt'))!);
     await page.keyboard.press('ArrowRight');
     await assertCurrent(0, perLevel, original!, (await visibleImages.first().getAttribute('alt'))!);
     await page.getByRole('button', { name: '下一张', exact: true }).click();
-    await assertCurrent(1, perLevel, (await visibleImages.nth(1).getAttribute('src'))!, (await visibleImages.nth(1).getAttribute('alt'))!);
+    await assertCurrent(1, perLevel, await sourceAt(1), (await visibleImages.nth(1).getAttribute('alt'))!);
     await page.keyboard.press('Escape');
     await expect(page.locator('#viewer')).not.toBeVisible();
     await expect(page.locator('#levels section:visible figure button').first()).toBeFocused();
@@ -61,13 +63,13 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await page.locator('#levels figure button').first().click();
     await page.keyboard.press('ArrowLeft');
     await expect(page.locator('#position')).toHaveText(`${count} / ${count}`);
-    await expect(page.locator('#full')).toHaveAttribute('src', (await page.locator('#levels .grid img').last().getAttribute('src'))!);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../' + await page.locator('#levels .grid .file').last().textContent());
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('#position')).toHaveText(`1 / ${count}`);
     await page.locator('#close').click();
     await page.locator('#levels figure button').nth(perLevel - 1).click();
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('#full')).toHaveAttribute('src', (await page.locator('#levels .grid img').nth(perLevel).getAttribute('src'))!);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../' + await page.locator('#levels .grid .file').nth(perLevel).textContent());
     await page.locator('#close').click();
     if (pageName === 'enemies') {
       await page.locator('#animation-toggle').click();
@@ -88,9 +90,8 @@ for (const width of [1280, 390]) {
     await page.goto('/review/rewards.html');
     const images = page.locator('#levels .grid img');
     const toggle = page.locator('#form-toggle');
-    const humanPaths = LEVELS.flatMap(l => [l.restored, l.rewardNinety, l.rewardPerfect]);
-    const monsterPaths = LEVELS.flatMap(l => [`review/monster-forms/${l.id}.png`,
-      `review/monster-forms/${l.id}-ninety.png`, `review/monster-forms/${l.id}-perfect.png`]);
+    const previewPaths = (form: string) => LEVELS.flatMap(l => ['restored', 'ninety', 'perfect'].map(kind => `review/previews/${l.id}-${kind}-${form}.webp`));
+    const humanPaths = previewPaths('human'), monsterPaths = previewPaths('monster');
     const assertImages = async (paths: string[]) => {
       await expect(images).toHaveCount(30);
       await images.evaluateAll(imgs => imgs.forEach(image => {
@@ -101,8 +102,8 @@ for (const width of [1280, 390]) {
         const img = image as HTMLImageElement;
         return img.getAttribute('src') === `../${expected[index]}` &&
           img.currentSrc === new URL(`../${expected[index]}`, document.baseURI).href &&
-          img.complete && img.naturalWidth === 1536 && img.naturalHeight === 1024;
-      }), paths), { timeout: 30000, message: 'All selected reward images should load at their original size' }).toBe(true);
+          img.complete && img.naturalWidth === 768 && img.naturalHeight === 512;
+      }), paths), { timeout: 30000, message: 'All selected reward previews should load at their preview size' }).toBe(true);
     };
     await assertImages(humanPaths);
     const dock = page.locator('#form-dock');
@@ -155,6 +156,44 @@ for (const width of [1280, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   });
 }
+
+test('nearby previews preload and wait for decoding without stale switches', async ({ page }) => {
+  let release!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  let requested = false;
+  const originalRequests: string[] = [];
+  page.on('request', request => {
+    if (request.url().includes('/review/monster-forms/') || request.url().includes('/levels/1/v10/restored.webp')) originalRequests.push(request.url());
+  });
+  await page.route('**/review/previews/1-restored-monster.webp', async route => {
+    requested = true;
+    await blocked;
+    await route.continue();
+  });
+  try {
+    await page.goto('/review/rewards.html', { waitUntil: 'domcontentloaded' });
+    const card = page.locator('#levels figure').first(), img = card.locator('img');
+    await card.scrollIntoViewIfNeeded();
+    await expect(img).toHaveAttribute('src', '../review/previews/1-restored-human.webp');
+    await expect.poll(() => requested).toBe(true);
+    expect(originalRequests).toEqual([]);
+    const toggle = page.locator('#form-toggle');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(img).toHaveAttribute('src', '../review/previews/1-restored-human.webp');
+    await expect(card.locator('figcaption')).toContainText('人形');
+    await toggle.click();
+    release();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(img).toHaveAttribute('src', '../review/previews/1-restored-human.webp');
+    await toggle.click();
+    await expect(img).toHaveAttribute('src', '../review/previews/1-restored-monster.webp');
+    await expect(card.locator('figcaption')).toContainText('魔物形态');
+    await card.locator('button').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/1.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../review/monster-forms/1.png', page.url()).href);
+  } finally { release(); }
+});
 
 test.describe('touch review navigation', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
