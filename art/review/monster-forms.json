@@ -2,7 +2,7 @@
   "version": 2,
   "width": 1536,
   "height": 1024,
-  "scope": "Review only. Monster variants of all restored, ninety and perfect artworks; game artwork and masks remain unchanged.",
+  "scope": "Monster variants of all restored, ninety and perfect artworks. Runtime versions and matching masks are in public/monster.",
   "levels": {
     "1": {
       "source": "levels/1/v10/restored.webp",

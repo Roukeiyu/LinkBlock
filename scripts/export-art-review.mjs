@@ -10,7 +10,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = await build({ entryPoints: [resolve(root, 'src/levels.ts')], bundle: true,
   platform: 'node', format: 'esm', write: false });
 const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
-// Review-only variants deliberately live outside the game's LEVELS and public assets.
+// The manifest also records which human artwork each monster variant follows.
 const monsterForms = JSON.parse(readFileSync(resolve(root, 'art/review/monster-forms.json'), 'utf8'));
 const monsterFolder = resolve(root, 'public/review/monster-forms');
 mkdirSync(monsterFolder, { recursive: true });
@@ -64,7 +64,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   }));
   if (kind === 'enemies') ref('sprites/player-spirit.webp');
   const title = kind === 'rewards' ? '全关卡奖励图片' : 'Boss、小怪与玩家标记';
-  const description = kind === 'rewards' ? '10 个关卡 · 每关依次为完整成图、九成净化、无伤通关 · 统一 1536 × 1024（3:2）。右侧按钮一键切换全部图片的人形／魔物形态。魔物图仅供审阅，不用于游戏。' : '10 个 Boss · 50 个小怪。保留图片原色，透明素材展示在深色底板上。';
+  const description = kind === 'rewards' ? '10 个关卡 · 每关依次为完整成图、九成净化、无伤通关 · 统一 1536 × 1024（3:2）。右侧按钮一键切换全部图片的人形／魔物形态。游戏设置中也可切换角色形态。' : '10 个 Boss · 50 个小怪。保留图片原色，透明素材展示在深色底板上。';
   const html = `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>封林 · ${title}</title><style>
 *{box-sizing:border-box}html{color-scheme:dark;scroll-behavior:smooth}body{margin:0;background:#19191d;color:#eee8dd;font:15px/1.65 system-ui,sans-serif}header,main{max-width:1560px;margin:auto;padding:28px}header{padding-bottom:8px}h1{font-size:clamp(25px,3vw,34px);letter-spacing:.05em;margin:4px 0 10px}h2{font-size:21px;margin:0 0 12px}h2 small{font-size:14px;color:#c3b292;font-weight:400;margin-left:12px}p{margin:6px 0;color:#bfb8ac}a{color:#ebcb8e}nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}nav a{text-decoration:none}button,select{font:inherit;border:1px solid #645a48;background:#2c2924;color:#f0e7d9;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,nav a:hover{color:#fff2d5}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f4cd7c;outline-offset:4px}section{margin:0 0 36px;scroll-margin:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.enemies .grid{grid-template-columns:repeat(6,minmax(0,1fr))}figure{margin:0;background:#232329;border:1px solid #3a3740;border-radius:10px;overflow:hidden;min-width:0}figure button{display:block;width:100%;padding:0;border:0;border-radius:0;background:#121319;cursor:zoom-in}figure img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}.enemies figure img{height:180px;aspect-ratio:auto;padding:14px}.enemies figure:first-child{border-color:#8c7149}figcaption{padding:10px 12px;color:#ddd3c2;font-size:14px}.file{display:block;color:#8e8b94;font:10px/1.5 monospace;overflow-wrap:anywhere;margin-top:4px}dialog{padding:0;border:1px solid #695c48;border-radius:10px;background:#15151a;color:#f5ebd9;max-width:96vw;max-height:96dvh;overflow:auto}dialog::backdrop{background:#000d}dialog img{display:block;max-width:94vw;max-height:80dvh;width:auto;height:auto;object-fit:contain;margin:auto}dialog footer{padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}dialog footer span{flex:1}#player-preview{padding:20px;border:1px solid #65543a;border-radius:12px;background:#242127}.spirit-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:18px 0}.spirit-stage{display:flex;align-items:center;justify-content:center;width:224px;height:176px;border-radius:8px;background:#14171e}.spirit-stage.light{background:#d8be8b}.frames{display:flex;gap:10px;flex-wrap:wrap}.frames figure{text-align:center}.frames canvas{display:block;width:96px;height:96px}.frames figcaption{font-size:12px;padding:4px}.note{font-size:13px;color:#b7a98f}[hidden]{display:none!important}@media(max-width:950px){.enemies .grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){header,main{padding:18px 14px}.grid{grid-template-columns:1fr}.enemies .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.enemies figure img{height:140px}h2{font-size:18px}h2 small{display:block;margin:0}.spirit-stage{width:calc(50% - 8px);height:128px}.frames canvas{width:64px;height:64px}#player-preview{padding:14px}}
@@ -92,7 +92,7 @@ function syncForm(){
     button.setAttribute('aria-pressed',String(monsterMode));
   });
   const status=document.querySelector('#form-status');
-  if(status)status.textContent='当前：'+(monsterMode?'魔物形态 · 仅供审阅':'人形');
+  if(status)status.textContent='当前：'+(monsterMode?'魔物形态':'人形');
   cardUpdates.forEach(update=>update());
   if(viewer.open)showImage(currentIndex);
 }

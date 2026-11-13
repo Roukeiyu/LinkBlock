@@ -369,3 +369,13 @@ Fox leg hair continuity (v24)
 Chapter 7 perfect adds natural thigh and calf hair matching the torso,
 retaining v23 muscle definition and the corrected garment depth.
 Source: art/canvas/v24-sources.json. Gameplay plates and masks are unchanged.
+
+Monster gameplay forms
+----------------------
+All ten monster main plates have their own checked-in completion masks in
+public/monster/<level>/mask.png, reviewed as overlays against the restored art.
+The seal and score use the same mask; portraits, rewards and opening head bounds
+follow the selected form. After changing a monster main plate, review and update
+its mask and head bounds before running `python scripts/build-monster-art.py <level>`;
+this packages the three source illustrations, sealed scene and portraits. Review
+the mask overlay and a partially revealed game board before publishing.

@@ -1,7 +1,7 @@
 import { lakeBossConfig, type BossConfig } from './boss';
 import { LevelAttack, type AttackPattern } from './level-attacks';
 import type { EnemyMotion } from './enemies';
-import { faceProtection, type FaceArtwork } from './faces';
+import { faceProtection, monsterFaceProtection, type FaceArtwork } from './faces';
 import type { GameOptions } from './engine';
 import type { SpriteSheet } from './render-enemies';
 
@@ -193,8 +193,8 @@ export function bossConfigFor(level: LevelDef): BossConfig {
 }
 
 /** Shared by the page and simulation tests, including restart and next-level. */
-export function gameOptionsFor(level: LevelDef): GameOptions {
-  return { opening: true, openingFace: faceProtection(level.restored), bossConfig: bossConfigFor(level), squad: level.squad,
+export function gameOptionsFor(level: LevelDef, monster = false): GameOptions {
+  return { opening: true, openingFace: monster ? monsterFaceProtection(level.id) : faceProtection(level.restored), bossConfig: bossConfigFor(level), squad: level.squad,
     speedScale: level.enemySpeed, bossSpeedScale: level.bossSpeed, enemyMotion: level.enemyMotion };
 }
 

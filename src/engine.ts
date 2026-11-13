@@ -120,6 +120,13 @@ export class Game {
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.completion?.percent ?? this.claimed / (this.width * this.height) * 100; }
   get lineSpeed() { return PLAYER_SPEED * (this.characterComplete ? LINE_SPEED_BOOST : 1); }
+  setOpeningFace(face: GameOptions['openingFace']) {
+    this.options.openingFace = face;
+    if (this.opening && (this.phase === 'opening' || this.phase === 'paused' && this.resumePhase === 'opening')
+      && face && openingTouchesFace(this.opening.region, this.width, this.height, face)) {
+      this.opening.region = openingRectangle(this.width, this.height, this.random, this.options.boss ?? undefined, face);
+    }
+  }
   setCompletionMask(mask: CompletionMask | undefined) {
     this.completionMask = mask;
     this.recomputeCompletion();

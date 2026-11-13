@@ -39,7 +39,7 @@ jobs:
       - name: Build website
         run: npm run build
       - name: Test level balance and artwork UI
-        run: npm run test:e2e -- tests/level-combat.spec.ts tests/art-review.spec.ts tests/title-menu.spec.ts tests/opening.spec.ts
+        run: npm run test:e2e -- tests/level-combat.spec.ts tests/art-review.spec.ts tests/title-menu.spec.ts tests/opening.spec.ts tests/character-form.spec.ts
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

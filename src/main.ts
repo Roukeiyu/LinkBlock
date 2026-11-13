@@ -43,13 +43,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <button id="menu-levels" class="menu-btn" type="button">${icon('levels')}<span>选择关卡<small aria-hidden="true">十处秘境</small></span></button>
         <button id="menu-gallery" class="menu-btn" type="button">${icon('gallery')}<span>图鉴<small aria-hidden="true">珍藏画像</small></span></button>
         <button id="menu-guide" class="menu-btn" type="button">${icon('guide')}<span>关卡攻略<small aria-hidden="true">探索指引</small></span></button>
-        <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-settings-panel">${icon('settings')}<span>设置<small aria-hidden="true">音乐与音效</small></span></button>
+        <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-settings-panel">${icon('settings')}<span>设置<small aria-hidden="true">音乐、音效与形态</small></span></button>
       </nav>
       <div id="menu-settings-panel" class="menu-settings" hidden>
         <button id="menu-music" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音乐开启</span><span class="toggle" aria-hidden="true"></span></button>
         <button id="menu-sfx" class="ink-tab audio-toggle" type="button" aria-pressed="true"><span>音效开启</span><span class="toggle" aria-hidden="true"></span></button>
         <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
         <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
+        <button id="menu-form" class="ink-tab form-setting" type="button" aria-pressed="false">角色形态：人形</button>
       </div>
       <div class="menu-progress"><div class="menu-progress-heading"><span>封印进度</span><p id="seal-count" class="seal-count"></p></div><div id="seal-row" class="seal-row"></div></div>
     </div>
@@ -115,7 +116,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
   <div id="gallery" class="gallery" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="gallery-title">
-      <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-close" class="ink-tab" type="button">返回</button></div>
+      <div class="gallery-head"><h2 id="gallery-title">图鉴</h2><button id="gallery-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="gallery-close" class="ink-tab" type="button">返回</button></div>
       <div id="gallery-grid" class="gallery-sections"></div>
     </div>
   </div>
@@ -130,7 +131,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
     </div>
   </div>
-  <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
+  <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
   <div id="level-select" class="gallery level-select" hidden>
     <div class="gallery-card" role="dialog" aria-labelledby="levels-title">
       <div class="gallery-head"><h2 id="levels-title">选关</h2><button id="levels-close" class="ink-tab" type="button">返回</button></div>
@@ -186,6 +187,35 @@ if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruin
 function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
 syncScene();
 const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+const FORM_KEY = 'linkblock.fenglin.character-form';
+let monsterForm = false;
+try { monsterForm = localStorage.getItem(FORM_KEY) === 'monster'; } catch { /* Storage may be unavailable. */ }
+let previewOtherForm = false;
+let viewerCard: GalleryCard | undefined;
+const monsterAsset = (level: number, kind: 'restored' | 'ninety' | 'perfect' | 'sealed' | 'mask' | 'portrait' | 'portrait-sealed') =>
+  `monster/${level}/${kind}.${kind === 'mask' ? 'png' : 'webp'}`;
+const rewardArt = (card: GalleryCard, monster: boolean) => monster
+  ? monsterAsset(card.level, card.id === 'clear' ? 'restored' : card.id) : card.src;
+function paintFormControls() {
+  $('#menu-form').textContent = `角色形态：${monsterForm ? '魔物' : '人形'}`;
+  $('#menu-form').setAttribute('aria-pressed', String(monsterForm));
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.form-preview')) {
+    button.textContent = `按住查看${monsterForm ? '人形' : '魔物'}`;
+    button.setAttribute('aria-label', `${button.textContent}，松开还原`);
+    button.setAttribute('aria-pressed', String(previewOtherForm));
+  }
+}
+function paintGalleryForm() {
+  const form = monsterForm !== previewOtherForm;
+  for (const image of document.querySelectorAll<HTMLImageElement>('#gallery-grid .gallery-item img[data-level]')) {
+    const card = galleryCards().find(item => item.level === Number(image.dataset.level) && item.id === image.dataset.reward);
+    if (card) image.src = asset(rewardArt(card, form));
+  }
+  if (viewerCard) $<HTMLImageElement>('#viewer-img').src = asset(rewardArt(viewerCard, form));
+  paintFormControls();
+}
+function resetGalleryPreview() { previewOtherForm = false; paintGalleryForm(); }
+
 let codex: Codex = codexForProgress(readCodex(), progress.cleared);
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
@@ -236,7 +266,7 @@ function paintCast() {
 function paintPortrait() {
   const portrait = $<HTMLImageElement>('#portrait-img');
   const freed = game.phase === 'won';
-  const src = asset(freed ? current.portraitRescued : current.portraitSealed);
+  const src = asset(monsterForm ? monsterAsset(current.id, freed ? 'portrait' : 'portrait-sealed') : freed ? current.portraitRescued : current.portraitSealed);
   if (portrait.getAttribute('src') !== src) portrait.src = src;
   portrait.alt = freed ? `${current.theme}已解开` : `${current.theme}仍被封印`;
   $('#portrait').setAttribute('aria-label', current.theme);
@@ -250,7 +280,7 @@ function renderGallery() {
     const items = cards.filter(card => card.level === level.id).map(item => {
       const open = rewardOpen(level.id, item.id);
       const picture = open
-        ? `<img src="${asset(item.src)}" alt="" loading="lazy" decoding="async" />`
+        ? `<img src="${asset(rewardArt(item, monsterForm !== previewOtherForm))}" data-level="${item.level}" data-reward="${item.id}" alt="" loading="lazy" decoding="async" />`
         : `<span class="sealed-plate" aria-hidden="true"><img src="${asset('ui/wax_seal_red.png')}" alt="" /></span>`;
       const note = open ? item.blurb : item.locked;
       return `<button type="button" class="gallery-item ${open ? 'unlocked' : 'locked'}" data-level="${level.id}" data-reward="${item.id}" ${open ? '' : 'disabled'} aria-label="${item.title}，${note}">${picture}<span>${item.title}</span><small>${note}</small></button>`;
@@ -260,9 +290,9 @@ function renderGallery() {
 }
 function openGallery() {
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
-  renderGallery(); $('#viewer').hidden = true; $('#gallery').hidden = false; placeShade();
+  previewOtherForm = false; viewerCard = undefined; renderGallery(); paintFormControls(); $('#viewer').hidden = true; $('#gallery').hidden = false; placeShade();
 }
-function closeGallery() { $('#gallery').hidden = true; $('#viewer').hidden = true; placeShade(); }
+function closeGallery() { resetGalleryPreview(); viewerCard = undefined; $('#gallery').hidden = true; $('#viewer').hidden = true; placeShade(); }
 
 function paintAudio() {
   const { music, sfx, musicVolume, sfxVolume } = lakeAudio.prefs;
@@ -345,9 +375,10 @@ function clearInput() {
   syncDirectionButtons();
 }
 function loadLevelArt(level: LevelDef) {
-  const nextRestored = asset(level.restored), nextSealed = asset(level.sealed);
-  if (!restored.src.endsWith(level.restored)) restored.src = nextRestored;
-  if (!ruined.src.endsWith(level.sealed)) ruined.src = nextSealed;
+  const restoredPath = monsterForm ? monsterAsset(level.id, 'restored') : level.restored;
+  const sealedPath = monsterForm ? monsterAsset(level.id, 'sealed') : level.sealed;
+  if (!restored.src.endsWith(restoredPath)) restored.src = asset(restoredPath);
+  if (!ruined.src.endsWith(sealedPath)) ruined.src = asset(sealedPath);
   useSpriteSheet(level.sprites);
   loadLevelMask(level);
 }
@@ -360,6 +391,7 @@ function loadLevelMask(level: LevelDef) {
   charMaskImage = undefined;
   auraCanvas = undefined;
   motes = [];
+  game.setCompletionMask(undefined);
   const image = new Image();
   image.decoding = 'async';
   image.onload = () => {
@@ -373,7 +405,7 @@ function loadLevelMask(level: LevelDef) {
     context.drawImage(image, 0, 0);
     game.setCompletionMask(maskFromPixels(scratch.width, scratch.height, context.getImageData(0, 0, scratch.width, scratch.height).data, 4));
   };
-  image.src = asset(level.mask);
+  image.src = asset(monsterForm ? monsterAsset(level.id, 'mask') : level.mask);
 }
 function beginLevel(id: number) {
   current = levelById(id);
@@ -381,7 +413,7 @@ function beginLevel(id: number) {
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
   applyAccent(current);
-  game = new Game(72, 48, gameOptionsFor(current));
+  game = new Game(72, 48, gameOptionsFor(current, monsterForm));
   syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   $('#toast').classList.remove('visible');
@@ -980,6 +1012,26 @@ $('#menu-start').addEventListener('click', () => {
 });
 $('#menu-levels').addEventListener('click', openLevels);
 $('#menu-gallery').addEventListener('click', openGallery);
+$('#menu-form').addEventListener('click', () => {
+  monsterForm = !monsterForm;
+  try { localStorage.setItem(FORM_KEY, monsterForm ? 'monster' : 'human'); } catch { /* Storage may be unavailable. */ }
+  game.setOpeningFace(gameOptionsFor(current, monsterForm).openingFace);
+  loadLevelArt(current); paintFormControls(); sync();
+});
+for (const button of document.querySelectorAll<HTMLButtonElement>('.form-preview')) {
+  const setPreview = (on: boolean) => { previewOtherForm = on; paintGalleryForm(); };
+  button.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    event.preventDefault(); button.setPointerCapture(event.pointerId); setPreview(true);
+  });
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) button.addEventListener(type, () => setPreview(false));
+  button.addEventListener('keydown', event => { if ((event.code === 'Space' || event.code === 'Enter') && !event.repeat) { event.preventDefault(); setPreview(true); } });
+  button.addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); setPreview(false); } });
+  button.addEventListener('blur', () => setPreview(false));
+}
+window.addEventListener('blur', resetGalleryPreview);
+document.addEventListener('visibilitychange', () => { if (document.hidden) resetGalleryPreview(); });
+paintFormControls();
 $('#menu-settings').addEventListener('click', () => {
   const panel = $('#menu-settings-panel');
   panel.hidden = !panel.hidden;
@@ -1027,7 +1079,7 @@ $('#level-list').addEventListener('click', event => {
 });
 $('#portrait').addEventListener('click', openGallery);
 $('#gallery-close').addEventListener('click', closeGallery);
-$('#viewer-close').addEventListener('click', () => { $('#viewer').hidden = true; placeShade(); });
+$('#viewer-close').addEventListener('click', () => { resetGalleryPreview(); viewerCard = undefined; $('#viewer').hidden = true; placeShade(); });
 $('#charms').addEventListener('click', event => { if ((event.target as Element).closest('.charm')) openGallery(); });
 $('#gallery-grid').addEventListener('click', event => {
   const item = (event.target as Element).closest<HTMLButtonElement>('.gallery-item');
@@ -1035,9 +1087,10 @@ $('#gallery-grid').addEventListener('click', event => {
   const reward = galleryCards().find(entry => String(entry.level) === item.dataset.level && entry.id === item.dataset.reward);
   if (!reward) return;
   const image = $<HTMLImageElement>('#viewer-img');
-  image.src = asset(reward.src); image.alt = reward.title; $('#viewer').hidden = false; placeShade();
+  viewerCard = reward; image.src = asset(rewardArt(reward, monsterForm !== previewOtherForm)); image.alt = reward.title; $('#viewer').hidden = false; placeShade();
 });
-loadLevelMask(current);
+game.setOpeningFace(gameOptionsFor(current, monsterForm).openingFace);
+loadLevelArt(current);
 applyAccent();
 sync();
 requestAnimationFrame(frame);

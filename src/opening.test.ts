@@ -74,6 +74,24 @@ describe('rectangle selection and deferred entry', () => {
     expect(rectangle[1].x <= face.left * 72 + 1e-7 || rectangle[0].x >= face.right * 72 - 1e-7
       || rectangle[2].y <= face.top * 48 + 1e-7 || rectangle[0].y >= face.bottom * 48 - 1e-7).toBe(true);
   });
+  it.each(LEVELS)('$title protects the monster head and updates a paused opening when the form changes', level => {
+    const face = gameOptionsFor(level, true).openingFace!;
+    for (let seed = 0; seed < 20; seed++) {
+      const game = new Game(72, 48, { ...gameOptionsFor(level, true), random: seeded(seed) });
+      game.start();
+      for (let tick = 0; tick < 30; tick++) {
+        expect(openingTouchesFace(game.opening!.region, 72, 48, face)).toBe(false);
+        game.update(1 / 30);
+      }
+      game.togglePause();
+      game.opening!.region = [{ x: face.left * 72, y: face.top * 48 }, { x: face.right * 72, y: face.top * 48 },
+        { x: face.right * 72, y: face.bottom * 48 }, { x: face.left * 72, y: face.bottom * 48 }];
+      game.setOpeningFace(face);
+      expect(openingTouchesFace(game.opening!.region, 72, 48, face)).toBe(false);
+      game.togglePause();
+      expect(game.confirmOpening()).toBe(true);
+    }
+  });
   it('has no actors before selection, rotates at 30 Hz and commits exactly the current candidate on confirmation', () => {
     const game = openingGame(); expect(game.enemies).toHaveLength(0); expect(game.boss).toBeUndefined();
     game.start(); expect(game.phase).toBe('opening'); expect(game.opening!.candidates).toBe(1);

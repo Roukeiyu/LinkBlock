@@ -33,3 +33,14 @@ export function faceProtection(artwork: FaceArtwork) {
   return { left: x / face.imageWidth, top: y / face.imageHeight,
     right: (x + size) / face.imageWidth, bottom: (y + size) / face.imageHeight };
 }
+
+/** Head bounds for the matching monster illustrations, including horns and ears. */
+const MONSTER_HEADS = [
+  [560, 0, 320, 340], [660, 10, 220, 280], [440, 0, 250, 290],
+  [420, 0, 310, 260], [340, 0, 320, 280], [450, 0, 350, 330],
+  [520, 0, 320, 320], [480, 0, 330, 300], [570, 0, 300, 300], [475, 0, 380, 300],
+] as const;
+export function monsterFaceProtection(level: number) {
+  const [x, y, width, height] = MONSTER_HEADS[level - 1];
+  return { left: x / 1536, top: y / 1024, right: (x + width) / 1536, bottom: (y + height) / 1024 };
+}
