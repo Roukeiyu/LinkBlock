@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
-for (const [pageName, count] of [['rewards', 40], ['enemies', 60]] as const) {
+for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
   test(`${pageName} review loads every current image and opens the original`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -27,26 +27,12 @@ for (const [pageName, count] of [['rewards', 40], ['enemies', 60]] as const) {
         expect(size.source).toEqual([1536, 1024]);
         expect(size.ratio).toBeCloseTo(1.5, 2);
       }
-      await expect(page.locator('.dimensions')).toHaveText(Array(40).fill('1536 × 1024'));
-      // Keep each review-only variant immediately left of its unchanged game original,
-      // including narrow screens where rewards wrap onto the following row.
-      for (const width of [1280, 390, 320]) {
-        await page.setViewportSize({ width, height: 844 });
-        for (const level of LEVELS) {
-          const cards = page.locator(`#levels section[data-level="${level.id}"] figure`);
-          await expect(cards.nth(0).locator('img')).toHaveAttribute('src', `../review/monster-forms/${level.id}.png`);
-          await expect(cards.nth(1).locator('img')).toHaveAttribute('src', `../${level.restored}`);
-          const left = (await cards.nth(0).boundingBox())!, right = (await cards.nth(1).boundingBox())!;
-          expect(left.y).toBe(right.y);
-          expect(left.x + left.width).toBeLessThan(right.x);
-        }
-      }
-      await page.setViewportSize({ width: 1280, height: 800 });
+      await expect(page.locator('.dimensions')).toHaveText(Array(30).fill('1536 × 1024'));
     }
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
     const original = await page.locator('#levels section:visible img').first().getAttribute('src');
-    expect(original).toContain(pageName === 'rewards' ? 'review/monster-forms/10.png' : LEVELS[9].sprites.tree);
+    expect(original).toContain(pageName === 'rewards' ? LEVELS[9].restored : LEVELS[9].sprites.tree);
     await page.locator('#levels section:visible figure button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
@@ -96,6 +82,64 @@ for (const [pageName, count] of [['rewards', 40], ['enemies', 60]] as const) {
   });
 }
 
+for (const width of [1280, 390]) {
+  test(`review switches all rewards and downloads without losing place at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/review/rewards.html');
+    const images = page.locator('#levels .grid img');
+    const toggle = page.locator('#form-toggle');
+    const humanPaths = LEVELS.flatMap(l => [l.restored, l.rewardNinety, l.rewardPerfect]);
+    const monsterPaths = LEVELS.flatMap(l => [`review/monster-forms/${l.id}.png`,
+      `review/monster-forms/${l.id}-ninety.png`, `review/monster-forms/${l.id}-perfect.png`]);
+    const assertImages = async (paths: string[]) => {
+      await expect(images).toHaveCount(30);
+      const actual = await images.evaluateAll(async imgs => Promise.all(imgs.map(async image => {
+        const img = image as HTMLImageElement;
+        img.loading = 'eager';await img.decode();
+        return { src: img.getAttribute('src'), size: [img.naturalWidth, img.naturalHeight] };
+      })));
+      expect(actual.map(img => img.src)).toEqual(paths.map(path => `../${path}`));
+      expect(actual.every(img => img.size[0] === 1536 && img.size[1] === 1024)).toBe(true);
+    };
+    await assertImages(humanPaths);
+    const initial = (await toggle.boundingBox())!;
+    await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto';window.scrollTo(0, 1500); });
+    const scroll = await page.evaluate(() => scrollY);
+    const scrolled = (await toggle.boundingBox())!;
+    expect(scrolled.x).toBe(initial.x);
+    expect(scrolled.y).toBe(initial.y);
+    expect(scrolled.x + scrolled.width).toBeCloseTo(width, 0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#form-status')).toContainText('魔物形态');
+    await assertImages(monsterPaths);
+    expect(await page.evaluate(() => scrollY)).toBeCloseTo(scroll, 0);
+    await page.locator('#level-filter').selectOption('4');
+    await expect(page.locator('#levels section:visible')).toHaveCount(1);
+    await page.locator('#levels section:visible figure button').nth(1).click();
+    await expect(page.locator('#position')).toHaveText('2 / 3');
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/4-ninety.png');
+    await expect(page.locator('#download')).toHaveAttribute('download', 'level-4-4-ninety.png');
+    await page.locator('#viewer-form-toggle').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[3].rewardNinety}`);
+    await expect(page.locator('#caption')).toContainText('人形');
+    await expect(page.locator('#position')).toHaveText('2 / 3');
+    await assertImages(humanPaths);
+    await page.locator('#viewer-form-toggle').click();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/4-perfect.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../review/monster-forms/4-perfect.png', page.url()).href);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#level-filter')).toHaveValue('4');
+    await page.reload();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await assertImages(monsterPaths);
+    await toggle.click();
+    await assertImages(humanPaths);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
 test.describe('touch review navigation', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
   test('horizontal swipes change images while vertical gestures do not', async ({ page }) => {
@@ -114,14 +158,14 @@ test.describe('touch review navigation', () => {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     };
     await swipe(-100, 0);
-    await expect(page.locator('#position')).toHaveText('2 / 4');
-    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[6].restored}`);
+    await expect(page.locator('#position')).toHaveText('2 / 3');
+    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[6].rewardNinety}`);
     await swipe(100, 0);
-    await expect(page.locator('#position')).toHaveText('1 / 4');
+    await expect(page.locator('#position')).toHaveText('1 / 3');
     await swipe(0, -65);
-    await expect(page.locator('#position')).toHaveText('1 / 4');
+    await expect(page.locator('#position')).toHaveText('1 / 3');
     await page.getByRole('button', { name: '上一张', exact: true }).click();
-    await expect(page.locator('#position')).toHaveText('4 / 4');
+    await expect(page.locator('#position')).toHaveText('3 / 3');
     expect(await page.locator('#viewer').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     await cdp.detach();
   });

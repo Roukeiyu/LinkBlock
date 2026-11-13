@@ -1,58 +1,159 @@
 {
-  "version": 1,
+  "version": 2,
   "width": 1536,
   "height": 1024,
-  "scope": "Review only. One monster-form variant of each active restored artwork; game artwork and masks remain unchanged.",
+  "scope": "Review only. Monster variants of all restored, ninety and perfect artworks; game artwork and masks remain unchanged.",
   "levels": {
     "1": {
       "source": "levels/1/v10/restored.webp",
       "file": "monster-forms/1.png",
-      "transformation": "True werewolf beast: fully wolf head with long dark canine muzzle, wet black nose, amber wolf eyes and pointed ears; dense charcoal fur across neck, torso, arms and legs, clawed paws instead of human hands and feet. Preserve the open palm gesture toward the firefly and bent knee."
+      "transformation": "True werewolf beast: fully wolf head with long dark canine muzzle, wet black nose, amber wolf eyes and pointed ears; dense charcoal fur across neck, torso, arms and legs, clawed paws instead of human hands and feet. Preserve the open palm gesture toward the firefly and bent knee.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/1/v10/ninety.webp",
+          "file": "monster-forms/1-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/1/v20/perfect.webp",
+          "file": "monster-forms/1-perfect.png"
+        }
+      }
     },
     "2": {
       "source": "levels/2/v11/restored.webp",
       "file": "monster-forms/2.png",
-      "transformation": "True ancient undead mummy: entire head, face, neck and exposed body wrapped in aged linen, desiccated dark skin only in small gaps, dim gold eyes deep between wrappings, no handsome living human face or hair. Preserve gold circlet, cuffs, scarab belt, hand resting on stone and other on knee."
+      "transformation": "True ancient undead mummy: entire head, face, neck and exposed body wrapped in aged linen, desiccated dark skin only in small gaps, dim gold eyes deep between wrappings, no handsome living human face or hair. Preserve gold circlet, cuffs, scarab belt, hand resting on stone and other on knee.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/2/v11/ninety.webp",
+          "file": "monster-forms/2-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/2/v15/perfect.webp",
+          "file": "monster-forms/2-perfect.png"
+        }
+      }
     },
     "3": {
       "source": "levels/3/v8/restored.webp",
       "file": "monster-forms/3.png",
-      "transformation": "Frankenstein stitched construct retaining the original character's distinctive white forelock and a partially emerald-green iris in the eye on the viewer's right. Lowered upper cranium and hairline; retain heavy monstrous features, rough green-grey leathery skin, stitched face, scars, neck bolts and sewn patchwork body. Preserve relaxed lean, hands, clothing and laboratory environment."
+      "transformation": "Frankenstein stitched construct retaining the original character's distinctive white forelock and a partially emerald-green iris in the eye on the viewer's right. Lowered upper cranium and hairline; retain heavy monstrous features, rough green-grey leathery skin, stitched face, scars, neck bolts and sewn patchwork body. Preserve relaxed lean, hands, clothing and laboratory environment.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/3/v10/ninety.webp",
+          "file": "monster-forms/3-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/3/v14/perfect.webp",
+          "file": "monster-forms/3-perfect.png"
+        }
+      }
     },
     "4": {
       "source": "levels/4/v9/restored.webp",
       "file": "monster-forms/4.png",
-      "transformation": "Return to the first monster variant's true bat anatomy: folded animal muzzle, leaf-shaped nose, small recessed garnet eyes, large membranous ears, textured leathery folds and sparse charcoal fur. No human jaw, chin, lips or sculpted male facial anatomy. Direct eye contact, a less open mouth with modest canine tips instead of the original wide tooth-baring snarl. Preserve the original body, claws, clothing, seated pose and castle environment."
+      "transformation": "Return to the first monster variant's true bat anatomy: folded animal muzzle, leaf-shaped nose, small recessed garnet eyes, large membranous ears, textured leathery folds and sparse charcoal fur. No human jaw, chin, lips or sculpted male facial anatomy. Direct eye contact, a less open mouth with modest canine tips instead of the original wide tooth-baring snarl. Preserve the original body, claws, clothing, seated pose and castle environment.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/4/v10/ninety.webp",
+          "file": "monster-forms/4-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/4/v18/perfect.webp",
+          "file": "monster-forms/4-perfect.png"
+        }
+      }
     },
     "5": {
       "source": "levels/5/v8/restored.webp",
       "file": "monster-forms/5.png",
-      "transformation": "Supernatural headless horseman with hollow black-metal rib armor and skeletal gauntlets. Pumpkin head remains rich orange and rounded, with light scratches and subtle age marks, slightly narrowed mischievous eyes and much of the original broad carved smile. Only the eye on the viewer's right releases a few small sparks and a tiny flame flicker. Avoid heavy decay, deep cracks and an excessively aggressive expression. Preserve body, coat, trousers, boots, seated pose, open hand, horse and autumn environment."
+      "transformation": "Supernatural headless horseman with hollow black-metal rib armor and skeletal gauntlets. Pumpkin head remains rich orange and rounded, with light scratches and subtle age marks, slightly narrowed mischievous eyes and much of the original broad carved smile. Only the eye on the viewer's right releases a few small sparks and a tiny flame flicker. Avoid heavy decay, deep cracks and an excessively aggressive expression. Preserve body, coat, trousers, boots, seated pose, open hand, horse and autumn environment.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/5/v10/ninety.webp",
+          "file": "monster-forms/5-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/5/v18/perfect.webp",
+          "file": "monster-forms/5-perfect.png"
+        }
+      }
     },
     "6": {
       "source": "levels/6/v7/restored.webp",
       "file": "monster-forms/6.png",
-      "transformation": "True sea monster siren: fully aquatic fish-reptile head with broad ridged snout, fish eyes, gill slits and fin crest instead of human hair, turquoise scales over all exposed skin and webbed claw hands; no human face or beard. Preserve nautical coat, shirt, shell buckle, trousers, seated silhouette, arms and bent knee."
+      "transformation": "True sea monster siren: fully aquatic fish-reptile head with broad ridged snout, fish eyes, gill slits and fin crest instead of human hair, turquoise scales over all exposed skin and webbed claw hands; no human face or beard. Preserve nautical coat, shirt, shell buckle, trousers, seated silhouette, arms and bent knee.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/6/v12/ninety.webp",
+          "file": "monster-forms/6-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/6/v16/perfect.webp",
+          "file": "monster-forms/6-perfect.png"
+        }
+      }
     },
     "7": {
       "source": "levels/7/v11/restored.webp",
       "file": "monster-forms/7.png",
-      "transformation": "True fox spirit beast: fully red fox head, long narrow fox muzzle, black nose and amber animal eyes, red fur with white throat across every exposed part, black fox paws/claws instead of human skin and hands; no human face or coiffed human hair. Keep existing large orange tail, kimono and trousers, identical seated joint positions."
+      "transformation": "True fox spirit beast: fully red fox head, long narrow fox muzzle, black nose and amber animal eyes, red fur with white throat across every exposed part, black fox paws/claws instead of human skin and hands; no human face or coiffed human hair. Keep existing large orange tail, kimono and trousers, identical seated joint positions.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/7/v12/ninety.webp",
+          "file": "monster-forms/7-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/7/v24/perfect.webp",
+          "file": "monster-forms/7-perfect.png",
+          "note": "Review variant uses opaque ivory knee-length shorts after the image tool rejected the original clothing coverage; pose and veranda setting retained."
+        }
+      }
     },
     "8": {
       "source": "levels/8/v3/restored.webp",
       "file": "monster-forms/8.png",
-      "transformation": "True frost giant monster: head and exposed body sculpted from jagged glacial blue ice and frost-encrusted stone, inhuman craggy face with heavy ice brow and luminous cyan eyes, icy tusks and horns, crystalline claws, no human face or blond human hair. Preserve vest, fur mantle, clasp, boots and seated pose, body scale and framing."
+      "transformation": "True frost giant monster: head and exposed body sculpted from jagged glacial blue ice and frost-encrusted stone, inhuman craggy face with heavy ice brow and luminous cyan eyes, icy tusks and horns, crystalline claws, no human face or blond human hair. Preserve vest, fur mantle, clasp, boots and seated pose, body scale and framing.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/8/v12/ninety.webp",
+          "file": "monster-forms/8-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/8/v19/perfect.webp",
+          "file": "monster-forms/8-perfect.png"
+        }
+      }
     },
     "9": {
       "source": "levels/9/v3/restored.webp",
       "file": "monster-forms/9.png",
-      "transformation": "True living gargoyle: entire head and exposed body weathered carved grey stone, monstrous broad reptilian muzzle with stone fangs, deep glowing amber eyes, ridged brow, horns and stone claws; no human facial structure or hairstyle. Preserve existing wing positions EXACTLY, tail, red cloak, leather outfit, seated pose and hands."
+      "transformation": "True living gargoyle: entire head and exposed body weathered carved grey stone, monstrous broad reptilian muzzle with stone fangs, deep glowing amber eyes, ridged brow, horns and stone claws; no human facial structure or hairstyle. Preserve existing wing positions EXACTLY, tail, red cloak, leather outfit, seated pose and hands.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/9/v12/ninety.webp",
+          "file": "monster-forms/9-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/9/v15/perfect.webp",
+          "file": "monster-forms/9-perfect.png"
+        }
+      }
     },
     "10": {
       "source": "levels/10/v3/restored.webp",
       "file": "monster-forms/10.png",
-      "transformation": "True fire demon: entirely volcanic obsidian hide with fine glowing magma fissures, inhuman angular demonic muzzle, molten eyes, large ridged horns, obsidian claw fingers, no human face, hair, beard or bare human skin. Preserve leather vest, red cloak, brass cuffs, trousers, body scale and precisely the same seated pose."
+      "transformation": "True fire demon: entirely volcanic obsidian hide with fine glowing magma fissures, inhuman angular demonic muzzle, molten eyes, large ridged horns, obsidian claw fingers, no human face, hair, beard or bare human skin. Preserve leather vest, red cloak, brass cuffs, trousers, body scale and precisely the same seated pose.",
+      "rewards": {
+        "ninety": {
+          "source": "levels/10/v12/ninety.webp",
+          "file": "monster-forms/10-ninety.png"
+        },
+        "perfect": {
+          "source": "levels/10/v18/perfect.webp",
+          "file": "monster-forms/10-perfect.png"
+        }
+      }
     }
   }
 }
