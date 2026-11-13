@@ -112,7 +112,7 @@
     },
     "8": {
       "source": "levels/8/v3/restored.webp",
-      "file": "monster-forms/8.png",
+      "file": "monster-forms/8-review.png",
       "transformation": "True frost giant monster: head and exposed body sculpted from jagged glacial blue ice and frost-encrusted stone, inhuman craggy face with heavy ice brow and luminous cyan eyes, icy tusks and horns, crystalline claws, no human face or blond human hair. Match the head direction and tilt of each corresponding human reference, preserving the monster face and direct gaze. Preserve each scene's clothing, props, seated pose, body scale and framing.",
       "rewards": {
         "ninety": {
@@ -121,7 +121,7 @@
         },
         "perfect": {
           "source": "levels/8/v19/perfect.webp",
-          "file": "monster-forms/8-perfect.png"
+          "file": "monster-forms/8-perfect-review.png"
         }
       }
     },

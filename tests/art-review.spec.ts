@@ -17,12 +17,12 @@ for (const width of [1280, 390]) {
         await expect(dialog).toBeVisible();
         await expect(page.locator('#mask-note')).toContainText('红色区域');
         const mask = monster ? `monster/${id}/mask.png` : LEVELS[id - 1].mask;
-        const art = monster ? (id === 10 ? `monster/${id}/restored.webp` : `review/monster-forms/${id}.png`) : LEVELS[id - 1].restored;
+        const art = monster ? ([8, 10].includes(id) ? `monster/${id}/restored.webp` : `review/monster-forms/${id}.png`) : LEVELS[id - 1].restored;
         await expect(page.locator('#mask-base')).toHaveAttribute('src', `../${art}`);
         await expect(page.locator('#mask-raw')).toHaveAttribute('src', `../${mask}`);
         await expect(page.locator('#mask-download')).toHaveAttribute('href', `../${mask}`);
         await expect(page.locator('#mask-caption')).toContainText(monster ? '魔物形态' : '人形');
-        if (monster && id === 10) await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
+        if (monster && [8, 10].includes(id)) await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
         const overlay = await page.locator('#mask-overlay').evaluate((canvas: HTMLCanvasElement) => {
           const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
           let colored = 0, clear = 0;
