@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
-for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
+for (const [pageName, count] of [['rewards', 40], ['enemies', 60]] as const) {
   test(`${pageName} review loads every current image and opens the original`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -27,12 +27,26 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
         expect(size.source).toEqual([1536, 1024]);
         expect(size.ratio).toBeCloseTo(1.5, 2);
       }
-      await expect(page.locator('.dimensions')).toHaveText(Array(30).fill('1536 × 1024'));
+      await expect(page.locator('.dimensions')).toHaveText(Array(40).fill('1536 × 1024'));
+      // Keep each review-only variant immediately left of its unchanged game original,
+      // including narrow screens where rewards wrap onto the following row.
+      for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const level of LEVELS) {
+          const cards = page.locator(`#levels section[data-level="${level.id}"] figure`);
+          await expect(cards.nth(0).locator('img')).toHaveAttribute('src', `../review/monster-forms/${level.id}.png`);
+          await expect(cards.nth(1).locator('img')).toHaveAttribute('src', `../${level.restored}`);
+          const left = (await cards.nth(0).boundingBox())!, right = (await cards.nth(1).boundingBox())!;
+          expect(left.y).toBe(right.y);
+          expect(left.x + left.width).toBeLessThan(right.x);
+        }
+      }
+      await page.setViewportSize({ width: 1280, height: 800 });
     }
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
     const original = await page.locator('#levels section:visible img').first().getAttribute('src');
-    expect(original).toContain(pageName === 'rewards' ? LEVELS[9].restored : LEVELS[9].sprites.tree);
+    expect(original).toContain(pageName === 'rewards' ? 'review/monster-forms/10.png' : LEVELS[9].sprites.tree);
     await page.locator('#levels section:visible figure button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
@@ -100,14 +114,14 @@ test.describe('touch review navigation', () => {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     };
     await swipe(-100, 0);
-    await expect(page.locator('#position')).toHaveText('2 / 3');
-    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[6].rewardNinety}`);
+    await expect(page.locator('#position')).toHaveText('2 / 4');
+    await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[6].restored}`);
     await swipe(100, 0);
-    await expect(page.locator('#position')).toHaveText('1 / 3');
+    await expect(page.locator('#position')).toHaveText('1 / 4');
     await swipe(0, -65);
-    await expect(page.locator('#position')).toHaveText('1 / 3');
+    await expect(page.locator('#position')).toHaveText('1 / 4');
     await page.getByRole('button', { name: '上一张', exact: true }).click();
-    await expect(page.locator('#position')).toHaveText('3 / 3');
+    await expect(page.locator('#position')).toHaveText('4 / 4');
     expect(await page.locator('#viewer').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     await cdp.detach();
   });
@@ -115,6 +129,8 @@ test.describe('touch review navigation', () => {
 
 for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
   test(`gallery cards and enlarged rewards keep the same canvas at ${viewport.width}px`, async ({ page }) => {
+    const reviewRequests: string[] = [];
+    page.on('request', request => { if (request.url().includes('/review/monster-forms/')) reviewRequests.push(request.url()); });
     await page.setViewportSize(viewport);
     await page.addInitScript(() => {
       const ids = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -150,6 +166,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
       expect(bounds.height).toBeLessThanOrEqual(viewport.height - 96);
       await page.locator('#viewer-close').click();
     }
+    expect(reviewRequests).toEqual([]);
   });
 }
 

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "width": 1536,
+  "height": 1024,
+  "scope": "Review only. One monster-form variant of each active restored artwork; game artwork and masks remain unchanged.",
+  "levels": {
+    "1": {
+      "source": "levels/1/v10/restored.webp",
+      "file": "monster-forms/1.png",
+      "transformation": "True werewolf beast: fully wolf head with long dark canine muzzle, wet black nose, amber wolf eyes and pointed ears; dense charcoal fur across neck, torso, arms and legs, clawed paws instead of human hands and feet. Preserve the open palm gesture toward the firefly and bent knee."
+    },
+    "2": {
+      "source": "levels/2/v11/restored.webp",
+      "file": "monster-forms/2.png",
+      "transformation": "True ancient undead mummy: entire head, face, neck and exposed body wrapped in aged linen, desiccated dark skin only in small gaps, dim gold eyes deep between wrappings, no handsome living human face or hair. Preserve gold circlet, cuffs, scarab belt, hand resting on stone and other on knee."
+    },
+    "3": {
+      "source": "levels/3/v8/restored.webp",
+      "file": "monster-forms/3.png",
+      "transformation": "True Frankenstein stitched construct: broad block-shaped skull, heavy brow, sunken eyes, visibly assembled green-grey leathery face, neck bolts and conspicuous sewn patchwork body, oversized stitched hands; distinctly a reanimated monster, no handsome human facial features. Preserve relaxed lean and each finger position, trousers and jacket."
+    },
+    "4": {
+      "source": "levels/4/v9/restored.webp",
+      "file": "monster-forms/4.png",
+      "transformation": "True vampire bat monster: monstrous bat head with wrinkled muzzle, large pointed bat ears, upturned bat nose, small red eyes and visible fangs; grey leathery skin and elongated claw fingers, no human face or beard. Preserve the velvet cape, white shirt, ruby pendant, boots, torso pose and resting arms."
+    },
+    "5": {
+      "source": "levels/5/v8/restored.webp",
+      "file": "monster-forms/5.png",
+      "transformation": "True supernatural headless horseman: keep exactly the glowing carved pumpkin head; replace exposed human chest and hands with a hollow spectral armored wraith body, ancient black metal ribs with subtle internal amber embers and dark skeletal gauntlet fingers, no human flesh. Preserve coat, trousers, boots, seated pose and open hand. Keep background horse EXACTLY unchanged."
+    },
+    "6": {
+      "source": "levels/6/v7/restored.webp",
+      "file": "monster-forms/6.png",
+      "transformation": "True sea monster siren: fully aquatic fish-reptile head with broad ridged snout, fish eyes, gill slits and fin crest instead of human hair, turquoise scales over all exposed skin and webbed claw hands; no human face or beard. Preserve nautical coat, shirt, shell buckle, trousers, seated silhouette, arms and bent knee."
+    },
+    "7": {
+      "source": "levels/7/v11/restored.webp",
+      "file": "monster-forms/7.png",
+      "transformation": "True fox spirit beast: fully red fox head, long narrow fox muzzle, black nose and amber animal eyes, red fur with white throat across every exposed part, black fox paws/claws instead of human skin and hands; no human face or coiffed human hair. Keep existing large orange tail, kimono and trousers, identical seated joint positions."
+    },
+    "8": {
+      "source": "levels/8/v3/restored.webp",
+      "file": "monster-forms/8.png",
+      "transformation": "True frost giant monster: head and exposed body sculpted from jagged glacial blue ice and frost-encrusted stone, inhuman craggy face with heavy ice brow and luminous cyan eyes, icy tusks and horns, crystalline claws, no human face or blond human hair. Preserve vest, fur mantle, clasp, boots and seated pose, body scale and framing."
+    },
+    "9": {
+      "source": "levels/9/v3/restored.webp",
+      "file": "monster-forms/9.png",
+      "transformation": "True living gargoyle: entire head and exposed body weathered carved grey stone, monstrous broad reptilian muzzle with stone fangs, deep glowing amber eyes, ridged brow, horns and stone claws; no human facial structure or hairstyle. Preserve existing wing positions EXACTLY, tail, red cloak, leather outfit, seated pose and hands."
+    },
+    "10": {
+      "source": "levels/10/v3/restored.webp",
+      "file": "monster-forms/10.png",
+      "transformation": "True fire demon: entirely volcanic obsidian hide with fine glowing magma fissures, inhuman angular demonic muzzle, molten eyes, large ridged horns, obsidian claw fingers, no human face, hair, beard or bare human skin. Preserve leather vest, red cloak, brass cuffs, trousers, body scale and precisely the same seated pose."
+    }
+  }
+}

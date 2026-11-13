@@ -29,7 +29,9 @@
 
 主界面沿用旧书背景，放大 Logo 并用浅色纸纹衬底提高辨识度；桌面左右分栏，手机上下排版。羊皮纸菜单突出开始按钮，其他四个入口排成两列，封印进度集中在底部。方向键 / WASD 按菜单网格移动，Tab 与设置里的原生键盘操作仍可使用；小屏展开设置后可滚动。
 
-`review/rewards.html` 展示全部 30 张通关、90% 和无伤图片；`review/enemies.html` 展示 10 个 Boss、50 个小怪和玩家四帧预览。两页都按当前 `LEVELS` 导出，点击图片可放大和保存原图。放大后支持左右按钮、键盘方向键和手机横向滑动，显示当前张数；筛选关卡后只在该关内循环，标题和下载链接随当前图片更新。开发启动与构建会重新生成；运行 `node scripts/export-art-review.mjs --offline /absolute/output/folder` 可另存两份内嵌图片、无需联网的 HTML，保留相同切图功能。
+`review/rewards.html` 展示 10 张仅供审阅的魔物本体图，以及原有 30 张通关、90% 和无伤图片。每关依次为魔物本体、完整成图、90%、无伤；手机窄屏也保持魔物本体在完整成图左侧。魔物本体源文件和对应原图记录保存在 `art/review/`，导出时复制到 `public/review/monster-forms/`，不写入游戏 `LEVELS`、图鉴或计分遮罩。原通关图路径变化时，导出会要求同步核对本体图。
+
+`review/enemies.html` 展示 10 个 Boss、50 个小怪和玩家四帧预览。两页都按当前 `LEVELS` 导出，点击图片可放大和保存原图。放大后支持左右按钮、键盘方向键和手机横向滑动，显示当前张数；筛选关卡后只在该关内循环，标题和下载链接随当前图片更新。开发启动与构建会重新生成；运行 `node scripts/export-art-review.mjs --offline /absolute/output/folder` 可另存两份内嵌图片、无需联网的 HTML，保留相同切图功能。
 
 关卡配置在 `src/levels.ts`，定向弹幕在 `src/level-attacks.ts`，运动规则在 `src/enemies.ts`。`gameOptionsFor` 是页面初始进入、选关、重开和下一关共用的配置入口。基础碰撞、受击保护、暂停、跳跃及胜负清场规则保持共用。
 
