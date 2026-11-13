@@ -385,7 +385,7 @@ for (const step of [0.03, 0.3]) for (const input of ['desktop', 'phone', 'two-ha
   await page.screenshot({ path: `test-results/coast-precision-${step}-${input.replaceAll(' ', '-')}.png`, fullPage: true });
 });
 
-for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast manual reverse erases bends, can branch and stops at the shore with ${input}${input === 'keyboard' ? '' : ' on phone'}`, async ({ page }) => {
+for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast manual reverse continues past a bend without releasing direction with ${input}${input === 'keyboard' ? '' : ' on phone'}`, async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   if (input === 'one-hand') await controlMode(page, 'one-hand');
   await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(32);
@@ -416,23 +416,22 @@ for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast man
     expect(done((await probe(page)).player), JSON.stringify((await probe(page)).player)).toBe(true);
   };
   await until('up', p => p.y <= 10); const upper = (await probe(page)).player.y;
-  await until('right', p => p.x >= 28); const right = (await probe(page)).player.x;
+  await until('right', p => p.x >= 28);
   await until('down', p => p.y >= 13); const before = (await probe(page)).player;
   await steer('up'); await page.clock.runFor(64); const trimmed = (await probe(page)).player;
   expect(trimmed.x).toBe(before.x); expect(trimmed.y).toBeLessThan(before.y); expect(trimmed.y).toBeGreaterThan(upper);
   expect((await probe(page)).trail.at(-1)).toEqual(trimmed); expect((await probe(page)).trail).not.toContainEqual(before);
   await steer('right'); await page.clock.runFor(64); expect((await probe(page)).player.x).toBeGreaterThan(trimmed.x);
-  await steer('left'); await page.clock.runFor(600); expect((await probe(page)).player).toEqual(trimmed);
-  // The action stays held: a stopped bend must not turn into a new branch.
-  await page.clock.runFor(96); expect((await probe(page)).player).toEqual(trimmed);
-  await steer('up'); await page.clock.runFor(600); expect((await probe(page)).player).toEqual({ x: right, y: upper }); expect((await probe(page)).trail).toHaveLength(3);
-  await steer('left'); await page.clock.runFor(600); expect((await probe(page)).player).toEqual({ x: anchor.x, y: upper }); expect((await probe(page)).trail).toHaveLength(2);
+  await steer('left'); await page.clock.runFor(128); const pastBend = (await probe(page)).player;
+  expect(pastBend.x).toBeLessThan(trimmed.x - 0.5); expect(pastBend.y).toBe(trimmed.y);
+  expect(pastBend.x).toBeGreaterThan(anchor.x);
+  // No keyup, extra touch motion or fresh draw press at the old corner.
+  await page.clock.runFor(32); const continued = (await probe(page)).player;
+  expect(continued.x).toBeLessThan(pastBend.x); expect(continued.y).toBe(trimmed.y);
+  expect((await probe(page)).trail.at(-1)).toEqual(continued);
   await page.screenshot({ path: `test-results/manual-backtracking-${input}.png` });
-  await steer('down'); await page.clock.runFor(600); expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);
-  await page.clock.runFor(160); expect((await probe(page)).player).toEqual(anchor);
   await expect(page.locator('#percent')).toHaveText(percent!); await expect(page.locator('#score')).toHaveText('000000'); await expect(page.locator('#toast')).not.toHaveClass('toast visible');
-  await steer('up'); await page.clock.runFor(64); expect((await probe(page)).player.y).toBeLessThan(anchor.y); expect((await probe(page)).trail).toHaveLength(2);
-  if (input === 'keyboard') { await page.keyboard.up('ArrowUp'); await page.keyboard.up('Space'); }
+  if (input === 'keyboard') { await page.keyboard.up('ArrowLeft'); await page.keyboard.up('Space'); }
   else if (input === 'one-hand') { await finger!.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await finger!.session.detach(); }
   else { await session!.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
   await page.clock.runFor(500); expect((await probe(page)).player).toEqual(anchor); expect((await probe(page)).trail).toHaveLength(0);

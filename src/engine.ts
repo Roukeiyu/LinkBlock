@@ -207,9 +207,8 @@ export class Game {
     }
     const last = this.trail.at(-1)!;
     const previous = same(last, p) && this.trail.length > 1 ? this.trail.at(-2)! : last;
-    // Reverse input erases only the current segment, at the normal walking
-    // speed. Stop at its old corner so a held key cannot draw a new branch
-    // before the player chooses how to continue.
+    // Reverse input erases the current segment at normal walking speed. At a
+    // bend, update carries the remaining distance into the held direction.
     if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) {
       if (this.collidesWithTrail() || this.hazardsHit(p, p)) { this.hit(); return false; }
       const segmentLength = Math.hypot(p.x - previous.x, p.y - previous.y);
@@ -505,11 +504,11 @@ export class Game {
             const closed = this.move(direction, drawing, remaining);
             const travelled = this.playerPath.slice(1).reduce((sum, p, j) => sum + Math.hypot(p.x - this.playerPath[j].x, p.y - this.playerPath[j].y), 0);
             route.push(...this.playerPath.slice(1)); boundaryChanged ||= closed;
-            // A normal closure keeps both the direction and the unused travel
-            // budget. Relocation, recovery and defeat still end the gesture.
-            gestureEnded = this.backtrackEnded || (closed && (this.boundaryRelocated || this.retracting || this.phase !== 'playing'));
+            // Closure and a fully erased segment keep the held direction and
+            // unused travel budget. A full return to shore still ends reversal.
+            gestureEnded = (this.backtrackEnded && !this.trail.length) || (closed && (this.boundaryRelocated || this.retracting || this.phase !== 'playing'));
             remaining = Math.max(0, remaining - travelled);
-            if (!closed || gestureEnded || travelled <= EPS) break;
+            if ((!closed && !this.backtrackEnded) || gestureEnded || travelled <= EPS) break;
           }
           this.playerPath = route;
         }

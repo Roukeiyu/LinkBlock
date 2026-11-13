@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game, PLAYER_SPEED, RETRACT_SPEED, type Direction } from './engine';
 import { createEnemy } from './enemies';
 import { Projectile } from './attacks';
-import { area, type Point } from './geometry';
+import { area, EPS, type Point } from './geometry';
 
 const directions: Direction[] = ['up', 'right', 'down', 'left'];
 function fixture(turns = 0) {
@@ -136,18 +136,48 @@ describe('directional trail backtracking while drawing is held', () => {
   function bent() {
     const scene = fixture(); scene.move('up', 6); scene.move('right', 8); scene.move('down', 4); return scene;
   }
-  it('trims the tip at walking speed and stops at every old bend and the original shore', () => {
+  it('trims at walking speed, allows steering at bends and stops at the original shore', () => {
     const { game, move } = bent(); move('up', 1);
     expect(game.player).toEqual({ x: 24, y: 9 }); expect(game.retracting).toBe(false);
     expect(game.update(0.05, 'up', true)).toBe(false);
     expect(game.player.y).toBeCloseTo(9 - PLAYER_SPEED * 0.05, 8); expect(game.trail.at(-1)).toEqual(game.player);
-    expect(game.update(1, 'up', true)).toBe(true); expect(game.player).toEqual({ x: 24, y: 6 }); expect(game.trail).toHaveLength(3);
-    expect(game.update(1, 'left', true)).toBe(true); expect(game.player).toEqual({ x: 16, y: 6 }); expect(game.trail).toHaveLength(2);
+    expect(game.update((game.player.y - 6) / PLAYER_SPEED, 'up', true)).toBe(false); expect(game.player).toEqual({ x: 24, y: 6 }); expect(game.trail).toHaveLength(3);
+    expect(game.update(8 / PLAYER_SPEED, 'left', true)).toBe(false); expect(game.player).toEqual({ x: 16, y: 6 }); expect(game.trail).toHaveLength(2);
     expect(game.update(1, 'down', true)).toBe(true); expect(game.player).toEqual({ x: 16, y: 12 }); expect(game.trail).toHaveLength(0);
     expect(game.retracting).toBe(false); expect(game.claimed).toBe(64); expect(game.score).toBe(0);
     expect(game.events.filter(e => e === 'capture' || e === 'partition')).toHaveLength(0);
     game.update(0.02, undefined, true); expect(game.player).toEqual(game.anchor);
     move('up', 0.25); expect(game.player).toEqual({ x: 16, y: 11.75 }); expect(game.trail).toHaveLength(2);
+  });
+
+  for (const hz of [30, 60, 120]) it.each([0, 1, 2, 3])(`continues beyond an erased bend with the same input at ${hz} Hz, turns=%s`, turns => {
+    const { game, move, rotate } = fixture(turns);
+    move('up', 6); move('right', 8); move('down', 4);
+    const oldTip = { ...game.player };
+    for (let frame = 0; frame < hz / 3; frame++) expect(game.update(1 / hz, directions[turns], true)).toBe(false);
+    const expected = rotate({ x: 24, y: 10 - PLAYER_SPEED / 3 });
+    expect(Math.hypot(game.player.x - expected.x, game.player.y - expected.y)).toBeLessThan(EPS);
+    expect(game.trail.slice(0, -1)).toEqual([{ x: 16, y: 12 }, { x: 16, y: 6 }, { x: 24, y: 6 }].map(rotate));
+    expect(game.trail.at(-1)).toEqual(game.player); expect(game.trail).not.toContainEqual(oldTip);
+    expect(game.claimed).toBe(64); expect(game.score).toBe(0); expect(game.lives).toBe(3);
+    game.beginRetraction(); game.update(1);
+    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+  });
+
+  it('uses the leftover distance in the very substep that reaches a bend', () => {
+    const { game, move } = bent(); move('up', 3.999);
+    expect(game.update(0.001, 'up', true)).toBe(false);
+    expect(game.player.y).toBeCloseTo(6.001 - PLAYER_SPEED * 0.001, 9);
+    expect(game.player.x).toBe(24); expect(game.retracting).toBe(false);
+  });
+
+  it('checks the continued segment for hazards before allowing further movement', () => {
+    const { game } = bent();
+    game.spawnHazard({ expired: false, update() {}, render() {}, hitsTrail: () => false, onHit() {},
+      hitsPlayer: (from, to) => from.y >= 5.9 && to.y <= 5.9 && to.x === 24 });
+    expect(game.update(0.25, 'up', true)).toBe(true);
+    expect(game.lives).toBe(2); expect(game.player).toEqual(game.anchor);
+    expect(game.trail).toHaveLength(0); expect(game.claimed).toBe(64); expect(game.score).toBe(0);
   });
 
   it('can immediately redraw an erased direction, change course and close only the remaining path', () => {
