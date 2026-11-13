@@ -1,0 +1,11 @@
+{
+  "version": "v16",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 6 perfect reward at the character's private seaside home pool. Preserve the pose, blue nautical trousers, rope belt, shell buckle and side lacing. Replace the indoor sofa with a shallow pool bench, tiled coping, cushions, towels and a warm residential terrace overlooking the moonlit sea.",
+  "levels": {
+    "6": {
+      "perfect": { "origin": "generated", "file": "sea-pool-v16.png" }
+    }
+  }
+}

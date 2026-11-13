@@ -281,3 +281,14 @@ Wolf perfect reward rollback
 At the user's request, chapter 1 selects its original v10 lakeside perfect
 reward again. The v15 shelter painting is retained as an unused historical
 asset. Other chapters retain their selected home/rest paintings.
+
+Sea character's home pool (v16)
+------------------------------
+Chapter 6 perfect moves from the indoor coastal sofa to a private seaside
+home pool. A shallow tiled bench, cushions, towels and warm residential
+terrace distinguish the pool from the moonlit sea beyond. The character's
+pose, blue nautical trousers, rope belt, shell buckle and side lacing remain.
+Only the perfect reward changes; gameplay plates and matching masks are intact.
+art/canvas/v16-sources.json records the complete generated painting.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v16-sources.json
