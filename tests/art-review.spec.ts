@@ -93,13 +93,16 @@ for (const width of [1280, 390]) {
       `review/monster-forms/${l.id}-ninety.png`, `review/monster-forms/${l.id}-perfect.png`]);
     const assertImages = async (paths: string[]) => {
       await expect(images).toHaveCount(30);
-      const actual = await images.evaluateAll(async imgs => Promise.all(imgs.map(async image => {
+      await images.evaluateAll(imgs => imgs.forEach(image => {
         const img = image as HTMLImageElement;
-        img.loading = 'eager';await img.decode();
-        return { src: img.getAttribute('src'), size: [img.naturalWidth, img.naturalHeight] };
-      })));
-      expect(actual.map(img => img.src)).toEqual(paths.map(path => `../${path}`));
-      expect(actual.every(img => img.size[0] === 1536 && img.size[1] === 1024)).toBe(true);
+        img.loading = 'eager';
+      }));
+      await expect.poll(() => images.evaluateAll((imgs, expected) => imgs.every((image, index) => {
+        const img = image as HTMLImageElement;
+        return img.getAttribute('src') === `../${expected[index]}` &&
+          img.currentSrc === new URL(`../${expected[index]}`, document.baseURI).href &&
+          img.complete && img.naturalWidth === 1536 && img.naturalHeight === 1024;
+      }), paths), { timeout: 30000, message: 'All selected reward images should load at their original size' }).toBe(true);
     };
     await assertImages(humanPaths);
     const initial = (await toggle.boundingBox())!;
