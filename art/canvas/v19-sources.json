@@ -1,0 +1,11 @@
+{
+  "version": "v19",
+  "width": 1536,
+  "height": 1024,
+  "description": "Perfect rewards only: wolf resting against partly submerged willow roots, fox in an ivory festival fundoshi on the existing engawa, and frost giant on a warm stone terrace overlooking the lake. Preserve character identities and principal poses. Gameplay plates and masks remain unchanged.",
+  "levels": {
+    "1": { "perfect": { "origin": "generated", "file": "wolf-v19.png" } },
+    "7": { "perfect": { "origin": "generated", "file": "fox-v19.png" } },
+    "8": { "perfect": { "origin": "generated", "file": "frost-v19.png" } }
+  }
+}

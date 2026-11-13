@@ -317,3 +317,16 @@ No gameplay main plate, mask, seal, portrait or opening face bound changes.
 art/canvas/v18-sources.json records the four generated source paintings.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v18-sources.json
+
+Willow roots, festival clothing and open stone terrace (v19)
+---------------------------------------------------------
+Chapter 1 perfect replaces the resting rock with coherent willow roots
+extending from the tree into shallow lake water, keeping the brown shorts.
+Chapter 7 perfect keeps the Japanese terrace and pose, replacing the layered
+skirt-like wrap with an ivory festival fundoshi and a single long front panel.
+Chapter 8 perfect replaces the crystal hall with an open Nordic stone terrace,
+wooden chair and warm lanterns, overlooking the lake, mountains and aurora.
+The fur wrap, cushion and hot drink remain. No gameplay plates or masks change.
+art/canvas/v19-sources.json records the three generated source paintings.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v19-sources.json
