@@ -14,8 +14,9 @@ export interface Enemy extends Point {
   kind: EnemyKind;
   vx: number;
   vy: number;
+  /** Clearance for wall movement and safe spawning; damage uses enemyHitRadius. */
   radius: number;
-  // Gameplay hit circle and visible body size are deliberately independent.
+  // Visible body size remains independent from movement and damage clearance.
   visualRadius: number;
   previous: Point;
   turnClock: number;
@@ -30,6 +31,9 @@ export const ENEMY_STYLES = {
   zigzag: { name: '残魂', motion: '折线游魂', color: '#72cfff', speed: 9, radius: 0.55, visualRadius: 0.78 },
   boss: { name: '蚀根', motion: '腐林之主', color: '#ffa56e', speed: 2.3, radius: 1.65, visualRadius: 2 },
 } satisfies Record<EnemyKind, { name: string; motion: string; color: string; speed: number; radius: number; visualRadius: number }>;
+
+/** A smaller damage core gives both ordinary enemies and Boss a grazing rim. */
+export function enemyHitRadius(enemy: Enemy) { return enemy.radius * 0.85; }
 
 export function createEnemy(kind: EnemyKind, position: Point, velocity?: Point): Enemy {
   const headings = { straight: 0.21, orbit: -Math.PI / 2, zigzag: -0.45, boss: -2.6 };

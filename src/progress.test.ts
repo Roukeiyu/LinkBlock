@@ -39,7 +39,7 @@ describe('completed seals versus available levels', () => {
     const storage = memory();
     const first = noteClear(readLevelProgress(storage), 1);
     writeLevelProgress(noteClear(first, 1), storage);
-    writeCodex(applyUnlocks(readCodex(storage), 80, 2).codex, storage);
+    writeCodex(applyUnlocks(readCodex(storage), { lives: 2, maxLives: 3, winReason: 'territory' }).codex, storage);
     expect(readLevelProgress(storage)).toEqual({ unlocked: 2, cleared: [1] });
     storage.setItem(rewardKey, JSON.stringify({ clear: true, levels: { 2: { clear: true } } }));
     expect(readLevelProgress(storage).cleared).toEqual([1]);

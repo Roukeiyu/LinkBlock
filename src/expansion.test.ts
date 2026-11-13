@@ -32,7 +32,7 @@ describe('ten-level campaign compatibility', () => {
     expect(LEVELS.map(l => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     for (const level of LEVELS) {
       progress = noteClear(progress, level.id);
-      codex = applyUnlocks(codex, 96, 3, level.id, 0).codex;
+      codex = applyUnlocks(codex, { lives: 3, maxLives: 3, winReason: 'boss' }, level.id).codex;
       writeLevelProgress(progress, storage); writeCodex(codex, storage);
       expect(readLevelProgress(storage).unlocked).toBe(Math.min(10, level.id + 1));
       expect(rewardsFor(readCodex(storage), level.id)).toEqual({ clear: true, ninety: true, perfect: true });
@@ -52,15 +52,15 @@ describe('ten-level campaign compatibility', () => {
       expect(game.enemies.length).toBe(level.squad.straight + level.squad.orbit + level.squad.zigzag);
     }
   });
-  it('does not award no-hit after damage followed by a healing capture', () => {
-    const game = new Game(100, 100, { enemies: [], boss: null, victory: { territoryPercent: 100 } });
+  it('awards full health when the winning capture heals earlier damage', () => {
+    const game = new Game(100, 100, { enemies: [], boss: null, victory: { territoryPercent: 10 } });
     game.start();
     game.spawnHazard(new Projectile({ ...game.player }, { x: 0, y: 0 })); game.update(.01);
     expect(game.hitsTaken).toBe(1); expect(game.lives).toBe(2);
     game.protection = 0;
     game.move('down', true, 30); game.move('right', true, 40); game.move('up', true, 30);
-    expect(game.lives).toBe(3);
-    expect(applyUnlocks(readCodex(memory()), 96, game.lives, 10, game.hitsTaken).fresh).toEqual(['clear', 'ninety']);
+    expect(game.lives).toBe(3); expect(game.lastCaptureHeal).toBe(true); expect(game.phase).toBe('won');
+    expect(applyUnlocks(readCodex(memory()), game, 10).fresh).toEqual(['clear', 'ninety']);
     expect(new Game().hitsTaken).toBe(0);
   });
 });

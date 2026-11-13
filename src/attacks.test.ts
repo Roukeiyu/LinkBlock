@@ -81,6 +81,24 @@ describe('eight-way boss skill', () => {
   });
 });
 describe('projectiles and collision', () => {
+  it.each([0.22, 0.4])('allows grazing the visible rim of a radius-%s bullet, but still hits its core', radius => {
+    const shot = new Projectile({ x: 5, y: 5 }, { x: 0, y: 0 }, radius);
+    const graze = { x: 5, y: 5 + 0.34 + radius * 0.9 }, hit = { x: 5, y: 5 + 0.34 + radius * 0.7 };
+    expect(shot.hitsPlayer(graze, graze, 0.34)).toBe(false);
+    expect(shot.hitsPlayer(hit, hit, 0.34)).toBe(true);
+    expect(shot.radius).toBe(radius);
+    for (const [offset, expected] of [[radius * 0.9, false], [radius * 0.7, true]] as const) {
+      const y = 5 + 0.12 + offset;
+      expect(shot.hitsTrail([{ x: 2, y }, { x: 8, y }], 0.12)).toBe(expected);
+    }
+  });
+  it('keeps the smaller hitbox swept for fast grazing shots and direct crossings', () => {
+    const shot = new Projectile({ x: 0, y: 5 }, { x: 1000, y: 0 }); shot.update(0.01, { width: 20, height: 20 });
+    expect(shot.hitsPlayer({ x: 5, y: 5.53 }, { x: 5, y: 5.53 }, 0.34)).toBe(false);
+    expect(shot.hitsPlayer({ x: 5, y: 5.49 }, { x: 5, y: 5.49 }, 0.34)).toBe(true);
+    expect(shot.hitsTrail([{ x: 2, y: 5.31 }, { x: 8, y: 5.31 }], 0.12)).toBe(false);
+    expect(shot.hitsTrail([{ x: 5, y: 4 }, { x: 5, y: 6 }], 0.12)).toBe(true);
+  });
   it('flies through claimed territory, then is removed outside the arena', () => {
     const game = fixture(); game.move('down', true, 20); expect(game.percent).toBe(50);
     const shot = new Projectile({ x: 15, y: 5 }, { x: -15, y: 0 }); game.spawnHazard(shot);

@@ -36,6 +36,8 @@ export class Projectile implements AttackHazard {
   constructor(public position: Point, readonly velocity: Point, readonly radius = 0.22) {
     this.position = { ...position }; this.previous = { ...position };
   }
+  // Keep the visible bullet intact while allowing its outer rim to graze.
+  get hitRadius() { return this.radius * 0.75; }
   update(seconds: number, arena: Arena) {
     this.previous = { ...this.position };
     this.position.x += this.velocity.x * seconds; this.position.y += this.velocity.y * seconds;
@@ -46,10 +48,10 @@ export class Projectile implements AttackHazard {
   hitsPlayer(from: Point, to: Point, radius: number) {
     const a = { x: this.previous.x - from.x, y: this.previous.y - from.y };
     const b = { x: this.position.x - to.x, y: this.position.y - to.y };
-    return distance({ x: 0, y: 0 }, a, b) <= this.radius + radius;
+    return distance({ x: 0, y: 0 }, a, b) <= this.hitRadius + radius;
   }
   hitsTrail(trail: Polygon, radius: number) {
-    return trail.slice(1).some((p, i) => segmentDistance(this.previous, this.position, trail[i], p) <= this.radius + radius);
+    return trail.slice(1).some((p, i) => segmentDistance(this.previous, this.position, trail[i], p) <= this.hitRadius + radius);
   }
   onHit() { this.expired = true; }
   render(ctx: CanvasRenderingContext2D) {

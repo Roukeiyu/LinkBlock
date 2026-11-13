@@ -1,8 +1,12 @@
 import { LEVELS } from './levels';
+import type { Game } from './engine';
 
 const validLevels = new Set(LEVELS.map(level => level.id));
 
 export type RewardId = 'clear' | 'ninety' | 'perfect';
+// Keep the saved IDs and artwork paths stable: ninety now means full health,
+// perfect means a Boss victory. Existing earned images remain unlocked.
+type RewardResult = Pick<Game, 'lives' | 'winReason'> & { maxLives: number };
 export interface LevelRewards { clear: boolean; ninety: boolean; perfect: boolean }
 /** Level 1 stays on the original fields so an existing save still opens 阿澈. Later levels live under `levels`. */
 export interface Codex extends LevelRewards { levels?: Record<number, LevelRewards> }
@@ -26,20 +30,19 @@ export function codexForProgress(codex: Codex, cleared: readonly number[]): Code
   return { ...first, levels };
 }
 
-export function freshUnlocks(before: Codex, percent: number, lives: number, levelId = 1, hitsTaken = 0): RewardId[] {
+export function freshUnlocks(before: Codex, result: RewardResult, levelId = 1): RewardId[] {
+  if (!result.winReason) return [];
   const state = rewardsFor(before, levelId);
   const earned: RewardId[] = ['clear'];
-  if (percent >= 90 - 1e-4) earned.push('ninety');
-  if (lives >= 3 && hitsTaken === 0) earned.push('perfect');
+  if (result.lives >= result.maxLives) earned.push('ninety');
+  if (result.winReason === 'boss') earned.push('perfect');
   return earned.filter(id => !state[id]);
 }
 
-export function applyUnlocks(before: Codex, percent: number, lives: number, levelId = 1, hitsTaken = 0): { codex: Codex; fresh: RewardId[] } {
-  const fresh = freshUnlocks(before, percent, lives, levelId, hitsTaken);
+export function applyUnlocks(before: Codex, result: RewardResult, levelId = 1): { codex: Codex; fresh: RewardId[] } {
+  const fresh = freshUnlocks(before, result, levelId);
   const next = rewardsFor(before, levelId);
-  if (percent >= 0) next.clear = true;
-  if (percent >= 90 - 1e-4) next.ninety = true;
-  if (lives >= 3 && hitsTaken === 0) next.perfect = true;
+  for (const id of fresh) next[id] = true;
   if (levelId <= 1) return { codex: { ...before, ...next }, fresh };
   return { codex: { ...before, levels: { ...before.levels, [levelId]: next } }, fresh };
 }

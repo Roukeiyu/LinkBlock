@@ -3,7 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
-import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
+import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
@@ -429,7 +429,7 @@ export class Game {
   }
   private collidesWithTrail(swept = false) {
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= body.radius + 0.12));
+    return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= enemyHitRadius(body) + 0.12));
   }
   private hit() {
     // The live stroke starts at trail[0]. Anchor can still be an older shore

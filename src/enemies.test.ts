@@ -13,6 +13,18 @@ function run(enemy: ReturnType<typeof createEnemy>, seconds: number) {
 function seeded(seed = 13) { return () => ((seed = Math.imul(seed, 1664525) + 1013904223 | 0) >>> 0) / 2 ** 32; }
 
 describe('independent enemy motion', () => {
+  for (const swept of [false, true]) it.each(kinds)('%s allows a grazing trail but damages a core hit, swept=' + swept, kind => {
+    const game = new Game(40, 40, { enemies: [], boss: null }); game.start(); game.move('down', true, 8);
+    const body = createEnemy(kind, { x: 20 + (kind === 'boss' ? 1.65 : 0.62), y: 4 }, { x: 0, y: 0 });
+    if (kind === 'boss') game.boss = body; else game.enemies.push(body);
+    const step = () => swept ? game.update(0.001, undefined, true) : game.move('down', true, 0.1);
+    step(); expect(game.lives).toBe(3); expect(game.trail.length).toBeGreaterThan(1);
+    body.x = 20 + (kind === 'boss' ? 1.48 : 0.56);
+    step(); expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.player).toEqual(game.anchor);
+    expect(game.score).toBe(0); expect(game.claimed).toBe(0);
+    expect(body.radius).toBe(kind === 'boss' ? 1.65 : 0.55);
+    expect(body.visualRadius).toBe(ENEMY_STYLES[kind].visualRadius);
+  });
   it('spawns three of each ordinary enemy and a slower, visibly larger boss with independent state', () => {
     const game = new Game(), fresh = new Game();
     expect(game.enemies).toHaveLength(9);

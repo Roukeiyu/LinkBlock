@@ -191,7 +191,10 @@ describe('automatic trail retraction', () => {
   it('keeps remaining line vulnerable and cancels retraction on a hit', () => {
     const game = bentTrail(); game.beginRetraction();
     game.enemies[0] = createEnemy('straight', { x: 5, y: 1.5 }, { x: -10, y: 0 });
-    expect(game.update(0.04, 'down', true)).toBe(true);
+    // The old grazing contact at 0.6 is now safe; moving into the smaller
+    // damage core still severs the remaining line during automatic retraction.
+    expect(game.update(0.04)).toBe(false); expect(game.lives).toBe(3); expect(game.retracting).toBe(true);
+    expect(game.update(0.01)).toBe(true);
     expect(game.lives).toBe(2); expect(game.player).toEqual(game.anchor);
     expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
     expect(game.claimed).toBe(0); expect(game.events).toContain('hit');

@@ -33,7 +33,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test music playback and campaign assets
         run: |
-          npm run test:e2e -- tests/audio.spec.ts tests/expansion.spec.ts
+          npm run test:e2e -- tests/audio.spec.ts tests/expansion.spec.ts tests/rewards.spec.ts
           npm run test:e2e -- tests/game.spec.ts --grep "pause, sound, restart and background pause|island coast stays visible and walkable at the frame"
       - name: Test drawing magnetism and coast controls
         run: |

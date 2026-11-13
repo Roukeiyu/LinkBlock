@@ -83,7 +83,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             <strong id="score" class="score">000000</strong>
           </div>
           <div class="badge-row">
-            <div class="charms" id="charms" aria-label="本关纪念"><button type="button" class="charm" data-reward="clear" aria-label="通关"><img alt="" /><span>通关</span></button><button type="button" class="charm" data-reward="ninety" aria-label="90%"><img alt="" /><span>90%</span></button><button type="button" class="charm" data-reward="perfect" aria-label="无伤"><img alt="" /><span>无伤</span></button></div>
+            <div class="charms" id="charms" aria-label="本关纪念"><button type="button" class="charm" data-reward="clear" aria-label="通关"><img alt="" /><span>通关</span></button><button type="button" class="charm" data-reward="ninety" aria-label="满血"><img alt="" /><span>满血</span></button><button type="button" class="charm" data-reward="perfect" aria-label="击破"><img alt="" /><span>击破</span></button></div>
           </div>
         </div>
         <div class="board-stage">
@@ -218,21 +218,21 @@ function resetGalleryPreview() { previewOtherForm = false; paintGalleryForm(); }
 
 let codex: Codex = codexForProgress(readCodex(), progress.cleared);
 let freshNote = '';
-const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '90%', perfect: '无伤' };
+const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '满血', perfect: '击破' };
 interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string }
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
     { level: 1, id: 'clear', title: '阿澈 · 解封', src: LEVELS[0].restored, blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
-    { level: 1, id: 'ninety', title: '九成净化', src: LEVELS[0].rewardNinety, blurb: '净化达到 90%', locked: '未解锁 · 净化达到 90%' },
-    { level: 1, id: 'perfect', title: '无伤', src: LEVELS[0].rewardPerfect, blurb: '全程未受伤并通关', locked: '未解锁 · 全程未受伤并通关' },
+    { level: 1, id: 'ninety', title: '满血通关', src: LEVELS[0].rewardNinety, blurb: '通关时生命全满（可通过圈地回血）', locked: '未解锁 · 通关时生命全满（可通过圈地回血）' },
+    { level: 1, id: 'perfect', title: '击败 Boss', src: LEVELS[0].rewardPerfect, blurb: '击败 Boss 通关', locked: '未解锁 · 击败 Boss 通关' },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
     level: level.id,
     id,
-    title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '九成净化' : '无伤'}`,
+    title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '满血通关' : '击败 Boss'}`,
     src: id === 'clear' ? level.restored : id === 'ninety' ? level.rewardNinety! : level.rewardPerfect!,
-    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '净化达到 90%' : '全程未受伤并通关',
-    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 净化达到 90%' : '未解锁 · 全程未受伤并通关',
+    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '通关时生命全满（可通过圈地回血）' : '击败 Boss 通关',
+    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 通关时生命全满（可通过圈地回血）' : '未解锁 · 击败 Boss 通关',
   })));
   return [...first, ...later];
 }
@@ -734,7 +734,7 @@ function handleEvent(event: GameEvent) {
     lakeAudio.play('hurt');
     if (game.lives > 0) lakeAudio.play('respawn');
   } else if (event === 'won') {
-    const result = applyUnlocks(codex, game.percent, game.lives, current.id, game.hitsTaken);
+    const result = applyUnlocks(codex, game, current.id);
     codex = result.codex; writeCodex(codex);
     const unlocked = result.fresh.map(id => current.id === 1 ? rewardNames[id] : `${current.theme}·${rewardNames[id]}`);
     freshNote = unlocked.length ? `新解开：${unlocked.join('、')}` : '这些纪念都已经在图鉴里了。';
@@ -742,8 +742,8 @@ function handleEvent(event: GameEvent) {
     effects.push(sealBreak(reducedMotion.matches));
     lakeAudio.play('seal');
     let fanfare = 1.15;
-    if (game.percent >= 90 - 1e-4) { lakeAudio.play('milestone', 1, fanfare); fanfare += 0.62; }
-    if (game.lives >= 3 && game.hitsTaken === 0) { lakeAudio.play('perfect', 1, fanfare); fanfare += 0.4; }
+    if (game.lives >= game.maxLives) { lakeAudio.play('milestone', 1, fanfare); fanfare += 0.62; }
+    if (game.winReason === 'boss') { lakeAudio.play('perfect', 1, fanfare); fanfare += 0.4; }
     if (result.fresh.length) lakeAudio.play('reward', 1, fanfare);
   } else if (event === 'lost') lakeAudio.play('gameover');
   else if (event === 'start') lakeAudio.play('level');
