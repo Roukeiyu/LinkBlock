@@ -357,3 +357,15 @@ legs. The foreground bent leg occludes the lower fabric, correcting the
 flat panel previously drawn over the knee and shin. Coverage, pose and
 veranda remain. Gameplay plates and masks are unchanged.
 Source: art/canvas/v22-sources.json.
+
+Fox leg anatomy refinement (v23)
+-------------------------------
+Chapter 7 perfect adds moderate quadriceps, knee and calf definition to
+both legs while preserving the relaxed pose and corrected v22 cloth depth.
+No gameplay plates or masks change. Source: art/canvas/v23-sources.json.
+
+Fox leg hair continuity (v24)
+----------------------------
+Chapter 7 perfect adds natural thigh and calf hair matching the torso,
+retaining v23 muscle definition and the corrected garment depth.
+Source: art/canvas/v24-sources.json. Gameplay plates and masks are unchanged.

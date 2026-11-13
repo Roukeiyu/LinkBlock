@@ -1,0 +1,14 @@
+{
+  "version": "v24",
+  "width": 1536,
+  "height": 1024,
+  "description": "Fox leg hair matching torso texture, preserving athletic anatomy and corrected garment depth.",
+  "levels": {
+    "7": {
+      "perfect": {
+        "origin": "generated",
+        "file": "fox-v24.png"
+      }
+    }
+  }
+}

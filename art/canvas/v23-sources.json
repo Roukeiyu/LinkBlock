@@ -1,0 +1,14 @@
+{
+  "version": "v23",
+  "width": 1536,
+  "height": 1024,
+  "description": "Moderate athletic leg definition on fox perfect reward; preserve pose and corrected cloth occlusion.",
+  "levels": {
+    "7": {
+      "perfect": {
+        "origin": "generated",
+        "file": "fox-v23.png"
+      }
+    }
+  }
+}
