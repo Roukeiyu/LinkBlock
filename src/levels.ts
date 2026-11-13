@@ -58,7 +58,7 @@ export const LEVELS: LevelDef[] = [
     id: 1, theme: '狼人', title: '第一关 · 月下封林',
     restored: 'levels/1/v10/restored.webp', sealed: 'levels/1/v10/sealed.webp', mask: 'levels/1/v10/mask.png', music: 'moonlit-grove',
     portraitSealed: 'levels/1/v10/portrait-sealed.webp', portraitRescued: 'levels/1/v10/portrait.webp',
-    rewardNinety: 'levels/1/v10/ninety.webp', rewardPerfect: 'levels/1/v19/perfect.webp',
+    rewardNinety: 'levels/1/v10/ninety.webp', rewardPerfect: 'levels/1/v20/perfect.webp',
     names: { straight: ['腐风', '灰孢', '咒鸦'], orbit: '荆蚀', zigzag: '残魂', boss: '蚀根' },
     sprites: { ...sheet('levels/1/v3', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']), tree: 'sprites/boss_shigen.png', turn: ['crow'] },
     enemySpeed: 1, bossSpeed: 1, squad: { straight: 2, orbit: 2, zigzag: 2 }, reinforceInterval: 1.5, reinforceSpeed: 1,

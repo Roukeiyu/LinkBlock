@@ -1,0 +1,9 @@
+{
+  "version": "v20",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 1 perfect reward moves onto a sheltered lakeside cabin veranda. Keep the brown shorts and character identity, adjust the pose to rest naturally on a cushioned timber bench, and show the moonlit lake, willow and mountains from the restored and ninety illustrations beyond the railing.",
+  "levels": {
+    "1": { "perfect": { "origin": "generated", "file": "wolf-v20.png" } }
+  }
+}

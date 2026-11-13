@@ -330,3 +330,15 @@ The fur wrap, cushion and hot drink remain. No gameplay plates or masks change.
 art/canvas/v19-sources.json records the three generated source paintings.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v19-sources.json
+
+Wolf's sheltered lakeside veranda (v20)
+--------------------------------------
+Chapter 1 perfect moves from submerged willow roots to a cushioned bench
+on a semi-open wooden cabin veranda. Roof beams, a cabin wall and railing
+provide shelter, with warm lanterns and a hot drink. The open view retains
+the lake, willow, moon and snowy mountains from the restored/ninety scenes.
+The brown shorts and character identity remain; the seated pose is adjusted.
+Only the perfect reward changes; gameplay plates and masks remain intact.
+art/canvas/v20-sources.json records the generated source painting.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v20-sources.json
