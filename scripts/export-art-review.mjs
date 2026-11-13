@@ -144,6 +144,38 @@ full.addEventListener('touchend',event=>{
 },{passive:true});
 full.addEventListener('touchcancel',()=>{swipeStart=null;},{passive:true});
 viewer.addEventListener('close',()=>{swipeStart=null;});
+// Retain decoded preview images for the life of the page. Limit concurrent work
+// and prioritize visible cards before progressively filling the rest of the cache.
+const previewCache=new Map(),previewCards=[];
+let activePreloads=0,preloadsStarted=false,backgroundAllowed=false;
+function pumpPreviews(){
+  if(!preloadsStarted)return;
+  while(activePreloads<4){
+    const jobs=[...previewCache.values()];
+    const job=jobs.find(job=>job.state==='queued'&&job.priority)||
+      (backgroundAllowed&&jobs.find(job=>job.state==='queued'));
+    if(!job)break;
+    job.state='loading';activePreloads++;
+    const image=new Image();image.src=sources[job.path];
+    image.decode().then(()=>{job.state='ready';job.image=image;job.resolve(image);},()=>{
+      previewCache.delete(job.path);job.resolve(null);
+    }).finally(()=>{activePreloads--;pumpPreviews();});
+  }
+}
+function preparePreview(path,priority=false){
+  let job=previewCache.get(path);
+  if(!job){
+    job={path,priority,state:'queued'};
+    job.promise=new Promise(resolve=>{job.resolve=resolve;});
+    previewCache.set(path,job);
+  }else if(priority)job.priority=true;
+  pumpPreviews();
+  return job.promise;
+}
+function inViewport(figure){
+  const rect=figure.getBoundingClientRect();
+  return rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<innerHeight&&rect.right>0&&rect.left<innerWidth;
+}
 const preloadObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>entry.target.updatePreload(entry.isIntersecting)),{rootMargin:'400px'}):null;
 for(const level of levels){
   const section=document.createElement('section');section.dataset.level=String(level.id);
@@ -157,26 +189,17 @@ for(const level of levels){
     img.onload=()=>{size.textContent=item.preview?'1536 × 1024':img.naturalWidth+' × '+img.naturalHeight;};
     button.append(img);button.onclick=()=>openImage(level.id,item.file);
     file.className='file';size.className='dimensions';size.style.display='block';size.style.minHeight='1.65em';
-    let nearby=false, generation=0, previews=new Map();
-    function prepare(path){
-      const cache=previews;
-      if(!cache.has(path)){
-        const image=new Image();image.src=sources[path];
-        const ready=image.decode().then(()=>image).catch(()=>{cache.delete(path);return null;});
-        cache.set(path,ready);
-      }
-      return cache.get(path);
-    }
-    function preloadBoth(){if(item.preview){prepare(item.preview);prepare(item.monsterPreview);}}
-    figure.updatePreload=visible=>{nearby=visible;if(visible)preloadBoth();else previews=new Map();};
-    if(item.preview&&preloadObserver)preloadObserver.observe(figure);
+    let nearby=false, generation=0;
+    function preloadBoth(priority){return [preparePreview(item.preview,priority),preparePreview(item.monsterPreview,priority)];}
+    figure.updatePreload=visible=>{nearby=visible;if(visible)preloadBoth(true);};
+    if(item.preview){previewCards.push({figure,preloadBoth});if(preloadObserver)preloadObserver.observe(figure);}
     cardUpdates.push(()=>{
       const path=activeFile(item),preview=activePreview(item),caption=activeLabel(item),token=++generation;
       const apply=()=>{img.src=sources[preview];img.alt=level.title+' / '+caption;
         label.textContent=caption;file.textContent=path;size.textContent='';
         if(img.complete&&img.naturalWidth)img.onload();};
-      if(item.preview&&nearby&&img.getAttribute('src')){
-        preloadBoth();prepare(preview).then(image=>{if(image&&token===generation)apply();});
+      if(item.preview&&(nearby||inViewport(figure))&&img.getAttribute('src')){
+        preloadBoth(true);preparePreview(preview,true).then(image=>{if(image&&token===generation)apply();});
       }else apply();
     });
     cap.append(label,size,file);figure.append(button,cap);grid.append(figure);
@@ -184,6 +207,10 @@ for(const level of levels){
   section.append(h,grid);container.append(section);
 }
 syncForm();
+const initialPreviews=previewCards.filter(card=>inViewport(card.figure)).flatMap(card=>card.preloadBoth(true));
+previewCards.forEach(card=>card.preloadBoth(false));
+preloadsStarted=true;pumpPreviews();
+Promise.all(initialPreviews).then(()=>{backgroundAllowed=true;pumpPreviews();});
 document.querySelector('#level-filter').onchange=e=>{for(const s of container.children)s.hidden=e.target.value!=='all'&&s.dataset.level!==e.target.value;};
 document.querySelector('#close').onclick=()=>viewer.close();viewer.onclick=e=>{if(e.target===viewer)viewer.close();};
 if(document.querySelector('#player-preview')){const sheet=new Image();sheet.src=sources['sprites/player-spirit.webp'];document.querySelector('#spirit-download').href=sheet.src;const reduced=matchMedia('(prefers-reduced-motion: reduce)');let playing=!reduced.matches,frame=0,previous=0,elapsed=0;const toggle=document.querySelector('#animation-toggle');function sync(){toggle.textContent=playing?'暂停预览':'播放预览';toggle.setAttribute('aria-pressed',String(playing));}toggle.onclick=()=>{playing=!playing;sync();};reduced.onchange=()=>{playing=!reduced.matches;frame=0;elapsed=0;sync();};function draw(canvas,f){const c=canvas.getContext('2d'),cell=sheet.naturalWidth/4;c.clearRect(0,0,canvas.width,canvas.height);c.drawImage(sheet,f*cell,0,cell,sheet.naturalHeight,0,0,canvas.width,canvas.height);}sheet.onload=()=>{document.querySelectorAll('[data-frame]').forEach(c=>draw(c,Number(c.dataset.frame)));function animate(now){if(playing)elapsed+=Math.min(50,now-previous);previous=now;frame=Math.floor(elapsed*6/1000)%4;document.querySelectorAll('.spirit-loop').forEach(c=>draw(c,frame));requestAnimationFrame(animate);}sync();requestAnimationFrame(animate);};}

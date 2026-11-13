@@ -195,6 +195,45 @@ test('nearby previews preload and wait for decoding without stale switches', asy
   } finally { release(); }
 });
 
+test('loads visible previews first, then retains all forms for later comparisons', async ({ page }) => {
+  let release!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  let visibleRequested = false;
+  const requested: string[] = [], completed = new Set<string>();
+  page.on('request', request => {
+    if (request.url().includes('/review/previews/')) requested.push(new URL(request.url()).pathname);
+  });
+  page.on('requestfinished', request => {
+    if (request.url().includes('/review/previews/')) completed.add(new URL(request.url()).pathname);
+  });
+  await page.route('**/review/previews/1-restored-monster.webp', async route => {
+    visibleRequested = true;
+    await blocked;
+    await route.continue();
+  });
+  try {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/review/rewards.html', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => visibleRequested).toBe(true);
+    expect(requested.some(path => path.endsWith('/10-perfect-monster.webp'))).toBe(false);
+    release();
+    await expect.poll(() => completed.size, { timeout: 30000 }).toBe(60);
+    const farPreview = '/review/previews/10-perfect-monster.webp';
+    const count = () => requested.filter(path => path.endsWith(farPreview)).length;
+    const before = count();
+    expect(before).toBe(1);
+    await page.locator('#levels section').last().scrollIntoViewIfNeeded();
+    await page.locator('#form-toggle').click();
+    await expect(page.locator('#levels section').last().locator('img').last())
+      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+    await page.locator('#form-toggle').click();
+    await page.locator('#form-toggle').click();
+    await expect(page.locator('#levels section').last().locator('img').last())
+      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+    expect(count()).toBe(before);
+  } finally { release(); }
+});
+
 test.describe('touch review navigation', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
   test('horizontal swipes change images while vertical gestures do not', async ({ page }) => {
