@@ -132,7 +132,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
-      <p>场上会出现一枚道具，碰到或圈住即可拾取：减速让敌人移动速度降低 30%（10 秒，不影响子弹）；止步冻结敌人和子弹（3 秒）；加速让角色速度提高 50%（10 秒）。拾取后 10–20 秒出现下一枚。</p>
+      <p>场上会出现一枚道具，圈入新领地即可获得：沙漏减速让敌人移动速度降低 30%（10 秒，不影响子弹）；雪花止步冻结敌人和子弹（3 秒）；闪电加速让角色速度提高 50%（10 秒）。获得后 10–20 秒出现下一枚。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -851,19 +851,36 @@ function sync() {
 
 function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: number) {
   const appearance = {
-    slow: { color: '#9ee8bb', mark: '减' },
-    stop: { color: '#a8d9ff', mark: '止' },
-    speed: { color: '#ffd783', mark: '加' },
+    slow: '#9ee8bb',
+    stop: '#a8d9ff',
+    speed: '#ffd783',
   }[item.kind];
   context.save(); context.translate(item.x, item.y);
   const pulse = reducedMotion.matches ? 1 : 1 + 0.06 * Math.sin(elapsed * 4);
-  context.scale(pulse, pulse); context.shadowColor = appearance.color; context.shadowBlur = 8;
-  context.fillStyle = '#17252b'; context.strokeStyle = appearance.color; context.lineWidth = 0.18;
+  context.scale(pulse, pulse); context.shadowColor = appearance; context.shadowBlur = 5;
+  context.fillStyle = '#17252b'; context.strokeStyle = appearance; context.lineWidth = 0.15;
   context.beginPath(); context.arc(0, 0, POWER_UP_RADIUS, 0, Math.PI * 2); context.fill(); context.stroke();
-  context.shadowBlur = 0; context.strokeStyle = '#fff8'; context.lineWidth = 0.07;
-  context.beginPath(); context.arc(0, 0, POWER_UP_RADIUS - 0.25, 0, Math.PI * 2); context.stroke();
-  context.fillStyle = appearance.color; context.font = 'bold 1.95px sans-serif';
-  context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(appearance.mark, 0, 0.08);
+  context.shadowBlur = 0; context.strokeStyle = appearance; context.fillStyle = appearance;
+  context.lineWidth = 0.18; context.lineCap = 'round'; context.lineJoin = 'round';
+  context.beginPath();
+  if (item.kind === 'slow') {
+    // Hourglass: the two chambers meet in the middle.
+    context.moveTo(-0.52, -0.66); context.lineTo(0.52, -0.66);
+    context.lineTo(0, 0); context.lineTo(0.52, 0.66); context.lineTo(-0.52, 0.66);
+    context.lineTo(0, 0); context.closePath(); context.stroke();
+  } else if (item.kind === 'stop') {
+    // Snowflake: three crossed axes remain legible on a small screen.
+    for (let i = 0; i < 3; i++) {
+      const angle = i * Math.PI / 3, x = Math.cos(angle) * 0.68, y = Math.sin(angle) * 0.68;
+      context.moveTo(-x, -y); context.lineTo(x, y);
+    }
+    context.stroke();
+  } else {
+    // Lightning bolt for the player speed boost.
+    context.moveTo(0.16, -0.78); context.lineTo(-0.52, 0.08); context.lineTo(-0.08, 0.08);
+    context.lineTo(-0.18, 0.78); context.lineTo(0.52, -0.18); context.lineTo(0.08, -0.18);
+    context.closePath(); context.fill();
+  }
   context.restore();
 }
 

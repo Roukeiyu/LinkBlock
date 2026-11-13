@@ -3,7 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
-import { POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RADIUS, powerUpPosition, type PowerUp, type PowerUpKind } from './powerups';
+import { POWER_UP_DURATION, POWER_UP_KINDS, powerUpPosition, type PowerUp, type PowerUpKind } from './powerups';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -170,15 +170,7 @@ export class Game {
   private spawnPowerUp() {
     if (!this.options.powerUps || this.powerUp) return;
     const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
-    let point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
-    if (!point) {
-      // If the remaining water is too crowded or narrow for a safe interior
-      // spot, keep the promised spawn time by choosing a reachable real shore.
-      const shore = this.boundarySegments.map(([a, b]) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }));
-      const apart = shore.filter(p => Math.hypot(p.x - this.player.x, p.y - this.player.y) > POWER_UP_RADIUS + PLAYER_RADIUS);
-      const choices = apart.length ? apart : shore;
-      if (choices.length) point = choices[Math.min(choices.length - 1, Math.floor(this.random() * choices.length))];
-    }
+    const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
     if (!point) { this.powerUpWait = 0.5; return; }
     const index = Math.min(POWER_UP_KINDS.length - 1, Math.floor(this.random() * POWER_UP_KINDS.length));
     this.powerUp = { ...point, kind: POWER_UP_KINDS[index] };
@@ -192,6 +184,21 @@ export class Game {
     // spawn remains strictly under 20 seconds after pickup.
     this.powerUpWait = 10 + Math.min(1 - Number.EPSILON, Math.max(0, this.random())) * 9.9;
     this.events.push({ type: 'powerup', kind });
+  }
+  private keepPowerUpInWater() {
+    const item = this.powerUp;
+    if (!item || this.territories.some(region => inside(item, region))) return;
+    // If the cut runs exactly through an item, merely touching it must not
+    // collect it. Shift it imperceptibly into remaining water so a later cut
+    // can still enclose it, including at corners and the arena frame.
+    for (const gap of [1e-4, 1e-3, 1e-2, 0.1]) for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
+      if (!dx && !dy) continue;
+      const point = { x: item.x + dx * gap, y: item.y + dy * gap };
+      if (this.territories.some(region => inside(point, region))) { Object.assign(item, point); return; }
+    }
+    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
+    const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
+    if (point) Object.assign(item, point);
   }
   togglePause() {
     if (this.phase === 'playing' || this.phase === 'opening') { this.resumePhase = this.phase; this.phase = 'paused'; }
@@ -361,8 +368,8 @@ export class Game {
     this.captured.push(...this.lastCapture, ...this.island?.sealedGaps ?? []);
     // A pickup enclosed by a successful capture remains obtainable even when
     // the water underneath it becomes land.
-    if (this.powerUp && [...this.lastCapture, ...this.island?.sealedGaps ?? []].some(region =>
-      inside(this.powerUp!, region) || wallEdges(region).some(([a, b]) => onSegment(this.powerUp!, a, b)))) this.collectPowerUp();
+    if (this.powerUp && [...this.lastCapture, ...this.island?.sealedGaps ?? []].some(region => inside(this.powerUp!, region))) this.collectPowerUp();
+    else this.keepPowerUpInWater();
     this.trail = [];
     if (!this.isBoundary(this.player.x, this.player.y)) {
       // Finishing an entire disconnected room can erase the closure point too.
@@ -568,7 +575,6 @@ export class Game {
         const path = this.boundaryRelocated ? [this.player, this.player] : this.playerPath.length > 1 ? this.playerPath : [playerBefore, this.player];
         if (path.slice(1).some((p, i) => this.hazardsHit(path[i], p))) this.hit();
         if (lives !== this.lives) gestureEnded = true;
-        if (!gestureEnded && this.powerUp && path.slice(1).some((p, i) => distance(this.powerUp!, path[i], p) <= POWER_UP_RADIUS + PLAYER_RADIUS)) this.collectPowerUp();
         if (boundaryChanged || gestureEnded) {
           walls = this.territories.map(wallEdges);
           bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
