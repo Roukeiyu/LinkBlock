@@ -196,6 +196,19 @@ test('nearby previews preload and wait for decoding without stale switches', asy
 });
 
 test('loads visible previews first, then retains all forms for later comparisons', async ({ page }) => {
+  // Intercepting a request disables the browser HTTP cache. Count the page's
+  // preloader objects instead of network events, which can include revalidation
+  // or refetches when Chromium evicts an image under memory pressure.
+  await page.addInitScript(() => {
+    const original = window.Image;
+    (window as any).__previewImagesCreated = 0;
+    window.Image = new Proxy(original, {
+      construct(target, args, newTarget) {
+        (window as any).__previewImagesCreated++;
+        return Reflect.construct(target, args, newTarget);
+      },
+    });
+  });
   let release!: () => void;
   const blocked = new Promise<void>(resolve => { release = resolve; });
   let visibleRequested = false;
@@ -218,10 +231,8 @@ test('loads visible previews first, then retains all forms for later comparisons
     expect(requested.some(path => path.endsWith('/10-perfect-monster.webp'))).toBe(false);
     release();
     await expect.poll(() => completed.size, { timeout: 30000 }).toBe(60);
-    const farPreview = '/review/previews/10-perfect-monster.webp';
-    const count = () => requested.filter(path => path.endsWith(farPreview)).length;
-    const before = count();
-    expect(before).toBe(1);
+    const before = await page.evaluate(() => (window as any).__previewImagesCreated);
+    expect(before).toBe(60);
     await page.locator('#levels section').last().scrollIntoViewIfNeeded();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
@@ -230,7 +241,10 @@ test('loads visible previews first, then retains all forms for later comparisons
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
       .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
-    expect(count()).toBe(before);
+    const last = page.locator('#levels section').last().locator('img').last();
+    await expect.poll(() => last.evaluate((img: HTMLImageElement) =>
+      img.complete && img.naturalWidth === 768 && img.naturalHeight === 512)).toBe(true);
+    expect(await page.evaluate(() => (window as any).__previewImagesCreated)).toBe(before);
   } finally { release(); }
 });
 
