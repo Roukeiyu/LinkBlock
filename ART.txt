@@ -372,10 +372,14 @@ Source: art/canvas/v24-sources.json. Gameplay plates and masks are unchanged.
 
 Monster gameplay forms
 ----------------------
-All ten monster main plates have their own checked-in completion masks in
-public/monster/<level>/mask.png, reviewed as overlays against the restored art.
+All ten monster main plates have independently traced outlines and cut-outs in
+art/monster-masks/<level>.json, drawn from each monster source, with no human
+mask input. Run `python scripts/build-monster-masks.py <level>` to rasterize them
+into public/monster/<level>/mask.png; source and mask hashes guard against stale
+artwork. Review the result as an overlay against the monster restored art.
 The seal and score use the same mask; portraits, rewards and opening head bounds
 follow the selected form. After changing a monster main plate, review and update
-its mask and head bounds before running `python scripts/build-monster-art.py <level>`;
+its contour and head bounds, regenerate the mask, then run
+`python scripts/build-monster-art.py <level>`;
 this packages the three source illustrations, sealed scene and portraits. Review
 the mask overlay and a partially revealed game board before publishing.

@@ -3,6 +3,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { imageDimensions } from './image-dimensions.mjs';
 import sharp from 'sharp';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = await build({ entryPoints: [resolve(root, 'src/levels.ts')], bundle: true,
@@ -10,6 +12,12 @@ const bundle = await build({ entryPoints: [resolve(root, 'src/levels.ts')], bund
 const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
 const errors = [];
 for (const level of LEVELS) {
+  const contour = JSON.parse(readFileSync(resolve(root, 'art/monster-masks', `${level.id}.json`), 'utf8'));
+  const digest = file => createHash('sha256').update(readFileSync(resolve(root, file))).digest('hex');
+  if (contour.source !== `art/review/monster-forms/${level.id}.png` || digest(contour.source) !== contour.source_sha256)
+    errors.push(`Level ${level.id}: monster source changed; review its independent mask`);
+  if (digest(`public/monster/${level.id}/mask.png`) !== contour.mask_sha256)
+    errors.push(`Level ${level.id}: monster mask does not match its reviewed contour`);
   for (const key of ['restored', 'rewardNinety', 'rewardPerfect', 'sealed', 'mask']) {
     const file = level[key];
     if (!file) { errors.push(`Level ${level.id}: missing ${key}`); continue; }
