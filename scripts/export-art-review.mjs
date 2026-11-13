@@ -52,7 +52,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   }
   const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme,
     items: kind === 'rewards' ? [
-      { label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`) },
+      { label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`), ...(monsterForms.levels[level.id].file !== `monster-forms/${level.id}.png` ? { monsterMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}) },
       { label: '九成净化 · 90%', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`) },
       { label: '无伤通关', file: ref(level.rewardPerfect), monster: ref(`review/monster-forms/${level.id}-perfect.png`), preview: ref(`review/previews/${level.id}-perfect-human.webp`), monsterPreview: ref(`review/previews/${level.id}-perfect-monster.webp`) },
     ] : [
@@ -95,9 +95,10 @@ async function openMask(level,item){
   const request=++maskRequest,form=monsterMode?'魔物形态':'人形',mask=monsterMode?item.monsterMask:item.mask;
   const base=document.querySelector('#mask-base'),raw=document.querySelector('#mask-raw'),canvas=document.querySelector('#mask-overlay');
   const context=canvas.getContext('2d');context.clearRect(0,0,canvas.width,canvas.height);
-  base.src=sources[activeFile(item)];base.alt=level.title+' / '+form+' 完整成图';
+  const gameMonster=monsterMode&&item.monsterMaskBase;
+  base.src=sources[gameMonster||activeFile(item)];base.alt=level.title+' / '+form+(gameMonster?' 游戏中完整成图':' 完整成图');
   raw.src=sources[mask];raw.alt=level.title+' / '+form+' Alpha 遮罩';
-  document.querySelector('#mask-caption').textContent=level.title+' / '+form+' · Alpha 遮罩';
+  document.querySelector('#mask-caption').textContent=level.title+' / '+form+(gameMonster?' · 游戏中成图与 Alpha 遮罩':' · Alpha 遮罩');
   document.querySelector('#mask-note').textContent='正在加载遮罩…';
   const download=document.querySelector('#mask-download');download.href=sources[mask];download.download='level-'+level.id+'-'+(monsterMode?'monster':'human')+'-mask.png';
   maskView(false);maskViewer.showModal();
@@ -110,7 +111,7 @@ async function openMask(level,item){
       pixels.data[i]=255;pixels.data[i+1]=45;pixels.data[i+2]=35;pixels.data[i+3]=a>127&&coverage>127?110:0;
     }
     context.putImageData(pixels,0,0);
-    document.querySelector('#mask-note').textContent='红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。';
+    document.querySelector('#mask-note').textContent=(gameMonster?'当前叠加的是游戏中使用的魔物成图；审阅图为另一个版本。':'')+'红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。';
   }catch{if(request===maskRequest)document.querySelector('#mask-note').textContent='遮罩加载失败，请关闭后重试。';}
 }
 if(maskViewer){

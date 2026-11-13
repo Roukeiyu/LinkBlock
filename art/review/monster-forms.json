@@ -117,7 +117,7 @@
       "rewards": {
         "ninety": {
           "source": "levels/8/v12/ninety.webp",
-          "file": "monster-forms/8-ninety.png"
+          "file": "monster-forms/8-ninety-review.png"
         },
         "perfect": {
           "source": "levels/8/v19/perfect.webp",
@@ -132,7 +132,7 @@
       "rewards": {
         "ninety": {
           "source": "levels/9/v12/ninety.webp",
-          "file": "monster-forms/9-ninety.png"
+          "file": "monster-forms/9-ninety-review.png"
         },
         "perfect": {
           "source": "levels/9/v15/perfect.webp",
@@ -142,7 +142,7 @@
     },
     "10": {
       "source": "levels/10/v3/restored.webp",
-      "file": "monster-forms/10.png",
+      "file": "monster-forms/10-review.png",
       "transformation": "True fire demon: entirely volcanic obsidian hide with fine glowing magma fissures, inhuman angular demonic muzzle, molten eyes, large ridged horns, obsidian claw fingers, no human face, hair, beard or bare human skin. Preserve leather vest, red cloak, brass cuffs, trousers, body scale and precisely the same seated pose.",
       "rewards": {
         "ninety": {
@@ -151,7 +151,7 @@
         },
         "perfect": {
           "source": "levels/10/v18/perfect.webp",
-          "file": "monster-forms/10-perfect.png"
+          "file": "monster-forms/10-perfect-review.png"
         }
       }
     }
