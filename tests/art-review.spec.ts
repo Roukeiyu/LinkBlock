@@ -1,6 +1,49 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
+for (const width of [1280, 390]) {
+  test(`completion masks can be reviewed in both forms at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/review/rewards.html');
+    const buttons = page.locator('#levels .mask-button');
+    const dialog = page.locator('#mask-viewer');
+    await expect(buttons).toHaveCount(10);
+    for (const monster of [false, true]) {
+      if (monster) await page.locator('#form-toggle').click();
+      for (const id of [1, 4, 8, 10]) {
+        await page.locator('#level-filter').selectOption(String(id));
+        const card = page.locator('#levels section:visible figure').first();
+        await card.locator('.mask-button').click();
+        await expect(dialog).toBeVisible();
+        await expect(page.locator('#mask-note')).toContainText('红色区域');
+        const mask = monster ? `monster/${id}/mask.png` : LEVELS[id - 1].mask;
+        const art = monster ? `review/monster-forms/${id}.png` : LEVELS[id - 1].restored;
+        await expect(page.locator('#mask-base')).toHaveAttribute('src', `../${art}`);
+        await expect(page.locator('#mask-raw')).toHaveAttribute('src', `../${mask}`);
+        await expect(page.locator('#mask-download')).toHaveAttribute('href', `../${mask}`);
+        await expect(page.locator('#mask-caption')).toContainText(monster ? '魔物形态' : '人形');
+        const overlay = await page.locator('#mask-overlay').evaluate((canvas: HTMLCanvasElement) => {
+          const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+          let colored = 0, clear = 0;
+          for (let i = 3; i < data.length; i += 4) data[i] ? colored++ : clear++;
+          return { colored, clear };
+        });
+        expect(overlay.colored).toBeGreaterThan(1000);
+        expect(overlay.clear).toBeGreaterThan(1000);
+        await page.locator('#mask-show-raw').click();
+        await expect(page.locator('#mask-raw')).toBeVisible();
+        await expect(page.locator('#mask-overlay')).toBeHidden();
+        await page.locator('#mask-show-overlay').click();
+        await expect(page.locator('#mask-overlay')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(dialog).not.toBeVisible();
+        await expect(card.locator('.mask-button')).toBeFocused();
+      }
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
 for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
   test(`${pageName} review loads every current image and opens the original`, async ({ page }) => {
     const errors: string[] = [];
@@ -34,7 +77,7 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     const originals = page.locator('#levels section:visible .grid .file');
     const original = '../' + await originals.first().textContent();
     expect(original).toContain(pageName === 'rewards' ? LEVELS[9].restored : LEVELS[9].sprites.tree);
-    await page.locator('#levels section:visible figure button').first().click();
+    await page.locator('#levels section:visible figure > button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
     const perLevel = count / 10;
@@ -57,17 +100,17 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await assertCurrent(1, perLevel, await sourceAt(1), (await visibleImages.nth(1).getAttribute('alt'))!);
     await page.keyboard.press('Escape');
     await expect(page.locator('#viewer')).not.toBeVisible();
-    await expect(page.locator('#levels section:visible figure button').first()).toBeFocused();
+    await expect(page.locator('#levels section:visible figure > button').first()).toBeFocused();
     // With all levels visible, arrows cross chapter boundaries and wrap the catalog.
     await page.locator('#level-filter').selectOption('all');
-    await page.locator('#levels figure button').first().click();
+    await page.locator('#levels figure > button').first().click();
     await page.keyboard.press('ArrowLeft');
     await expect(page.locator('#position')).toHaveText(`${count} / ${count}`);
     await expect(page.locator('#full')).toHaveAttribute('src', '../' + await page.locator('#levels .grid .file').last().textContent());
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('#position')).toHaveText(`1 / ${count}`);
     await page.locator('#close').click();
-    await page.locator('#levels figure button').nth(perLevel - 1).click();
+    await page.locator('#levels figure > button').nth(perLevel - 1).click();
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('#full')).toHaveAttribute('src', '../' + await page.locator('#levels .grid .file').nth(perLevel).textContent());
     await page.locator('#close').click();
@@ -133,7 +176,7 @@ for (const width of [1280, 390]) {
     expect(await page.evaluate(() => scrollY)).toBeCloseTo(scroll, 0);
     await page.locator('#level-filter').selectOption('4');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
-    await page.locator('#levels section:visible figure button').nth(1).click();
+    await page.locator('#levels section:visible figure > button').nth(1).click();
     await expect(page.locator('#position')).toHaveText('2 / 3');
     await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/4-ninety.png');
     await expect(page.locator('#download')).toHaveAttribute('download', 'level-4-4-ninety.png');
@@ -189,7 +232,7 @@ test('nearby previews preload and wait for decoding without stale switches', asy
     await toggle.click();
     await expect(img).toHaveAttribute('src', '../review/previews/1-restored-monster.webp');
     await expect(card.locator('figcaption')).toContainText('魔物形态');
-    await card.locator('button').click();
+    await card.locator(':scope > button').click();
     await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/1.png');
     await expect(page.locator('#download')).toHaveAttribute('href', new URL('../review/monster-forms/1.png', page.url()).href);
   } finally { release(); }
@@ -253,7 +296,7 @@ test.describe('touch review navigation', () => {
   test('horizontal swipes change images while vertical gestures do not', async ({ page }) => {
     await page.goto('/review/rewards.html');
     await page.locator('#level-filter').selectOption('7');
-    await page.locator('#levels section:visible figure button').first().click();
+    await page.locator('#levels section:visible figure > button').first().click();
     await page.locator('#full').evaluate((img: HTMLImageElement) => img.decode());
     const cdp = await page.context().newCDPSession(page);
     const swipe = async (dx: number, dy: number) => {

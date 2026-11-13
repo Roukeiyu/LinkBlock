@@ -33,6 +33,8 @@
 
 `review/enemies.html` 展示 10 个 Boss、50 个小怪和玩家四帧预览。两页都按当前 `LEVELS` 导出，点击图片可放大和保存原图。放大后支持左右按钮、键盘方向键和手机横向滑动，显示当前张数；筛选关卡后只在该关内循环，标题和下载链接随当前图片更新。开发启动与构建会重新生成；运行 `node scripts/export-art-review.mjs --offline /absolute/output/folder` 可另存两份内嵌图片、无需联网的 HTML，保留相同切图功能。
 
+奖励审阅页每关完整成图卡片的“查看 Alpha”打开该形态在游戏中使用的计分遮罩，可切换红色半透明叠加图和黑白遮罩原图，也可保存原始遮罩。红色叠加按游戏相同的亮度和透明度阈值显示，便于人工核对人物边缘；离线导出同样包含人形和魔物的遮罩。
+
 关卡配置在 `src/levels.ts`，定向弹幕在 `src/level-attacks.ts`，运动规则在 `src/enemies.ts`。`gameOptionsFor` 是页面初始进入、选关、重开和下一关共用的配置入口。基础碰撞、受击保护、暂停、跳跃及胜负清场规则保持共用。
 
 验证：`npm test` 覆盖预警锁定、真实圈地切换阶段、补怪继承规则、暂停、重开、连续运动、十关连续解锁与奖励持久化；`CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e -- tests/level-combat.spec.ts tests/progress.spec.ts tests/expansion.spec.ts` 覆盖十关在桌面、竖屏、窄屏和横屏上的选择、弹幕、攻略与重开，以及首次进入、旧存档升级、实际资源加载、下一关和最终通关。
