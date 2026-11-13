@@ -223,7 +223,7 @@ interface GalleryCard { level: number; id: RewardId; title: string; src: string;
 function galleryCards(): GalleryCard[] {
   const first: GalleryCard[] = [
     { level: 1, id: 'clear', title: '阿澈 · 解封', src: LEVELS[0].restored, blurb: '通关后收下的解封画像', locked: '未解锁 · 通关本关' },
-    { level: 1, id: 'ninety', title: '满血通关', src: LEVELS[0].rewardNinety, blurb: '通关时生命全满（可通过圈地回血）', locked: '未解锁 · 通关时生命全满（可通过圈地回血）' },
+    { level: 1, id: 'ninety', title: '满血通关', src: LEVELS[0].rewardNinety, blurb: '通关时生命全满', locked: '未解锁 · 通关时生命全满' },
     { level: 1, id: 'perfect', title: '击败 Boss', src: LEVELS[0].rewardPerfect, blurb: '击败 Boss 通关', locked: '未解锁 · 击败 Boss 通关' },
   ];
   const later = LEVELS.slice(1).flatMap(level => (['clear', 'ninety', 'perfect'] as const).map((id): GalleryCard => ({
@@ -231,8 +231,8 @@ function galleryCards(): GalleryCard[] {
     id,
     title: `${level.theme} · ${id === 'clear' ? '解封' : id === 'ninety' ? '满血通关' : '击败 Boss'}`,
     src: id === 'clear' ? level.restored : id === 'ninety' ? level.rewardNinety! : level.rewardPerfect!,
-    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '通关时生命全满（可通过圈地回血）' : '击败 Boss 通关',
-    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 通关时生命全满（可通过圈地回血）' : '未解锁 · 击败 Boss 通关',
+    blurb: id === 'clear' ? '通关后收下的解封画像' : id === 'ninety' ? '通关时生命全满' : '击败 Boss 通关',
+    locked: id === 'clear' ? '未解锁 · 通关本关' : id === 'ninety' ? '未解锁 · 通关时生命全满' : '未解锁 · 击败 Boss 通关',
   })));
   return [...first, ...later];
 }
