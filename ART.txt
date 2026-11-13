@@ -292,3 +292,14 @@ Only the perfect reward changes; gameplay plates and matching masks are intact.
 art/canvas/v16-sources.json records the complete generated painting.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v16-sources.json
+
+Fox's private Japanese terrace (v17)
+-----------------------------------
+Chapter 7 perfect moves from the tatami room to an open engawa terrace.
+Timber decking, eaves, an open shoji doorway, paper lanterns and low railings
+frame the maple garden. Tea, cushions, the ivory cotton fundoshi-style wrap
+and the corrected foreground knee/lower-leg pose are preserved.
+Only the perfect reward changes; gameplay plates and matching masks are intact.
+art/canvas/v17-sources.json records the complete generated painting.
+
+node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v17-sources.json

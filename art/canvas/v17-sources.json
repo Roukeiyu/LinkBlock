@@ -1,0 +1,11 @@
+{
+  "version": "v17",
+  "width": 1536,
+  "height": 1024,
+  "description": "Chapter 7 perfect reward on a private Japanese engawa terrace. Preserve the character, ivory cotton fundoshi-style wrap and corrected foreground leg pose. Replace the tatami room with timber decking, eaves, an open shoji doorway, paper lanterns, low railings and a moonlit maple garden.",
+  "levels": {
+    "7": {
+      "perfect": { "origin": "generated", "file": "fox-terrace-v17.png" }
+    }
+  }
+}
