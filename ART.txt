@@ -342,3 +342,10 @@ Only the perfect reward changes; gameplay plates and masks remain intact.
 art/canvas/v20-sources.json records the generated source painting.
 
 node scripts/pack-canvas-art.mjs /path/to/generated_images art/canvas/v20-sources.json
+
+Fox garment construction correction (v21)
+----------------------------------------
+Chapter 7 perfect uses a slim side-tied cotton waist cord and a single
+front panel folded over the cord, replacing the bulky waistband and side
+layers. The character pose and Japanese veranda remain. Gameplay plates
+and masks are unchanged. Source: art/canvas/v21-sources.json.

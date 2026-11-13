@@ -1,0 +1,14 @@
+{
+  "version": "v21",
+  "width": 1536,
+  "height": 1024,
+  "description": "Correct chapter 7 perfect garment construction: side-tied cord and folded front panel; retain character and veranda.",
+  "levels": {
+    "7": {
+      "perfect": {
+        "origin": "generated",
+        "file": "fox-v21.png"
+      }
+    }
+  }
+}
