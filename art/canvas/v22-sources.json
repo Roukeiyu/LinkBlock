@@ -1,0 +1,14 @@
+{
+  "version": "v22",
+  "width": 1536,
+  "height": 1024,
+  "description": "Correct fox perfect cloth depth: fold fabric into lap behind foreground leg, preserving coverage and setting.",
+  "levels": {
+    "7": {
+      "perfect": {
+        "origin": "generated",
+        "file": "fox-v22.png"
+      }
+    }
+  }
+}

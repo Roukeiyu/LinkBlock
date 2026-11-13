@@ -349,3 +349,11 @@ Chapter 7 perfect uses a slim side-tied cotton waist cord and a single
 front panel folded over the cord, replacing the bulky waistband and side
 layers. The character pose and Japanese veranda remain. Gameplay plates
 and masks are unchanged. Source: art/canvas/v21-sources.json.
+
+Fox cloth depth correction (v22)
+-------------------------------
+Chapter 7 perfect gathers the long cloth into natural folds between the
+legs. The foreground bent leg occludes the lower fabric, correcting the
+flat panel previously drawn over the knee and shin. Coverage, pose and
+veranda remain. Gameplay plates and masks are unchanged.
+Source: art/canvas/v22-sources.json.
