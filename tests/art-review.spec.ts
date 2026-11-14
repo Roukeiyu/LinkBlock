@@ -340,11 +340,14 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
     await page.locator('#menu-gallery').click();
     const images = page.locator('.gallery-item > img');
     await expect(images).toHaveCount(60);
-    const sizes = await images.evaluateAll(async images => Promise.all(images.map(async image => {
-      const img = image as HTMLImageElement; img.loading = 'eager'; await img.decode();
-      const box = img.getBoundingClientRect();
-      return { src: img.getAttribute('src'), natural: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
-    })));
+    const sizes = [];
+    for (const handle of await images.elementHandles()) {
+      sizes.push(await handle.evaluate(async image => {
+        const img = image as HTMLImageElement; img.loading = 'eager'; await img.decode();
+        const box = img.getBoundingClientRect();
+        return { src: img.getAttribute('src'), natural: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
+      }));
+    }
     const paths = LEVELS.flatMap(level => [level.restored, level.rewardNinety, level.rewardPerfect]);
     for (let i = 0; i < sizes.length; i++) {
       expect(sizes[i].src).toContain(paths[i]);
