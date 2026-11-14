@@ -7,7 +7,8 @@ for (const width of [1280, 390]) {
     await page.goto('/review/rewards.html');
     const buttons = page.locator('#levels .mask-button');
     const dialog = page.locator('#mask-viewer');
-    await expect(buttons).toHaveCount(10);
+    test.setTimeout(180000);
+    await expect(buttons).toHaveCount(LEVELS.length);
     for (const monster of [false, true]) {
       if (monster) await page.locator('#form-toggle').click();
       for (const id of LEVELS.map(level => level.id)) {
@@ -45,12 +46,13 @@ for (const width of [1280, 390]) {
   });
 }
 
-for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
+for (const [pageName, perLevel] of [['rewards', 3], ['enemies', 6]] as const) {
+  const count = LEVELS.length * perLevel;
   test(`${pageName} review loads every current image and opens the original`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`/review/${pageName}.html`);
-    await expect(page.locator('#levels section')).toHaveCount(10);
+    await expect(page.locator('#levels section')).toHaveCount(LEVELS.length);
     await expect(page.locator('#levels img')).toHaveCount(count);
     // Trigger lazy assets, including the final chapters below the viewport.
     const broken = await page.locator('#levels img').evaluateAll(async images => {
@@ -71,7 +73,7 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
         expect(size.source).toEqual([768, 512]);
         expect(size.ratio).toBeCloseTo(1.5, 2);
       }
-      await expect(page.locator('.dimensions')).toHaveText(Array(30).fill('1536 × 1024'));
+      await expect(page.locator('.dimensions')).toHaveText(Array(count).fill('1536 × 1024'));
     }
     await page.locator('#level-filter').selectOption('10');
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
@@ -81,7 +83,6 @@ for (const [pageName, count] of [['rewards', 30], ['enemies', 60]] as const) {
     await page.locator('#levels section:visible figure > button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
-    const perLevel = count / 10;
     const visibleImages = page.locator('#levels section:visible .grid img');
     const sourceAt = async (index: number) => '../' + await originals.nth(index).textContent();
     const assertCurrent = async (index: number, total: number, source: string, label: string) => {
@@ -137,7 +138,7 @@ for (const width of [1280, 390]) {
     const previewPaths = (form: string) => LEVELS.flatMap(l => ['restored', 'ninety', 'perfect'].map(kind => `review/previews/${l.id}-${kind}-${form}.webp`));
     const humanPaths = previewPaths('human'), monsterPaths = previewPaths('monster');
     const assertImages = async (paths: string[]) => {
-      await expect(images).toHaveCount(30);
+      await expect(images).toHaveCount(LEVELS.length * 3);
       await images.evaluateAll(imgs => imgs.forEach(image => {
         const img = image as HTMLImageElement;
         img.loading = 'eager';
@@ -274,17 +275,17 @@ test('loads visible previews first, then retains all forms for later comparisons
     await expect.poll(() => visibleRequested).toBe(true);
     expect(requested.some(path => path.endsWith('/10-perfect-monster.webp'))).toBe(false);
     release();
-    await expect.poll(() => completed.size, { timeout: 30000 }).toBe(60);
+    await expect.poll(() => completed.size, { timeout: 30000 }).toBe(LEVELS.length * 6);
     const before = await page.evaluate(() => (window as any).__previewImagesCreated);
-    expect(before).toBe(60);
+    expect(before).toBe(LEVELS.length * 6);
     await page.locator('#levels section').last().scrollIntoViewIfNeeded();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
     await page.locator('#form-toggle').click();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
     const last = page.locator('#levels section').last().locator('img').last();
     await expect.poll(() => last.evaluate((img: HTMLImageElement) =>
       img.complete && img.naturalWidth === 768 && img.naturalHeight === 512)).toBe(true);
@@ -329,21 +330,24 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
     page.on('request', request => { if (request.url().includes('/review/monster-forms/')) reviewRequests.push(request.url()); });
     await page.setViewportSize(viewport);
     await page.addInitScript(() => {
-      const ids = Array.from({ length: 10 }, (_, i) => i + 1);
+      const ids = Array.from({ length: 20 }, (_, i) => i + 1);
       const earned = { clear: true, ninety: true, perfect: true };
-      localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: ids }));
+      localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 20, cleared: ids }));
       localStorage.setItem('linkblock.fenglin.codex', JSON.stringify({ ...earned,
         levels: Object.fromEntries(ids.slice(1).map(id => [id, earned])) }));
     });
     await page.goto('/');
     await page.locator('#menu-gallery').click();
     const images = page.locator('.gallery-item > img');
-    await expect(images).toHaveCount(30);
-    const sizes = await images.evaluateAll(async images => Promise.all(images.map(async image => {
-      const img = image as HTMLImageElement; img.loading = 'eager'; await img.decode();
-      const box = img.getBoundingClientRect();
-      return { src: img.getAttribute('src'), natural: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
-    })));
+    await expect(images).toHaveCount(60);
+    const sizes = [];
+    for (const handle of await images.elementHandles()) {
+      sizes.push(await handle.evaluate(async image => {
+        const img = image as HTMLImageElement; img.loading = 'eager'; await img.decode();
+        const box = img.getBoundingClientRect();
+        return { src: img.getAttribute('src'), natural: [img.naturalWidth, img.naturalHeight], ratio: box.width / box.height };
+      }));
+    }
     const paths = LEVELS.flatMap(level => [level.restored, level.rewardNinety, level.rewardPerfect]);
     for (let i = 0; i < sizes.length; i++) {
       expect(sizes[i].src).toContain(paths[i]);

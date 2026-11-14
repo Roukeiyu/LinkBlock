@@ -44,4 +44,4 @@ for (const level of LEVELS) {
   }
 }
 if (errors.length) throw new Error(`Artwork canvas mismatch:\n${errors.join('\n')}`);
-console.log('Artwork canvases and character masks checked for all 10 levels in both forms.');
+console.log(`Artwork canvases and character masks checked for all ${LEVELS.length} levels in both forms.`);

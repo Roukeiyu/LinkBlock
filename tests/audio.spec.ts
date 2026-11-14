@@ -8,7 +8,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
     await page.goto('/');
     await page.evaluate(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [1,2,3,4,5,6,7,8,9] })));
     await page.reload();
-    for (const level of LEVELS.slice(4)) {
+    for (const level of LEVELS.filter(level => level.id >= 5 && level.id <= 10)) {
       await page.locator('#menu-levels').click();
       await page.locator(`#level-list [data-level="${level.id}"]`).click();
       const track = page.locator('audio');
@@ -45,7 +45,7 @@ test('all six MP3 fallbacks decode and play in the actual music controller', asy
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [1,2,3,4,5,6,7,8,9] })));
   await page.reload();
-  for (const level of LEVELS.slice(4)) {
+  for (const level of LEVELS.filter(level => level.id >= 5 && level.id <= 10)) {
     await page.locator('#menu-levels').click();
     await page.locator(`#level-list [data-level="${level.id}"]`).click();
     const track = page.locator('audio');

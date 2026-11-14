@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "canvas": [
+    1536,
+    1024
+  ],
+  "source": "art/review/monster-forms/15.png",
+  "source_sha256": "a45305beb429e1f1efe3bf46d842638894fc35aadc205e41fc079d4bcd1d4e87",
+  "matte": "art/monster-masks/mattes/15.png",
+  "matte_sha256": "804a37049a2f9950e914272dca354f3f4177066bf870ca4bd0c7c2db366ff773",
+  "generated_source": "art/review/monster-forms/15.png",
+  "method": "Supplied rembg mask, white character on black, matching the existing loader",
+  "background_holes": [],
+  "guard_pixels": 2,
+  "portrait_crop": [
+    560,
+    40,
+    400
+  ],
+  "mask_sha256": "804a37049a2f9950e914272dca354f3f4177066bf870ca4bd0c7c2db366ff773",
+  "sealed_sha256": "4daed7fe12f2bf903f75e4ea7c389272f67f91210c04a6c5be3c8560741f76cc",
+  "portrait_sealed_sha256": "6bab3cdd835861a11f6d6958ee53c92b550d1a8342850fdf6c3cc4e8a6312d57"
+}

@@ -19,7 +19,7 @@ for (const [screen, width, height] of [['desktop', 1280, 800], ['portrait', 390,
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await page.goto('/'); await page.clock.install();
     await page.locator('#menu-guide').click();
-    await expect(page.locator('#combat-guide section')).toHaveCount(10);
+    await expect(page.locator('#combat-guide section')).toHaveCount(20);
     await expect(page.locator('#combat-guide section').first()).toContainText('场上最多 6 只小怪');
     await expect(page.locator('#combat-guide section').nth(4)).toContainText('每 4 秒最多补 1 只');
     const guide = await page.locator('.combat-guide-card').boundingBox();
