@@ -83,7 +83,6 @@ for (const [pageName, perLevel] of [['rewards', 3], ['enemies', 6]] as const) {
     await page.locator('#levels section:visible figure > button').first().click();
     await expect(page.locator('#viewer')).toBeVisible();
     await expect(page.locator('#download')).toHaveAttribute('href', new URL(original!, page.url()).href);
-    const perLevel = count / 10;
     const visibleImages = page.locator('#levels section:visible .grid img');
     const sourceAt = async (index: number) => '../' + await originals.nth(index).textContent();
     const assertCurrent = async (index: number, total: number, source: string, label: string) => {
@@ -276,17 +275,17 @@ test('loads visible previews first, then retains all forms for later comparisons
     await expect.poll(() => visibleRequested).toBe(true);
     expect(requested.some(path => path.endsWith('/10-perfect-monster.webp'))).toBe(false);
     release();
-    await expect.poll(() => completed.size, { timeout: 30000 }).toBe(60);
+    await expect.poll(() => completed.size, { timeout: 30000 }).toBe(LEVELS.length * 6);
     const before = await page.evaluate(() => (window as any).__previewImagesCreated);
-    expect(before).toBe(60);
+    expect(before).toBe(LEVELS.length * 6);
     await page.locator('#levels section').last().scrollIntoViewIfNeeded();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
     await page.locator('#form-toggle').click();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', '../review/previews/10-perfect-monster.webp');
+      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
     const last = page.locator('#levels section').last().locator('img').last();
     await expect.poll(() => last.evaluate((img: HTMLImageElement) =>
       img.complete && img.naturalWidth === 768 && img.naturalHeight === 512)).toBe(true);
