@@ -70,7 +70,8 @@ describe('actual level battle lifecycle', () => {
     const options = { ...gameOptionsFor(level), opening: false, powerUps: false, victory: { territory: false }, random: seeded() };
     const game = new Game(72, 48, options); game.start(); game.protection = 1000;
     const name = game.bossAttack!.name;
-    expect(name).toBe(['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎', '快慢双潮', '三方狐火', '冰晶排射', '四翼石羽', '熔冠轮舞'][level.id - 1]);
+    const skills = ['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎', '快慢双潮', '三方狐火', '冰晶排射', '四翼石羽', '熔冠轮舞'];
+    expect(name).toBe([...skills, ...skills.slice(5), ...skills.slice(5)][level.id - 1]);
     const first = game.bossAttack;
     hitBoss(game); expect(game.bossHealth).toBe(4); expect(game.bossAttack).toBe(first);
     hitBoss(game); expect(game.bossHealth).toBe(3); expect(game.bossAttack).not.toBe(first);
@@ -86,7 +87,7 @@ describe('actual level battle lifecycle', () => {
     expect(game.bossAttack!.warning).toBe(warning);
     expect(structuredClone(game.hazards)).toEqual(hazards);
     game.togglePause(); hitBoss(game); hitBoss(game);
-    expect(game.bossHealth).toBe(1); expect(game.reinforcementTarget).toBe(level.id <= 5 ? 5 + level.id : 13 + level.id);
+    expect(game.bossHealth).toBe(1); expect(game.reinforcementTarget).toBe(level.id <= 5 ? 5 + level.id : Math.min(32, 13 + level.id));
     game.update(10); expect(game.hazards.length).toBeLessThanOrEqual(MAX_HAZARDS);
     hitBoss(game); expect(game.phase).toBe('won'); expect(game.hazards).toEqual([]);
     const fresh = new Game(72, 48, { ...options, random: seeded() });

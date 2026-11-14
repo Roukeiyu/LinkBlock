@@ -1,4 +1,4 @@
-import { lakeBossConfig, type BossConfig } from './boss';
+import { lakeBossConfig, MAX_ENEMIES, type BossConfig } from './boss';
 import { LevelAttack, type AttackPattern } from './level-attacks';
 import type { EnemyMotion } from './enemies';
 import { faceProtection, monsterFaceProtection, type FaceArtwork } from './faces';
@@ -167,7 +167,58 @@ export const LEVELS: LevelDef[] = [
     sprites: sheet('levels/10/v2', ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
     enemySpeed: 1.4, bossSpeed: 1.32, squad: { straight: 6, orbit: 6, zigzag: 5 }, reinforceInterval: 0.58, reinforceSpeed: 1.3, accent: '#ff805a',
   },
+  ...campaignAfterTen(),
 ];
+
+/** Placeholder plates for levels 11–20. Drop final art on these same paths. */
+function campaignAfterTen(): LevelDef[] {
+  const themes = [
+    ['竹灵', '雾隐竹海', '竹影', '露珠', '萤羽', '笋灵', '叶旋', '雾竹姬像', '#7dcea0', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。'],
+    ['星蝎', '星陨荒漠', '星尘', '沙刺', '蝎影', '陨环', '流星', '星陨巨蝎', '#f6d98a', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。'],
+    ['花妖', '毒藤密林', '藤蔓', '孢花', '刺蕊', '花环', '香雾', '毒蕊花后', '#8fd18a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。'],
+    ['机械鸟', '铁羽空港', '齿轮', '铆钉', '翼刃', '涡环', '电弧', '铁羽机皇', '#9fd4e0', '小怪巡行后突然折返；首领四翼弹幕逐轮旋转。避免贪长线。'],
+    ['骸骨', '骨潮墓海', '骨鱼', '潮骸', '磷火', '骨环', '残帆', '骨潮龙骨', '#d7c4a3', '小怪高速冲锋；首领交替缺口环射与双向扇射。先读预警。'],
+    ['镜妖', '镜月回廊', '镜片', '月尘', '影鸦', '镜环', '回声', '镜月妖面', '#c9b7f0', '小怪沿弧线游走；首领快慢双潮错位。别急着穿过慢潮。'],
+    ['雷兽', '雷鼓深峡', '鼓鸣', '雷羽', '石火花', '雷环', '回音', '雷鼓兽首', '#8eb6ff', '小怪定时折返；首领三向扇射。注意身后折返的小怪。'],
+    ['蛛妖', '蚕丝幽阁', '丝线', '茧影', '蛛足', '丝环', '露网', '蚕丝蛛后', '#e7a0c4', '小怪走直角路线；首领横竖排射交替。沿开放方向短线推进。'],
+    ['盐灵', '盐白荒城', '盐晶', '白鸦', '风沙', '盐环', '裂壳', '盐白城心', '#f4efe4', '小怪巡行后折返；首领四翼弹幕旋转。观察翼间通道。'],
+    ['虚空', '虚空门庭', '裂隙', '门钥', '虚鸦', '空环', '星屑', '虚空门主', '#b9a0ff', '小怪高速冲锋；首领缺口环射与双向扇射交替。每轮先读预警。'],
+  ] as const;
+  const numbers = ['十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+  const attacks = ['tide', 'fox', 'frost', 'gargoyle', 'inferno'] as const;
+  const motions = [
+    { straight: 'curve', period: 3, orbitRate: 0.7, zigzagInterval: 0.78, zigzagAngle: 1.1 },
+    { straight: 'reverse', period: 1.7, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: 1.4 },
+    { straight: 'corner', period: 0.9, orbitRate: 0.75, zigzagInterval: 0.8, zigzagAngle: 1.57 },
+    { straight: 'reverse', period: 1.3, orbitRate: 1.8, zigzagInterval: 0.44, zigzagAngle: 1.4 },
+    { straight: 'surge', period: 1.25, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 },
+  ] as const;
+  const tracks = ['moonlit-grove', 'desert-temple', 'storm-lab', 'rose-waltz', 'autumn-ride-suno-v1', 'sunken-court-suno-v1', 'fox-shrine-suno-v1', 'aurora-throne-suno-v1', 'dusk-belfry-suno-v1', 'ember-crown-suno-v1'];
+  return themes.map((row, index) => {
+    const id = 11 + index;
+    const total = id + 7;
+    const straight = Math.ceil(total / 3);
+    const orbit = Math.ceil((total - straight) / 2);
+    const zigzag = total - straight - orbit;
+    const step = id - 10;
+    const dir = `levels/${id}/v1`;
+    return {
+      id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`, difficulty: id === 20 ? '终幕' : '续章',
+      tactic: row[9], attackPattern: attacks[index % attacks.length], enemyMotion: motions[index % motions.length],
+      restored: `${dir}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: tracks[index],
+      portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
+      rewardNinety: `${dir}/ninety.webp`, rewardPerfect: `${dir}/perfect.webp`,
+      names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
+      sprites: sheet(dir, ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
+      enemySpeed: Math.round((1.4 + step * 0.03) * 100) / 100,
+      bossSpeed: Math.round((1.32 + step * 0.02) * 100) / 100,
+      squad: { straight, orbit, zigzag },
+      reinforceInterval: Math.round((0.58 - step * 0.02) * 100) / 100,
+      reinforceSpeed: Math.round((1.3 + step * 0.02) * 100) / 100,
+      accent: row[8],
+    } satisfies LevelDef;
+  });
+}
 
 export const levelById = (id: number) => LEVELS.find(level => level.id === id) ?? LEVELS[0];
 
@@ -183,7 +234,7 @@ export function bossConfigFor(level: LevelDef): BossConfig {
       createAttack: level.attackPattern ? () => new LevelAttack(level.attackPattern!, stage) : phase.createAttack,
       reinforcements: phase.reinforcements ? {
         ...phase.reinforcements,
-        targetCount: early ? count : stage === 2 ? 13 + level.id : 8 + level.id,
+        targetCount: Math.min(MAX_ENEMIES, early ? count : stage === 2 ? 13 + level.id : 8 + level.id),
         batchSize: early ? 1 : phase.reinforcements.batchSize,
         interval: phase.reinforcements.interval * level.reinforceInterval,
         speed: phase.reinforcements.speed * level.reinforceSpeed,

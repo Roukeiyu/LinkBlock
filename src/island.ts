@@ -110,6 +110,18 @@ export class Island {
   constructor(outline: Polygon, starting: Polygon) {
     this.arena = geometry(outline); this.land = union(geometry(starting)); this.refresh();
   }
+  /** Replace claimed land. The arena stays put, and hairline gaps are repaired as usual. */
+  reshape(polygon: Polygon) {
+    this.refresh(geometry(polygon));
+  }
+  landRings(): Polygon[] {
+    return this.land.flatMap(polygon => polygon.map(ring => {
+      const points = ring.map(([x, y]) => ({ x, y }));
+      const last = points.at(-1);
+      if (last && points.length > 1 && last.x === points[0].x && last.y === points[0].y) points.pop();
+      return points;
+    }));
+  }
   private refresh(land = this.land) {
     const repaired = repairLand(this.arena, land);
     this.land = repaired.land; this.regions = repaired.regions; this.coast = repaired.coast; this.sealedGaps = repaired.gaps;

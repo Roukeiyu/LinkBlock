@@ -35,8 +35,8 @@ describe('level catalog', () => {
   it.each(LEVELS.slice(5))('$title retains its later-game population and full refill waves', level => {
     expect(level.squad.straight + level.squad.orbit + level.squad.zigzag).toBe(level.id + 7);
     const phases = bossConfigFor(level).phases!;
-    expect(phases[1].reinforcements?.targetCount).toBe(level.id + 8);
-    expect(phases[2].reinforcements?.targetCount).toBe(level.id + 13);
+    expect(phases[1].reinforcements?.targetCount).toBe(Math.min(32, level.id + 8));
+    expect(phases[2].reinforcements?.targetCount).toBe(Math.min(32, level.id + 13));
     expect(phases[2].reinforcements?.batchSize).toBeUndefined();
   });
 
@@ -60,7 +60,7 @@ describe('level catalog', () => {
       const count = level.squad.straight + level.squad.orbit + level.squad.zigzag;
       const before = previous.squad.straight + previous.squad.orbit + previous.squad.zigzag;
       expect(level.enemySpeed).toBeGreaterThan(previous.enemySpeed);
-      expect(level.enemySpeed).toBeLessThanOrEqual(1.4);
+      expect(level.enemySpeed).toBeLessThanOrEqual(level.id <= 10 ? 1.4 : 1.8);
       expect(count).toBeGreaterThanOrEqual(before);
       expect(level.reinforceInterval).toBeLessThan(previous.reinforceInterval);
       expect(bossConfigFor(level)).not.toBe(lakeBossConfig);
@@ -82,7 +82,7 @@ describe('level progress', () => {
     progress = noteClear(progress, 2);
     expect(progress.unlocked).toBe(6);
     writeLevelProgress({ unlocked: 99, cleared: [] }, storage);
-    expect(readLevelProgress(storage).unlocked).toBe(10);
+    expect(readLevelProgress(storage).unlocked).toBe(LEVELS.length);
   });
 });
 

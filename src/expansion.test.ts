@@ -27,17 +27,17 @@ describe('ten-level campaign compatibility', () => {
     storage.setItem('linkblock.fenglin.levels', JSON.stringify({ unlocked: 5 }));
     expect(readLevelProgress(storage)).toEqual({ unlocked: 6, cleared: [5] });
   });
-  it('unlocks six through ten sequentially, saves all 30 rewards and never creates level eleven', () => {
+  it('unlocks the full campaign sequentially and saves every reward', () => {
     const storage = memory(); let progress = readLevelProgress(storage), codex = readCodex(storage);
-    expect(LEVELS.map(l => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(LEVELS.map(l => l.id)).toEqual(Array.from({ length: LEVELS.length }, (_, index) => index + 1));
     for (const level of LEVELS) {
       progress = noteClear(progress, level.id);
       codex = applyUnlocks(codex, { lives: 3, maxLives: 3, winReason: 'boss' }, level.id).codex;
       writeLevelProgress(progress, storage); writeCodex(codex, storage);
-      expect(readLevelProgress(storage).unlocked).toBe(Math.min(10, level.id + 1));
+      expect(readLevelProgress(storage).unlocked).toBe(Math.min(LEVELS.length, level.id + 1));
       expect(rewardsFor(readCodex(storage), level.id)).toEqual({ clear: true, ninety: true, perfect: true });
     }
-    expect(readLevelProgress(storage).cleared).toHaveLength(10);
+    expect(readLevelProgress(storage).cleared).toHaveLength(LEVELS.length);
     const loaded = codexForProgress(readCodex(storage), progress.cleared);
     expect(LEVELS.every(l => rewardsFor(loaded, l.id).perfect)).toBe(true);
   });

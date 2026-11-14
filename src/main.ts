@@ -10,7 +10,7 @@ import { LEVELS, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelP
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
-import { POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, type PowerUp } from './powerups';
+import { BOMB_RADIUS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, type PowerUp } from './powerups';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -132,7 +132,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
-      <p>场上会出现一枚道具，圈入新领地即可获得：沙漏减速让敌人移动速度降低 30%（10 秒，不影响子弹）；雪花止步冻结敌人和子弹（3 秒）；闪电加速让角色速度提高 50%（10 秒）。获得后 10–20 秒出现下一枚。</p>
+      <p>场上会出现一枚道具，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 10–20 秒出现下一枚。</p>
+      <p>沙漏减速：敌人移动速度降低 30%（10 秒，不影响子弹）。雪花止步：敌人和子弹冻结 3 秒。闪电加速：角色速度提高 50%（10 秒）。</p>
+      <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒，时间到时圆外的敌人和首领各受到一次伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -720,7 +722,7 @@ function handleEvent(event: GameEvent) {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
       notify(`${current.names.boss}受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `${current.names.boss} ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); lakeAudio.play('boss-hit');
     } else if (event.type === 'powerup') {
-      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒' };
+      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒', bomb: '3 秒后圆外敌人受击', shuffle: '3 秒内重铺为等面积矩形' };
       notify(`获得${POWER_UP_LABELS[event.kind]} · ${descriptions[event.kind]}`, descriptions[event.kind]); lakeAudio.play('reward');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
@@ -854,6 +856,8 @@ function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: 
     slow: '#9ee8bb',
     stop: '#a8d9ff',
     speed: '#ffd783',
+    bomb: '#ff8a6a',
+    shuffle: '#d7b4ff',
   }[item.kind];
   context.save(); context.translate(item.x, item.y);
   const pulse = reducedMotion.matches ? 1 : 1 + 0.06 * Math.sin(elapsed * 4);
@@ -875,6 +879,12 @@ function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: 
       context.moveTo(-x, -y); context.lineTo(x, y);
     }
     context.stroke();
+  } else if (item.kind === 'bomb') {
+    context.arc(0, 0, 0.42, 0, Math.PI * 2); context.stroke();
+    context.beginPath(); context.arc(0, 0, 0.12, 0, Math.PI * 2); context.fill();
+  } else if (item.kind === 'shuffle') {
+    context.strokeRect(-0.46, -0.34, 0.92, 0.68);
+    context.beginPath(); context.moveTo(-0.2, 0.5); context.lineTo(0.34, 0.5); context.lineTo(0.16, 0.28); context.moveTo(0.34, 0.5); context.lineTo(0.16, 0.72); context.stroke();
   } else {
     // Lightning bolt for the player speed boost.
     context.moveTo(0.16, -0.78); context.lineTo(-0.52, 0.08); context.lineTo(-0.08, 0.08);
@@ -941,6 +951,10 @@ function render(now: number) {
       ctx.beginPath();
       game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
       ctx.stroke(); ctx.restore();
+    }
+    if (game.powerUpEffects.bomb > 0) {
+      ctx.save(); ctx.strokeStyle = '#ff8a6a'; ctx.lineWidth = 0.18; ctx.setLineDash([0.45, 0.28]);
+      ctx.beginPath(); ctx.arc(game.player.x, game.player.y, BOMB_RADIUS, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     }
     if (game.powerUp) drawPowerUp(ctx, game.powerUp, game.elapsed);
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);

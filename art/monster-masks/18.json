@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "canvas": [
+    1536,
+    1024
+  ],
+  "source": "art/review/monster-forms/18.png",
+  "source_sha256": "3d3e14b37a4d59be8a7d620a07fa034f14dac9cb862039bf99f103d768d2d5bd",
+  "matte": "art/monster-masks/mattes/18.png",
+  "matte_sha256": "c38c40832f3e375fd0ecbd47837e12b17e7e498a2ad1be6d8286d65bf581360d",
+  "generated_source": "placeholder",
+  "method": "Placeholder ellipse until the final monster plate is dropped in",
+  "background_holes": [],
+  "guard_pixels": 2,
+  "portrait_crop": [
+    560,
+    40,
+    400
+  ],
+  "mask_sha256": "c38c40832f3e375fd0ecbd47837e12b17e7e498a2ad1be6d8286d65bf581360d",
+  "sealed_sha256": "73231c0ce59f240d1b188bc967e844bf9b2dec2eeddb22d88d970a41712780ca",
+  "portrait_sealed_sha256": "0dfd7b78cd67c43fa3330992722de60f783d489bd17d1f5307e41bb1922c19b3"
+}

@@ -3,7 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
-import { POWER_UP_DURATION, POWER_UP_KINDS, powerUpPosition, type PowerUp, type PowerUpKind } from './powerups';
+import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, lerpClaimedRect, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -76,7 +76,9 @@ export class Game {
   score = 0;
   elapsed = 0;
   powerUp: PowerUp | undefined;
-  readonly powerUpEffects: Record<PowerUpKind, number> = { slow: 0, stop: 0, speed: 0 };
+  readonly powerUpEffects: Record<PowerUpKind, number> = { slow: 0, stop: 0, speed: 0, bomb: 0, shuffle: 0 };
+  readonly bombRadius = BOMB_RADIUS;
+  private shufflePlan: { area: number; from: BoardRect; to: BoardRect } | undefined;
   private powerUpWait = 0;
   protection = 0;
   events: GameEvent[] = [];
@@ -172,14 +174,14 @@ export class Game {
     const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
     const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
     if (!point) { this.powerUpWait = 0.5; return; }
-    const index = Math.min(POWER_UP_KINDS.length - 1, Math.floor(this.random() * POWER_UP_KINDS.length));
-    this.powerUp = { ...point, kind: POWER_UP_KINDS[index] };
+    this.powerUp = { ...point, kind: pickPowerUp(this.random) };
   }
   private collectPowerUp() {
     if (!this.powerUp) return;
     const kind = this.powerUp.kind;
     this.powerUp = undefined;
     this.powerUpEffects[kind] = POWER_UP_DURATION[kind];
+    if (kind === 'shuffle') this.beginShuffle();
     // Leave a small margin for the next physics/render frame so the visible
     // spawn remains strictly under 20 seconds after pickup.
     this.powerUpWait = 10 + Math.min(1 - Number.EPSILON, Math.max(0, this.random())) * 9.9;
@@ -199,6 +201,78 @@ export class Game {
     const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
     const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
     if (point) Object.assign(item, point);
+  }
+  claimedRings(): Polygon[] {
+    return this.island?.landRings() ?? [];
+  }
+  private beginShuffle() {
+    const exact = this.claimed;
+    if (exact <= EPS) { this.powerUpEffects.shuffle = 0; this.shufflePlan = undefined; return; }
+    const center = { x: this.width / 2, y: this.height / 2 };
+    const to = rectangleOfArea(this.width, this.height, exact, center);
+    const from = rectangleOfArea(this.width, this.height, exact, this.player);
+    this.shufflePlan = { area: exact, from, to };
+    this.trail = []; this.cutRegion = -1; this.retracting = false;
+  }
+  private stepShuffle() {
+    const plan = this.shufflePlan;
+    if (!plan) return;
+    const done = this.powerUpEffects.shuffle === 0;
+    const progress = done ? 1 : 1 - this.powerUpEffects.shuffle / POWER_UP_DURATION.shuffle;
+    const rect = done ? plan.to : lerpClaimedRect(plan.from, plan.to, progress, plan.area, this.width, this.height);
+    this.applyClaimRect(rect);
+    if (done) this.shufflePlan = undefined;
+  }
+  private applyClaimRect(rect: BoardRect) {
+    const polygon = [
+      { x: rect.x, y: rect.y },
+      { x: rect.x + rect.w, y: rect.y },
+      { x: rect.x + rect.w, y: rect.y + rect.h },
+      { x: rect.x, y: rect.y + rect.h },
+    ];
+    if (!this.island) this.island = new Island(this.outline, polygon);
+    else this.island.reshape(polygon);
+    this.territories = this.island.regions;
+    const shore = this.island.project(this.player, Math.hypot(this.width, this.height));
+    if (shore) { this.player = shore; this.anchor = { ...shore }; }
+    this.trail = []; this.cutRegion = -1; this.retracting = false;
+    const park = this.waterPoint(rect);
+    for (const body of this.boss ? [...this.enemies, this.boss] : this.enemies) {
+      if (this.territories.some(region => inside(body, region)) || !park) continue;
+      body.x = park.x; body.y = park.y; body.previous = { ...park }; body.trace = [{ ...park }];
+    }
+    this.recomputeCompletion();
+  }
+  private waterPoint(rect: BoardRect): Point | undefined {
+    const spots = [
+      { x: rect.x + rect.w / 2, y: rect.y * 0.5 },
+      { x: rect.x + rect.w / 2, y: rect.y + rect.h + (this.height - rect.y - rect.h) * 0.5 },
+      { x: rect.x * 0.5, y: rect.y + rect.h / 2 },
+      { x: rect.x + rect.w + (this.width - rect.x - rect.w) * 0.5, y: rect.y + rect.h / 2 },
+    ];
+    return spots.find(point => point.x > 0 && point.y > 0 && point.x < this.width && point.y < this.height
+      && this.territories.some(region => inside(point, region)));
+  }
+  private detonateBomb() {
+    const outside = (point: Point) => Math.hypot(point.x - this.player.x, point.y - this.player.y) > this.bombRadius;
+    const defeated = this.enemies.filter(outside);
+    this.enemies = this.enemies.filter(enemy => !outside(enemy));
+    this.lastDefeats = defeated.map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));
+    this.score += this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0);
+    if (this.boss && outside(this.boss)) {
+      const from = this.bossJump ? jumpPose(this.bossJump) : { ...this.boss };
+      if (!this.bossJump) {
+        this.bossHealth--; this.score += BOSS_HIT_POINTS; this.bossFlash = 0.3;
+        this.events.push({ type: 'bossHit', hit: { x: this.boss.x, y: this.boss.y, points: BOSS_HIT_POINTS, health: this.bossHealth, maxHealth: this.bossMaxHealth } });
+      }
+      if (this.bossHealth <= 0) {
+        const defeat = { kind: this.boss.kind, x: this.boss.x, y: this.boss.y, points: DEFEAT_POINTS.boss };
+        this.lastDefeats.push(defeat); this.score += defeat.points;
+        this.boss = undefined; this.bossAttack = undefined; this.bossJump = undefined; this.bossDefeated = true;
+      } else if (!this.bossJump) this.startBossJump(from);
+    }
+    if (this.lastDefeats.length) this.events.push({ type: 'defeat', enemies: this.lastDefeats });
+    this.advanceBossPhase(); this.checkWin();
   }
   togglePause() {
     if (this.phase === 'playing' || this.phase === 'opening') { this.resumePhase = this.phase; this.phase = 'paused'; }
@@ -524,10 +598,14 @@ export class Game {
       const slowed = Math.max(0, Math.min(dt, this.powerUpEffects.slow) - stopped);
       const enemyTime = active - slowed * 0.3;
       const playerTime = dt + Math.min(dt, this.powerUpEffects.speed) * 0.5;
+      if (this.powerUpEffects.shuffle > EPS && !this.shufflePlan) this.beginShuffle();
+      const bombArmed = this.powerUpEffects.bomb > EPS;
       for (const kind of POWER_UP_KINDS) {
         const remaining = this.powerUpEffects[kind] - dt;
         this.powerUpEffects[kind] = remaining > EPS ? remaining : 0;
       }
+      if (bombArmed && this.powerUpEffects.bomb === 0) this.detonateBomb();
+      if (this.shufflePlan) this.stepShuffle();
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
       if (enemyTime > 0) this.updateBossJump(enemyTime);
       if (active > 0 && this.updateReinforcements(active)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
