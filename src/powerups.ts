@@ -1,55 +1,12 @@
 import { distance, inside, wallEdges, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
 
-export type PowerUpKind = 'slow' | 'stop' | 'speed' | 'bomb' | 'shuffle';
+export type PowerUpKind = 'slow' | 'stop' | 'speed';
 export interface PowerUp extends Point { kind: PowerUpKind }
-export const POWER_UP_KINDS: PowerUpKind[] = ['slow', 'stop', 'speed', 'bomb', 'shuffle'];
-export const POWER_UP_DURATION: Record<PowerUpKind, number> = { slow: 10, stop: 3, speed: 10, bomb: 3, shuffle: 3 };
-export const POWER_UP_LABELS: Record<PowerUpKind, string> = { slow: '减速', stop: '止步', speed: '加速', bomb: '炸弹', shuffle: '洗牌' };
-/** Higher weight means a more common drop. Bomb and shuffle stay rare. */
-export const POWER_UP_WEIGHTS: Record<PowerUpKind, number> = { slow: 3, stop: 2, speed: 3, bomb: 1, shuffle: 1 };
+export const POWER_UP_KINDS: PowerUpKind[] = ['slow', 'stop', 'speed'];
+export const POWER_UP_DURATION: Record<PowerUpKind, number> = { slow: 10, stop: 3, speed: 10 };
+export const POWER_UP_LABELS: Record<PowerUpKind, string> = { slow: '减速', stop: '止步', speed: '加速' };
 export const POWER_UP_RADIUS = 1.2;
-/** Enemies farther than this from the player take the bomb's single hit. */
-export const BOMB_RADIUS = 8;
-
-export function pickPowerUp(random: () => number): PowerUpKind {
-  const total = POWER_UP_KINDS.reduce((sum, kind) => sum + POWER_UP_WEIGHTS[kind], 0);
-  let roll = random() * total;
-  for (const kind of POWER_UP_KINDS) {
-    roll -= POWER_UP_WEIGHTS[kind];
-    if (roll < 0) return kind;
-  }
-  return 'shuffle';
-}
-
-export interface BoardRect { x: number; y: number; w: number; h: number }
-
-/** A 3:2 rectangle of exactly `claimed` area, kept inside the board and centered on `anchor`. */
-export function rectangleOfArea(width: number, height: number, claimed: number, anchor: Point): BoardRect {
-  const exact = Math.min(width * height, Math.max(0, claimed));
-  let w = Math.sqrt(exact * width / height);
-  let h = w > 0 ? exact / w : 0;
-  if (w > width) { w = width; h = w > 0 ? exact / w : 0; }
-  if (h > height) { h = height; w = h > 0 ? exact / h : 0; }
-  const x = Math.max(0, Math.min(width - w, anchor.x - w / 2));
-  const y = Math.max(0, Math.min(height - h, anchor.y - h / 2));
-  return { x, y, w, h };
-}
-
-/** Move toward `to` while keeping the rectangle area equal to `claimed`. */
-export function lerpClaimedRect(from: BoardRect, to: BoardRect, t: number, claimed: number, width: number, height: number): BoardRect {
-  const blend = Math.min(1, Math.max(0, t));
-  let w = from.w + (to.w - from.w) * blend;
-  if (w > width) w = width;
-  if (w < 1e-4) w = 1e-4;
-  let h = claimed / w;
-  if (h > height) { h = height; w = claimed / h; }
-  const cx = from.x + from.w / 2 + (to.x + to.w / 2 - (from.x + from.w / 2)) * blend;
-  const cy = from.y + from.h / 2 + (to.y + to.h / 2 - (from.y + from.h / 2)) * blend;
-  const x = Math.max(0, Math.min(width - w, cx - w / 2));
-  const y = Math.max(0, Math.min(height - h, cy - h / 2));
-  return { x, y, w, h };
-}
 
 /** Find an exposed, reachable spot without placing an item under an actor. */
 export function powerUpPosition(width: number, height: number, regions: Polygon[], player: Point, enemies: Enemy[], trail: Polygon, random: () => number): Point | undefined {

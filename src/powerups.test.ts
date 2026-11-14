@@ -3,7 +3,7 @@ import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
 import { Projectile } from './attacks';
 import { createEnemy } from './enemies';
 import { inside } from './geometry';
-import { BOMB_RADIUS, POWER_UP_DURATION, powerUpPosition, rectangleOfArea, type PowerUpKind } from './powerups';
+import { POWER_UP_DURATION, powerUpPosition, type PowerUpKind } from './powerups';
 
 function game(random = () => 0.5) {
   const result = new Game(100, 100, { enemies: [], boss: null, powerUps: true, random, victory: { territoryPercent: 100 } });
@@ -26,7 +26,7 @@ describe('persistent power-ups', () => {
     expect(Math.hypot(item.x - field.player.x, item.y - field.player.y)).toBeGreaterThanOrEqual(4);
     field.update(25); expect(field.powerUp).toEqual(item); expect(field.events.filter(e => typeof e === 'object' && e.type === 'powerup')).toHaveLength(0);
   });
-  it.each([[0, 'slow'], [0.4, 'stop'], [0.5, 'speed'], [0.85, 'bomb'], [0.95, 'shuffle']] as const)('can spawn %s as a %s pickup', (random, kind) => {
+  it.each([[0, 'slow'], [0.4, 'stop'], [0.8, 'speed']] as const)('can spawn %s as a %s pickup', (random, kind) => {
     expect(game(() => random).powerUp?.kind).toBe(kind);
   });
   it('falls back to a water interior when no safely separated position exists', () => {
@@ -136,40 +136,9 @@ describe('persistent power-ups', () => {
     expect(enemy.x - from).toBeCloseTo(10 * (0.5 * 0.7 + 0.25), 6);
     expect(field.powerUpEffects.stop).toBe(0); expect(field.powerUpEffects.slow).toBe(0);
   });
-  it('damages everyone outside the bomb circle once the countdown ends', () => {
-    const near = createEnemy('straight', { x: 12, y: 10 }, { x: 0, y: 0 });
-    const far = createEnemy('orbit', { x: 70, y: 40 }, { x: 0, y: 0 });
-    const boss = createEnemy('boss', { x: 60, y: 30 }, { x: 0, y: 0 });
-    const field = new Game(72, 48, { enemies: [near, far], boss, powerUps: true, random: () => 0.5, victory: { territoryPercent: 100 },
-      createBossAttack: () => ({ name: 'idle', warning: 0, update() {} }) });
-    field.start(); field.player = { x: 10, y: 10 }; field.powerUpEffects.bomb = 3;
-    field.update(2.9); expect(field.enemies).toHaveLength(2); expect(field.bossHealth).toBe(field.bossMaxHealth);
-    field.update(0.2);
-    expect(field.enemies.map(enemy => enemy.kind)).toEqual(['straight']);
-    expect(Math.hypot(near.x - field.player.x, near.y - field.player.y)).toBeLessThanOrEqual(BOMB_RADIUS);
-    expect(field.bossHealth).toBe(field.bossMaxHealth - 1);
-    expect(field.events).toContainEqual(expect.objectContaining({ type: 'bossHit' }));
-  });
-  it('relays the claimed land into an equal-area rectangle', () => {
-    const field = new Game(72, 48, { opening: true, enemies: [], boss: null, powerUps: true, random: () => 0.2, victory: { territoryPercent: 100 } });
-    field.start(); expect(field.confirmOpening()).toBe(true);
-    const before = field.claimed;
-    field.powerUpEffects.shuffle = 3;
-    field.update(3);
-    expect(field.claimed).toBeCloseTo(before, 6);
-    expect(field.powerUpEffects.shuffle).toBe(0);
-    const rings = field.claimedRings();
-    expect(rings).toHaveLength(1);
-    expect(rings[0]).toHaveLength(4);
-    const xs = new Set(rings[0].map(point => Math.round(point.x * 1000)));
-    const ys = new Set(rings[0].map(point => Math.round(point.y * 1000)));
-    expect(xs.size).toBe(2); expect(ys.size).toBe(2);
-    const target = rectangleOfArea(72, 48, before, { x: 36, y: 24 });
-    expect(target.w * target.h).toBeCloseTo(before, 6);
-  });
   it('restarts without a stale pickup or active effect', () => {
     const first = game(); pickup(first, 'speed');
     const fresh = game(); expect(fresh.powerUp).toBeDefined();
-    expect(fresh.powerUpEffects).toEqual({ slow: 0, stop: 0, speed: 0, bomb: 0, shuffle: 0 });
+    expect(fresh.powerUpEffects).toEqual({ slow: 0, stop: 0, speed: 0 });
   });
 });

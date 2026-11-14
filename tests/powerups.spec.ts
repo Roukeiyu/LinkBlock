@@ -21,7 +21,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await page.goto('/'); await page.locator('#menu-start').click();
     await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(160);
     const item = await page.evaluate(() => window.powerUpGame().powerUp);
-    expect(item).toBeDefined(); expect(['slow', 'stop', 'speed', 'bomb', 'shuffle']).toContain(item!.kind);
+    expect(item).toBeDefined(); expect(['slow', 'stop', 'speed']).toContain(item!.kind);
     await page.evaluate(() => {
       const game = window.powerUpGame(); game.enemies = []; game.boss = undefined; game.bossAttack = undefined;
       game.player = { x: 24, y: 18 }; game.anchor = { ...game.player };

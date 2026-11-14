@@ -15,7 +15,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       localStorage.setItem('linkblock.fenglin.character-form', 'monster');
       localStorage.setItem('other-app-data', 'untouched');
     }, original);
-    await page.reload(); await expect(page.locator('#seal-count')).toHaveText('已解封 2/20');
+    await page.reload(); await expect(page.locator('#seal-count')).toHaveText('已解封 2/10');
     // A paused old run must not be resumed after its progress has been reset.
     await page.locator('#menu-start').click(); await expect(page.locator('#level-title')).toContainText('第三关');
     await page.locator('#home').click(); await page.locator('#menu-settings').click();
@@ -31,16 +31,16 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await page.locator('#clear-progress').click(); await page.locator('#cancel-clear-progress').click();
     expect(await page.evaluate(() => localStorage.getItem('linkblock.fenglin.codex'))).toBe(original.codex);
     await page.locator('#clear-progress').click(); await page.locator('#confirm-clear-progress').click();
-    await expect(dialog).toBeHidden(); await expect(page.locator('#seal-count')).toHaveText('已解封 0/20');
+    await expect(dialog).toBeHidden(); await expect(page.locator('#seal-count')).toHaveText('已解封 0/10');
     expect(await page.evaluate(() => ({
       levels: localStorage.getItem('linkblock.fenglin.levels'), codex: localStorage.getItem('linkblock.fenglin.codex'),
       audio: localStorage.getItem('linkblock.fenglin.audio'), form: localStorage.getItem('linkblock.fenglin.character-form'),
       other: localStorage.getItem('other-app-data'),
     }))).toEqual({ levels: null, codex: null, audio: original.audio, form: 'monster', other: 'untouched' });
-    await page.reload(); await expect(page.locator('#seal-count')).toHaveText('已解封 0/20');
+    await page.reload(); await expect(page.locator('#seal-count')).toHaveText('已解封 0/10');
     await page.locator('#menu-levels').click(); await expect(page.locator('#level-list button:not([disabled])')).toHaveCount(1);
     await page.locator('#levels-close').click(); await page.locator('#menu-gallery').click();
-    await expect(page.locator('.gallery-item.locked')).toHaveCount(60); await page.locator('#gallery-close').click();
+    await expect(page.locator('.gallery-item.locked')).toHaveCount(30); await page.locator('#gallery-close').click();
     await page.locator('#menu-start').click(); await expect(page.locator('#level-title')).toContainText('第一关');
   });
 }
