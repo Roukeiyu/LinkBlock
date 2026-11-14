@@ -5,11 +5,11 @@
     1024
   ],
   "source": "art/review/monster-forms/17.png",
-  "source_sha256": "2e1285d27e7aade4407bbbf44bada8167972ea0c552d0dbf3649d894694c8a84",
+  "source_sha256": "e5d08337c6b6a555056242cf0fe92e153cee66cb6299d91f2462d06818d76e66",
   "matte": "art/monster-masks/mattes/17.png",
-  "matte_sha256": "c38c40832f3e375fd0ecbd47837e12b17e7e498a2ad1be6d8286d65bf581360d",
-  "generated_source": "placeholder",
-  "method": "Placeholder ellipse until the final monster plate is dropped in",
+  "matte_sha256": "b8dc69b0efd0d9605dfa94399742739e441ec590a2831e9592c8e553e6175e6d",
+  "generated_source": "art/review/monster-forms/17.png",
+  "method": "Supplied rembg mask, white character on black, matching the existing loader",
   "background_holes": [],
   "guard_pixels": 2,
   "portrait_crop": [
@@ -17,7 +17,7 @@
     40,
     400
   ],
-  "mask_sha256": "c38c40832f3e375fd0ecbd47837e12b17e7e498a2ad1be6d8286d65bf581360d",
-  "sealed_sha256": "7f94e12d1c749d407f006ad78e3231e0e7d28b3ef6ac3c1caa6056b919f2e21c",
-  "portrait_sealed_sha256": "308702333dc410326449f2e96c68fd6f84b282806bcf254aaea996e881b25fba"
+  "mask_sha256": "b8dc69b0efd0d9605dfa94399742739e441ec590a2831e9592c8e553e6175e6d",
+  "sealed_sha256": "34bfa06ceee9df9f3353c6ffcab6786c018a1062bab8f33fd2f32ad722e75cae",
+  "portrait_sealed_sha256": "3020e233d417a84dacaade325f51494c78752f82d69a7f2359ecab8e9635406c"
 }
