@@ -18,10 +18,10 @@ export const FACE_REGIONS = {
   'levels/8/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 550, y: 14, width: 230, height: 258 },
   'levels/9/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 630, y: 0, width: 205, height: 280 },
   'levels/10/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 510, y: 0, width: 320, height: 270 },
-  'levels/11/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
-  'levels/12/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
-  'levels/13/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
-  'levels/14/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
+  'levels/11/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 760, y: 130, width: 300, height: 280 },
+  'levels/12/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 860, y: 120, width: 320, height: 300 },
+  'levels/13/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 480, y: 0, width: 330, height: 300 },
+  'levels/14/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 300, y: 130, width: 420, height: 300 },
   'levels/15/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
   'levels/16/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
   'levels/17/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
@@ -49,7 +49,7 @@ const MONSTER_HEADS = [
   [560, 0, 320, 340], [660, 10, 220, 280], [440, 0, 250, 290],
   [420, 0, 310, 260], [340, 0, 320, 280], [450, 0, 350, 330],
   [520, 0, 320, 320], [480, 0, 330, 300], [570, 0, 300, 300], [475, 0, 380, 300],
-  [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280],
+  [740, 70, 280, 300], [850, 110, 360, 310], [500, 0, 360, 320], [280, 90, 500, 340], [628, 160, 280, 280],
   [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280],
 ] as const;
 export function monsterFaceProtection(level: number) {
