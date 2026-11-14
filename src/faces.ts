@@ -25,9 +25,9 @@ export const FACE_REGIONS = {
   'levels/15/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 770, y: 30, width: 230, height: 280 },
   'levels/16/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 800, y: 10, width: 290, height: 320 },
   'levels/17/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 980, y: 0, width: 270, height: 300 },
-  'levels/18/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
-  'levels/19/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
-  'levels/20/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 628, y: 160, width: 280, height: 280 },
+  'levels/18/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 740, y: 10, width: 220, height: 280 },
+  'levels/19/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 500, y: 30, width: 400, height: 340 },
+  'levels/20/v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 430, y: 60, width: 280, height: 320 },
 } as const;
 
 export type FaceArtwork = keyof typeof FACE_REGIONS;
@@ -50,7 +50,7 @@ const MONSTER_HEADS = [
   [420, 0, 310, 260], [340, 0, 320, 280], [450, 0, 350, 330],
   [520, 0, 320, 320], [480, 0, 330, 300], [570, 0, 300, 300], [475, 0, 380, 300],
   [740, 70, 280, 300], [850, 110, 360, 310], [500, 0, 360, 320], [280, 90, 500, 340], [780, 15, 230, 290],
-  [800, 0, 360, 340], [980, 0, 280, 300], [628, 160, 280, 280], [628, 160, 280, 280], [628, 160, 280, 280],
+  [800, 0, 360, 340], [980, 0, 280, 300], [740, 20, 230, 290], [500, 10, 380, 340], [450, 20, 300, 340],
 ] as const;
 export function monsterFaceProtection(level: number) {
   const [x, y, width, height] = MONSTER_HEADS[level - 1];
