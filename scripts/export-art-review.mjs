@@ -46,7 +46,9 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   function ref(file) {
     if (!(file in sources)) {
       const bytes = readFileSync(resolve(root, 'public', file));
-      sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}`;
+      const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(file)
+        || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(file);
+      sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}${bust ? '?v=r9' : ''}`;
     }
     return file;
   }

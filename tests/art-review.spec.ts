@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
+/** Human plates replaced in place for r9. Level 12 kept the previous file. */
+function reviewed(file: string) {
+  const path = file.replace(/^\.\.\//, '');
+  const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(path)
+    || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
+  return `../${path}${bust ? '?v=r9' : ''}`;
+}
+
 for (const width of [1280, 390]) {
   test(`completion masks can be reviewed in both forms at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -19,9 +27,9 @@ for (const width of [1280, 390]) {
         await expect(page.locator('#mask-note')).toContainText('红色区域');
         const mask = monster ? `monster/${id}/mask.png` : LEVELS[id - 1].mask;
         const art = monster ? ([8, 10].includes(id) ? `monster/${id}/restored.webp` : `review/monster-forms/${id}.png`) : LEVELS[id - 1].restored;
-        await expect(page.locator('#mask-base')).toHaveAttribute('src', `../${art}`);
-        await expect(page.locator('#mask-raw')).toHaveAttribute('src', `../${mask}`);
-        await expect(page.locator('#mask-download')).toHaveAttribute('href', `../${mask}`);
+        await expect(page.locator('#mask-base')).toHaveAttribute('src', reviewed(art));
+        await expect(page.locator('#mask-raw')).toHaveAttribute('src', reviewed(mask));
+        await expect(page.locator('#mask-download')).toHaveAttribute('href', reviewed(mask));
         await expect(page.locator('#mask-caption')).toContainText(monster ? '魔物形态' : '人形');
         if (monster && [8, 10].includes(id)) await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
         const overlay = await page.locator('#mask-overlay').evaluate((canvas: HTMLCanvasElement) => {
@@ -108,7 +116,7 @@ for (const [pageName, perLevel] of [['rewards', 3], ['enemies', 6]] as const) {
     await page.locator('#levels figure > button').first().click();
     await page.keyboard.press('ArrowLeft');
     await expect(page.locator('#position')).toHaveText(`${count} / ${count}`);
-    await expect(page.locator('#full')).toHaveAttribute('src', '../' + await page.locator('#levels .grid .file').last().textContent());
+    await expect(page.locator('#full')).toHaveAttribute('src', reviewed(await page.locator('#levels .grid .file').last().textContent() ?? ''));
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('#position')).toHaveText(`1 / ${count}`);
     await page.locator('#close').click();
@@ -145,8 +153,11 @@ for (const width of [1280, 390]) {
       }));
       await expect.poll(() => images.evaluateAll((imgs, expected) => imgs.every((image, index) => {
         const img = image as HTMLImageElement;
-        return img.getAttribute('src') === `../${expected[index]}` &&
-          img.currentSrc === new URL(`../${expected[index]}`, document.baseURI).href &&
+        const path = expected[index] as string;
+        const bust = /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
+        const url = `../${path}${bust ? '?v=r9' : ''}`;
+        return img.getAttribute('src') === url &&
+          img.currentSrc === new URL(url, document.baseURI).href &&
           img.complete && img.naturalWidth === 768 && img.naturalHeight === 512;
       }), paths), { timeout: 30000, message: 'All selected reward previews should load at their preview size' }).toBe(true);
     };

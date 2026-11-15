@@ -200,7 +200,14 @@ restored.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruinedLandscape}`;
 function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
 syncScene();
-const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+/** Bust cached gallery plates replaced in place. Level 12 stayed on the previous plate. */
+const GALLERY_REV = 'r9';
+const replacedGallery = (file: string) => /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\/(?:restored|ninety|perfect|sealed|portrait(?:-sealed)?|mask)\./.test(file);
+const asset = (file: string) => `${import.meta.env.BASE_URL}${file}${replacedGallery(file) ? `?v=${GALLERY_REV}` : ''}`;
+const sameAsset = (src: string, file: string) => {
+  try { return new URL(src, location.href).pathname.endsWith(file); }
+  catch { return src.split('?')[0].endsWith(file); }
+};
 const FORM_KEY = 'linkblock.fenglin.character-form';
 let monsterForm = false;
 try { monsterForm = localStorage.getItem(FORM_KEY) === 'monster'; } catch { /* Storage may be unavailable. */ }
@@ -391,8 +398,8 @@ function clearInput() {
 function loadLevelArt(level: LevelDef) {
   const restoredPath = monsterForm ? monsterAsset(level.id, 'restored') : level.restored;
   const sealedPath = monsterForm ? monsterAsset(level.id, 'sealed') : level.sealed;
-  if (!restored.src.endsWith(restoredPath)) restored.src = asset(restoredPath);
-  if (!ruined.src.endsWith(sealedPath)) ruined.src = asset(sealedPath);
+  if (!sameAsset(restored.src, restoredPath)) restored.src = asset(restoredPath);
+  if (!sameAsset(ruined.src, sealedPath)) ruined.src = asset(sealedPath);
   useSpriteSheet(level.sprites);
   loadLevelMask(level);
 }
