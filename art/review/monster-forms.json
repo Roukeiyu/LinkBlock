@@ -156,7 +156,7 @@
       }
     },
     "11": {
-      "source": "levels/11/v2/restored.webp",
+      "source": "levels/11/v3/restored.webp",
       "file": "monster-forms/11.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -168,10 +168,12 @@
           "source": "levels/11/v2/perfect.webp",
           "file": "monster-forms/11-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/11/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "12": {
-      "source": "levels/12/v2/restored.webp",
+      "source": "levels/12/v3/restored.webp",
       "file": "monster-forms/12.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -183,10 +185,12 @@
           "source": "levels/12/v2/perfect.webp",
           "file": "monster-forms/12-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/12/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "13": {
-      "source": "levels/13/v2/restored.webp",
+      "source": "levels/13/v3/restored.webp",
       "file": "monster-forms/13.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -198,10 +202,12 @@
           "source": "levels/13/v2/perfect.webp",
           "file": "monster-forms/13-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/13/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "14": {
-      "source": "levels/14/v2/restored.webp",
+      "source": "levels/14/v3/restored.webp",
       "file": "monster-forms/14.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -213,10 +219,12 @@
           "source": "levels/14/v2/perfect.webp",
           "file": "monster-forms/14-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/14/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "15": {
-      "source": "levels/15/v2/restored.webp",
+      "source": "levels/15/v3/restored.webp",
       "file": "monster-forms/15.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -228,10 +236,12 @@
           "source": "levels/15/v2/perfect.webp",
           "file": "monster-forms/15-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/15/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "16": {
-      "source": "levels/16/v2/restored.webp",
+      "source": "levels/16/v3/restored.webp",
       "file": "monster-forms/16.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -243,10 +253,12 @@
           "source": "levels/16/v2/perfect.webp",
           "file": "monster-forms/16-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/16/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "17": {
-      "source": "levels/17/v2/restored.webp",
+      "source": "levels/17/v3/restored.webp",
       "file": "monster-forms/17.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -258,10 +270,12 @@
           "source": "levels/17/v2/perfect.webp",
           "file": "monster-forms/17-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/17/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "18": {
-      "source": "levels/18/v2/restored.webp",
+      "source": "levels/18/v3/restored.webp",
       "file": "monster-forms/18.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -273,10 +287,12 @@
           "source": "levels/18/v2/perfect.webp",
           "file": "monster-forms/18-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/18/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "19": {
-      "source": "levels/19/v2/restored.webp",
+      "source": "levels/19/v3/restored.webp",
       "file": "monster-forms/19.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -288,10 +304,12 @@
           "source": "levels/19/v2/perfect.webp",
           "file": "monster-forms/19-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/19/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "20": {
-      "source": "levels/20/v2/restored.webp",
+      "source": "levels/20/v3/restored.webp",
       "file": "monster-forms/20.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -303,7 +321,9 @@
           "source": "levels/20/v2/perfect.webp",
           "file": "monster-forms/20-perfect.png"
         }
-      }
+      },
+      "previousHumanSource": "levels/20/v2/restored.webp",
+      "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     }
   }
 }

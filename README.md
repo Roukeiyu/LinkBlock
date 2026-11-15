@@ -223,3 +223,9 @@ new Game(72, 48, {
 仓库内置 `.github/workflows/deploy.yml`。首次发布时，在 GitHub 仓库的 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。推送到 `main` 会自动安装依赖、运行规则测试、构建并部署静态站点，也可以在 **Actions → Deploy LinkBlock to GitHub Pages → Run workflow** 手动运行。若启用 Pages 之前的部署已失败，启用后重新运行该工作流。
 
 部署成功后，默认访问地址为 <https://roukeiyu.github.io/LinkBlock/>（以 GitHub 部署结果显示的地址为准）。资源使用相对路径，支持 GitHub Pages 项目目录。Actions 构建失败时不会部署新的版本。
+
+## 第二期完成图预览（v3）
+
+第二期指第 11–20 关。人形完成主图使用本轮用户确认的 v3：调整人物构图并补齐完成版鞋履，蜘蛛采用指定的旧版近景构图。原始预览无损编码为 WebP，文件校验记录见 `art/phase-two-completion/manifest.json`。游戏与奖励审阅页从同一关卡配置读取新图。
+
+按用户本次明确要求，先上线完成图，人物遮罩暂不重做；封印图、头像和计分遮罩仍为 v2，位置与新主图可能不完全吻合，待后续美术定稿再同步。开场头部保护范围已按新图调整。九成／满血、击败 Boss 奖励图以及魔物图不在本次替换范围内。
