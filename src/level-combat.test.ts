@@ -71,7 +71,10 @@ describe('actual level battle lifecycle', () => {
     const game = new Game(72, 48, options); game.start(); game.protection = 1000;
     const name = game.bossAttack!.name;
     const skills = ['十字 / X 交替', '流沙扇射', '旋转电弧', '血翼夹击', '缺口围猎', '快慢双潮', '三方狐火', '冰晶排射', '四翼石羽', '熔冠轮舞'];
-    expect(name).toBe([...skills, ...skills.slice(5), ...skills.slice(5)][level.id - 1]);
+    const expected = [...skills, ...skills.slice(5), ...skills.slice(5)];
+    // The deer and snake themes swapped levels, and their attacks moved with them.
+    [expected[11], expected[13]] = [expected[13], expected[11]];
+    expect(name).toBe(expected[level.id - 1]);
     const first = game.bossAttack;
     hitBoss(game); expect(game.bossHealth).toBe(4); expect(game.bossAttack).toBe(first);
     hitBoss(game); expect(game.bossHealth).toBe(3); expect(game.bossAttack).not.toBe(first);

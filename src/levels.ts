@@ -170,13 +170,13 @@ export const LEVELS: LevelDef[] = [
   ...campaignAfterTen(),
 ];
 
-/** Levels 11–20. Human plates live in public/levels/<id>/v1/. */
+/** Levels 11–20. Human plates live in public/levels/<id>/v2/. */
 function campaignAfterTen(): LevelDef[] {
   const themes = [
     ['蜘蛛妖', '蛛丝绣楼', '丝絮', '茧蛛', '绣纹', '络灯', '梭影', '绣楼蛛君', '#c45b6a', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。', 'silk-tower'],
-    ['蛇妖', '紫藤画舫', '藤鳞', '莲蝰', '紫绶', '花环', '涟蛇', '紫藤蟒君', '#9b6bb5', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。', 'wisteria-boat'],
-    ['牛头人', '金沙斗场', '沙蝎', '盔虫', '角砾', '沙轮', '刃蜥', '金沙牛魔', '#e0a15a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。', 'golden-arena'],
     ['鹿人', '翠角神林', '翠芽', '苔羊', '角叶', '藤环', '飘籽', '翠角神麋', '#7dcea0', '小怪巡行后突然折返；首领四翼弹幕逐轮旋转。避免贪长线。', 'jade-forest'],
+    ['牛头人', '金沙斗场', '沙蝎', '盔虫', '角砾', '沙轮', '刃蜥', '金沙牛魔', '#e0a15a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。', 'golden-arena'],
+    ['蛇妖', '紫藤画舫', '藤鳞', '莲蝰', '紫绶', '花环', '涟蛇', '紫藤蟒君', '#9b6bb5', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。', 'wisteria-boat'],
     ['机心造物', '钟械秘阁', '钥蛾', '铜蝉', '齿鼠', '摆轮', '游丝', '自鸣机兽', '#d4a574', '小怪高速冲锋；首领交替缺口环射与双向扇射。先读预警。', 'clockwork-archive'],
     ['龙裔', '琥珀龙窟', '蜜蜥', '珀虫', '脂蛹', '珀环', '翅蝎', '琥珀龙君', '#c4843a', '小怪沿弧线游走；首领快慢双潮错位。别急着穿过慢潮。', 'amber-cave'],
     ['歌剧魅影', '月蚀歌剧院', '谱灵', '烛泪', '金面具', '声环', '幕影', '月蚀魅兽', '#8b3a4a', '小怪定时折返；首领三向扇射。注意身后折返的小怪。', 'eclipse-opera'],
@@ -185,14 +185,23 @@ function campaignAfterTen(): LevelDef[] {
     ['封门主宰', '万象封门', '门钉', '封条', '钥齿', '门环', '隙楔', '封门兽首', '#e6d39a', '小怪高速冲锋；首领缺口环射与双向扇射交替。每轮先读预警。', 'myriad-gate'],
   ] as const;
   const numbers = ['十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
-  const attacks = ['tide', 'fox', 'frost', 'gargoyle', 'inferno'] as const;
-  const motions = [
-    { straight: 'curve', period: 3, orbitRate: 0.7, zigzagInterval: 0.78, zigzagAngle: 1.1 },
-    { straight: 'reverse', period: 1.7, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: 1.4 },
-    { straight: 'corner', period: 0.9, orbitRate: 0.75, zigzagInterval: 0.8, zigzagAngle: 1.57 },
-    { straight: 'reverse', period: 1.3, orbitRate: 1.8, zigzagInterval: 0.44, zigzagAngle: 1.4 },
-    { straight: 'surge', period: 1.25, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 },
-  ] as const;
+  const tide = { straight: 'curve', period: 3, orbitRate: 0.7, zigzagInterval: 0.78, zigzagAngle: 1.1 } as const;
+  const fox = { straight: 'reverse', period: 1.7, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: 1.4 } as const;
+  const frost = { straight: 'corner', period: 0.9, orbitRate: 0.75, zigzagInterval: 0.8, zigzagAngle: 1.57 } as const;
+  const gargoyle = { straight: 'reverse', period: 1.3, orbitRate: 1.8, zigzagInterval: 0.44, zigzagAngle: 1.4 } as const;
+  const inferno = { straight: 'surge', period: 1.25, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 } as const;
+  const combat = {
+    '蜘蛛妖': { attack: 'tide', motion: tide },
+    '鹿人': { attack: 'gargoyle', motion: gargoyle },
+    '牛头人': { attack: 'frost', motion: frost },
+    '蛇妖': { attack: 'fox', motion: fox },
+    '机心造物': { attack: 'inferno', motion: inferno },
+    '龙裔': { attack: 'tide', motion: tide },
+    '歌剧魅影': { attack: 'fox', motion: fox },
+    '雷兽': { attack: 'frost', motion: frost },
+    '堕星看守': { attack: 'gargoyle', motion: gargoyle },
+    '封门主宰': { attack: 'inferno', motion: inferno },
+  } as const;
   // The music stem sits on the theme row, so swapping two themes also swaps their tracks.
   return themes.map((row, index) => {
     const id = 11 + index;
@@ -201,11 +210,11 @@ function campaignAfterTen(): LevelDef[] {
     const orbit = Math.ceil((total - straight) / 2);
     const zigzag = total - straight - orbit;
     const step = id - 10;
-    const dir = `levels/${id}/v1`;
+    const dir = `levels/${id}/v2`;
     return {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',
-      tactic: row[9], attackPattern: attacks[index % attacks.length], enemyMotion: motions[index % motions.length],
+      tactic: row[9], attackPattern: combat[row[0]].attack, enemyMotion: combat[row[0]].motion,
       restored: `${dir}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
       portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
       rewardNinety: `${dir}/ninety.webp`, rewardPerfect: `${dir}/perfect.webp`,
