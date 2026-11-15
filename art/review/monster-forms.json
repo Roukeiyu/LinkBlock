@@ -156,7 +156,7 @@
       }
     },
     "11": {
-      "source": "levels/11/v3/restored.webp",
+      "source": "levels/11/v4/restored.webp",
       "file": "monster-forms/11.png",
       "transformation": "Same character in monster form.",
       "rewards": {

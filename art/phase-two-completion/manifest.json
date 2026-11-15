@@ -6,9 +6,10 @@
   "maskStatus": "Deferred by explicit user instruction; v2 masks, seals and portraits remain provisional.",
   "levels": {
     "11": {
-      "file": "public/levels/11/v3/restored.webp",
-      "sha256": "690444d39105853d01fcd73638e8c68fa0c816d24f857b066823f48a4e9e3440",
-      "source_png_sha256": "d2949a96c8e8a2bc268e4d388c9e9e0ed4da74f7b2e74ce3c20f7c5dd3cdd4f6"
+      "file": "public/levels/11/v4/restored.webp",
+      "sha256": "33034c28aeb7be9b4279cf5ddbf4e4b5c31edc8f42f033920e9e65e7690ecfb2",
+      "source_png_sha256": "4f4467d29b8b8c4403efe3311faddaa84b42ed4fc5ec3875fbfdf8f3fe818454",
+      "revision": "v4: sheer black high-neck undershirt and leather gloves."
     },
     "12": {
       "file": "public/levels/12/v3/restored.webp",

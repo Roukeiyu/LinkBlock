@@ -48,7 +48,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
       const bytes = readFileSync(resolve(root, 'public', file));
       const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(file)
         || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(file);
-      const revision = /^review\/previews\/(?:1[1-9]|20)-restored-human\.webp$/.test(file) ? '?v=phase2-v7' : bust ? '?v=r9' : '';
+      const revision = /^review\/previews\/(?:1[1-9]|20)-restored-human\.webp$/.test(file) ? '?v=phase2-v8' : bust ? '?v=r9' : '';
       sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}${revision}`;
     }
     return file;
