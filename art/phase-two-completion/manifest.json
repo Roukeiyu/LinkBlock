@@ -31,15 +31,16 @@
       "source_png_sha256": "716d56563e1268b6f132559b9e6836c30f344f59b3c6c3d85ad7bd629fa95ff1"
     },
     "16": {
-      "file": "public/levels/16/v4/restored.webp",
-      "sha256": "599f24ff73425216098a46eaccad88778ae584c15d1495f3176888824147c00a",
-      "source_png_sha256": "dfa362e95c909385b9e8d43d468a262ad526162391de53d5c4d76be50a29b87a",
-      "revision": "v4: extended rear leg passes behind raised leg and out of frame, based on user pose reference."
+      "file": "public/levels/16/v5/restored.webp",
+      "sha256": "06d870301e9c8b4714a10ffd62c63c2afc0982eb9abd3ea124dde0835a74e2ee",
+      "source_png_sha256": "30c8b1632257ae109ee4129c621c1ef72a121750a23507c214ae2071a23c2f97",
+      "revision": "Rework seated pose so each leg connects clearly to its own boot."
     },
     "17": {
-      "file": "public/levels/17/v3/restored.webp",
-      "sha256": "8a89e45917142c8d6ff832581b2bc61a322fda456e87f5948feeabe74880d39e",
-      "source_png_sha256": "da7abd670944f0f450f7318b6591f0f6132362a63b632d5fdf4531983b3d1847"
+      "file": "public/levels/17/v4/restored.webp",
+      "sha256": "8705edc6f7b68515bf3fd771dbf9952daba21840b2361c3a41db7a8730a475fd",
+      "source_png_sha256": "02680eaf9fd506e25ba5784dfe14c9fa0dbb2718a80eed9cca4c83a9eccb91f8",
+      "revision": "Restore the distinctive white forelock using the full-health reward as reference."
     },
     "18": {
       "file": "public/levels/18/v5/restored.webp",
