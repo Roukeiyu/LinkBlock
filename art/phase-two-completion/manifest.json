@@ -31,9 +31,10 @@
       "source_png_sha256": "716d56563e1268b6f132559b9e6836c30f344f59b3c6c3d85ad7bd629fa95ff1"
     },
     "16": {
-      "file": "public/levels/16/v3/restored.webp",
-      "sha256": "e74d638ad69e093e0abe68ece9a07a2bb057d977516a451f1801540a3135ee26",
-      "source_png_sha256": "30288d8bb7e8e2262f1e45d95f34e521d8b25fc92ae2daad16e92799c6f97d02"
+      "file": "public/levels/16/v4/restored.webp",
+      "sha256": "599f24ff73425216098a46eaccad88778ae584c15d1495f3176888824147c00a",
+      "source_png_sha256": "dfa362e95c909385b9e8d43d468a262ad526162391de53d5c4d76be50a29b87a",
+      "revision": "v4: extended rear leg passes behind raised leg and out of frame, based on user pose reference."
     },
     "17": {
       "file": "public/levels/17/v3/restored.webp",
@@ -49,12 +50,18 @@
     "19": {
       "file": "public/levels/19/v3/restored.webp",
       "sha256": "77c48e883004131427245ec6f8730a964654dc818c9dadc5fd25f443ad51772d",
-      "source_png_sha256": "44a98ef3f9a4bc50fe8fb9dce1c7d1c4062ab13cb53721d24f935024a2f98611"
+      "source_png_sha256": "44a98ef3f9a4bc50fe8fb9dce1c7d1c4062ab13cb53721d24f935024a2f98611",
+      "superseded": true,
+      "activeFile": "public/levels/19/v2/restored.webp",
+      "revision": "User requested restoring previous barefoot completion artwork."
     },
     "20": {
       "file": "public/levels/20/v3/restored.webp",
       "sha256": "c04c48d882b9458f342b27e36c9d7d5398302d317a22b6e6ffa45674cc203e9e",
-      "source_png_sha256": "66bb368e5e75929817f642eb92794b498900221011566c8bf453e1b4d041d29a"
+      "source_png_sha256": "66bb368e5e75929817f642eb92794b498900221011566c8bf453e1b4d041d29a",
+      "superseded": true,
+      "activeFile": "public/levels/20/v2/restored.webp",
+      "revision": "User requested restoring previous barefoot completion artwork."
     }
   }
 }
