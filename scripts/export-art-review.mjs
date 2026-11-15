@@ -50,7 +50,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
     }
     return file;
   }
-  const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme,
+  const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme, music: level.music,
     items: kind === 'rewards' ? [
       { label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`), ...(monsterForms.levels[level.id].file !== `monster-forms/${level.id}.png` ? { monsterMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}) },
       { label: '满血通关', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`) },
@@ -67,7 +67,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   const description = kind === 'rewards' ? '10 个关卡 · 每关依次为完整成图、满血通关、击败 Boss · 统一 1536 × 1024（3:2）。右侧按钮一键切换全部图片的人形／魔物形态。游戏设置中也可切换角色形态。' : '10 个 Boss · 50 个小怪。保留图片原色，透明素材展示在深色底板上。';
   const html = `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>封林 · ${title}</title><style>
-*{box-sizing:border-box}html{color-scheme:dark;scroll-behavior:smooth}body{margin:0;background:#19191d;color:#eee8dd;font:15px/1.65 system-ui,sans-serif}header,main{max-width:1560px;margin:auto;padding:28px}header{padding-bottom:8px}h1{font-size:clamp(25px,3vw,34px);letter-spacing:.05em;margin:4px 0 10px}h2{font-size:21px;margin:0 0 12px}h2 small{font-size:14px;color:#c3b292;font-weight:400;margin-left:12px}p{margin:6px 0;color:#bfb8ac}a{color:#ebcb8e}nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}nav a{text-decoration:none}button,select{font:inherit;border:1px solid #645a48;background:#2c2924;color:#f0e7d9;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,nav a:hover{color:#fff2d5}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f4cd7c;outline-offset:4px}section{margin:0 0 36px;scroll-margin:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.enemies .grid{grid-template-columns:repeat(6,minmax(0,1fr))}figure{margin:0;background:#232329;border:1px solid #3a3740;border-radius:10px;overflow:hidden;min-width:0}figure button{display:block;width:100%;padding:0;border:0;border-radius:0;background:#121319;cursor:zoom-in}figure img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}.enemies figure img{height:180px;aspect-ratio:auto;padding:14px}.enemies figure:first-child{border-color:#8c7149}figcaption{padding:10px 12px;color:#ddd3c2;font-size:14px}.file{display:block;color:#8e8b94;font:10px/1.5 monospace;overflow-wrap:anywhere;margin-top:4px}dialog{padding:0;border:1px solid #695c48;border-radius:10px;background:#15151a;color:#f5ebd9;max-width:96vw;max-height:96dvh;overflow:auto}dialog::backdrop{background:#000d}dialog img{display:block;max-width:94vw;max-height:80dvh;width:auto;height:auto;object-fit:contain;margin:auto}dialog footer{padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}dialog footer span{flex:1}#player-preview{padding:20px;border:1px solid #65543a;border-radius:12px;background:#242127}.spirit-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:18px 0}.spirit-stage{display:flex;align-items:center;justify-content:center;width:224px;height:176px;border-radius:8px;background:#14171e}.spirit-stage.light{background:#d8be8b}.frames{display:flex;gap:10px;flex-wrap:wrap}.frames figure{text-align:center}.frames canvas{display:block;width:96px;height:96px}.frames figcaption{font-size:12px;padding:4px}.note{font-size:13px;color:#b7a98f}[hidden]{display:none!important}@media(max-width:950px){.enemies .grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){header,main{padding:18px 14px}.grid{grid-template-columns:1fr}.enemies .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.enemies figure img{height:140px}h2{font-size:18px}h2 small{display:block;margin:0}.spirit-stage{width:calc(50% - 8px);height:128px}.frames canvas{width:64px;height:64px}#player-preview{padding:14px}}
+*{box-sizing:border-box}html{color-scheme:dark;scroll-behavior:smooth}body{margin:0;background:#19191d;color:#eee8dd;font:15px/1.65 system-ui,sans-serif}header,main{max-width:1560px;margin:auto;padding:28px}header{padding-bottom:8px}h1{font-size:clamp(25px,3vw,34px);letter-spacing:.05em;margin:4px 0 10px}h2{font-size:21px;margin:0 0 8px}h2 small{font-size:14px;color:#c3b292;font-weight:400;margin-left:12px}.bgm{margin:0 0 14px}.bgm[aria-pressed="true"]{background:#584024;border-color:#bd9b61;color:#fff0cf}p{margin:6px 0;color:#bfb8ac}a{color:#ebcb8e}nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}nav a{text-decoration:none}button,select{font:inherit;border:1px solid #645a48;background:#2c2924;color:#f0e7d9;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,nav a:hover{color:#fff2d5}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f4cd7c;outline-offset:4px}section{margin:0 0 36px;scroll-margin:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.enemies .grid{grid-template-columns:repeat(6,minmax(0,1fr))}figure{margin:0;background:#232329;border:1px solid #3a3740;border-radius:10px;overflow:hidden;min-width:0}figure button{display:block;width:100%;padding:0;border:0;border-radius:0;background:#121319;cursor:zoom-in}figure img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}.enemies figure img{height:180px;aspect-ratio:auto;padding:14px}.enemies figure:first-child{border-color:#8c7149}figcaption{padding:10px 12px;color:#ddd3c2;font-size:14px}.file{display:block;color:#8e8b94;font:10px/1.5 monospace;overflow-wrap:anywhere;margin-top:4px}dialog{padding:0;border:1px solid #695c48;border-radius:10px;background:#15151a;color:#f5ebd9;max-width:96vw;max-height:96dvh;overflow:auto}dialog::backdrop{background:#000d}dialog img{display:block;max-width:94vw;max-height:80dvh;width:auto;height:auto;object-fit:contain;margin:auto}dialog footer{padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}dialog footer span{flex:1}#player-preview{padding:20px;border:1px solid #65543a;border-radius:12px;background:#242127}.spirit-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:18px 0}.spirit-stage{display:flex;align-items:center;justify-content:center;width:224px;height:176px;border-radius:8px;background:#14171e}.spirit-stage.light{background:#d8be8b}.frames{display:flex;gap:10px;flex-wrap:wrap}.frames figure{text-align:center}.frames canvas{display:block;width:96px;height:96px}.frames figcaption{font-size:12px;padding:4px}.note{font-size:13px;color:#b7a98f}[hidden]{display:none!important}@media(max-width:950px){.enemies .grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){header,main{padding:18px 14px}.grid{grid-template-columns:1fr}.enemies .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.enemies figure img{height:140px}h2{font-size:18px}h2 small{display:block;margin:0}.spirit-stage{width:calc(50% - 8px);height:128px}.frames canvas{width:64px;height:64px}#player-preview{padding:14px}}
 #form-dock{position:fixed;right:0;bottom:max(24px,env(safe-area-inset-bottom));z-index:50;display:flex;align-items:stretch;border:1px solid #bd9b61;border-right:0;border-radius:12px 0 0 12px;background:#30291ff5;box-shadow:0 4px 18px #0008;overflow:hidden}#form-dock button{display:grid;place-items:center;border:0;border-radius:0;background:transparent;color:#f0e7d9;padding:0;min-height:48px}#form-dock button:hover{background:#584024}#dock-toggle{width:36px}#form-toggle{width:58px;border-left:1px solid #645a48!important}#form-toggle svg{width:36px;height:36px;stroke-width:2}#form-toggle[aria-pressed="true"]{background:#584024;color:#fff0cf}#form-dock svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}#form-dock[data-collapsed="true"] #form-toggle{display:none}#form-dock[data-collapsed="true"] #dock-chevron{transform:rotate(180deg)}#form-status{color:#ebcb8e}#viewer-form-toggle{flex:0 0 auto}
 .rewards figcaption{position:relative}.rewards figure:has(.mask-button) figcaption{padding-right:105px}.rewards figure .mask-button{position:absolute;right:10px;top:8px;width:auto;padding:4px 8px;border:1px solid #8b795b;border-radius:5px;background:#332d25;color:#f0e7d9;font-size:12px;cursor:pointer}.rewards figure .mask-button:hover{background:#574933}#mask-viewer{width:min(96vw,1200px)}#mask-stage{position:relative;background:#111;line-height:0}#mask-stage img{width:100%;height:auto;max-width:none;max-height:none}#mask-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#mask-viewer footer{gap:10px}#mask-viewer footer button[aria-pressed="true"]{background:#584024;border-color:#bd9b61}#mask-note{padding:0 16px 12px;color:#b7a98f;font-size:13px}
 
@@ -217,10 +217,39 @@ function inViewport(figure){
   return rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<innerHeight&&rect.right>0&&rect.left<innerWidth;
 }
 const preloadObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>entry.target.updatePreload(entry.isIntersecting)),{rootMargin:'400px'}):null;
+const music=${kind === 'rewards' ? 'true' : 'false'};
+const bgm=music?new Audio():null;
+if(bgm){bgm.loop=true;bgm.preload='none';}
+let bgmButton=null;
+function musicSrc(stem){
+  const probe=document.createElement('audio');
+  const opus=probe.canPlayType('audio/ogg; codecs="opus"')||probe.canPlayType('audio/ogg; codecs=opus');
+  return '../audio/'+stem+'.'+(opus?'ogg':'mp3');
+}
+function paintBgm(button,playing){
+  button.setAttribute('aria-pressed',String(playing));
+  button.textContent=playing?'暂停背景音乐':'播放背景音乐';
+}
+function toggleBgm(level,button){
+  const src=new URL(musicSrc(level.music),location.href).href;
+  if(bgmButton===button&&!bgm.paused){bgm.pause();paintBgm(button,false);return;}
+  if(bgmButton&&bgmButton!==button)paintBgm(bgmButton,false);
+  bgmButton=button;
+  if(bgm.src!==src){bgm.pause();bgm.src=src;}
+  bgm.play().then(()=>{if(bgmButton===button)paintBgm(button,true);}).catch(()=>{if(bgmButton===button)paintBgm(button,false);});
+}
 for(const level of levels){
   const section=document.createElement('section');section.dataset.level=String(level.id);
   const h=document.createElement('h2');h.textContent=level.title;
   const small=document.createElement('small');small.textContent=level.theme;h.append(small);
+  section.append(h);
+  if(music){
+    const button=document.createElement('button');button.type='button';button.className='bgm';
+    button.setAttribute('aria-label',level.title+' 背景音乐');
+    paintBgm(button,false);
+    button.onclick=()=>toggleBgm(level,button);
+    section.append(button);
+  }
   const grid=document.createElement('div');grid.className='grid';
   for(const item of level.items){
     const figure=document.createElement('figure'),button=document.createElement('button'),img=document.createElement('img');
@@ -246,7 +275,7 @@ for(const level of levels){
     if(item.mask){const maskButton=document.createElement('button');maskButton.className='mask-button';maskButton.textContent='查看 Alpha';maskButton.setAttribute('aria-label',level.title+' 查看 Alpha 遮罩');maskButton.onclick=()=>openMask(level,item);cap.append(maskButton);}
     figure.append(button,cap);grid.append(figure);
   }
-  section.append(h,grid);container.append(section);
+  section.append(grid);container.append(section);
 }
 syncForm();
 const initialPreviews=previewCards.filter(card=>inViewport(card.figure)).flatMap(card=>card.preloadBoth(true));
