@@ -6,8 +6,10 @@ Levels 5–10 are Suno recordings prepared by scripts/prepare-suno-audio.py:
 trim nothing musical, overlap 3 seconds with an equal-power crossfade, rotate
 the join away from the file edge, then two-pass loudness to -20 LUFS / -2 dBTP,
 48 kHz stereo Opus at 96 kbps and MP3 at 160 kbps, with a 10 ms endpoint
-de-click. This script renders original theme pieces and applies that same
-delivery chain. There is still one loop per level and no boss-phase variant.
+de-click. This script renders the remaining composed theme pieces and applies that same
+delivery chain. silk-tower, wisteria-boat, golden-arena, and jade-forest are
+owner Suno recordings and are left in place. There is still one loop per level
+and no boss-phase variant.
 """
 import hashlib
 import json
@@ -412,11 +414,9 @@ def finale():
     return score, 1.0
 
 
+# These four stems are owner Suno recordings. Do not overwrite their exports.
+SUNO_STEMS = {'silk-tower', 'wisteria-boat', 'golden-arena', 'jade-forest'}
 PIECES = [
-    ('silk-tower', '蛛丝绣楼', silk),
-    ('wisteria-boat', '紫藤画舫', wisteria),
-    ('golden-arena', '金沙斗场', arena),
-    ('jade-forest', '翠角神林', forest),
     ('clockwork-archive', '钟械秘阁', clockwork),
     ('amber-cave', '琥珀龙窟', amber),
     ('eclipse-opera', '月蚀歌剧院', opera),
@@ -424,10 +424,14 @@ PIECES = [
     ('fallen-star', '星陨神座', stars),
     ('myriad-gate', '万象封门', finale),
 ]
+ORDER = ['silk-tower', 'wisteria-boat', 'golden-arena', 'jade-forest',
+         'clockwork-archive', 'amber-cave', 'eclipse-opera', 'thunder-citadel', 'fallen-star', 'myriad-gate']
 
 
 def main():
-    report = []
+    report_path = OUT / 'campaign-11-20.json'
+    existing = json.loads(report_path.read_text()) if report_path.exists() else []
+    by_stem = {item['stem']: item for item in existing}
     for stem, title, build in PIECES:
         score, space = build()
         print(f'{stem} ({title}): {len(score.events)} events, {score.dur:.1f}s', flush=True)
@@ -438,9 +442,12 @@ def main():
                      'crossfade_seconds': CROSSFADE, 'endpoint_declick_seconds': 0.01,
                      'sample_rate': SR, 'channels': 2, 'loudness_target_lufs': -20, 'true_peak_ceiling_dbtp': -2,
                      'opus_bitrate': '96k', 'mp3_bitrate': '160k'})
-        report.append(meta)
+        by_stem[stem] = meta
         print(f'  loop {meta["loop_seconds"]}s  ' + '  '.join(f'{item["file"].split("/")[-1]} {item["bytes"]}' for item in meta['outputs']), flush=True)
-    (OUT / 'campaign-11-20.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
+    kept = [stem for stem in SUNO_STEMS if stem not in by_stem]
+    if kept:
+        raise SystemExit(f'Missing Suno manifest entries: {kept}')
+    report_path.write_text(json.dumps([by_stem[stem] for stem in ORDER], ensure_ascii=False, indent=2) + '\n')
 
 
 if __name__ == '__main__':

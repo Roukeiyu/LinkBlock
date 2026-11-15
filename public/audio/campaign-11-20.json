@@ -1,151 +1,167 @@
 [
   {
-    "source_seconds": 113.684,
-    "loop_seconds": 110.684,
+    "stem": "silk-tower",
+    "theme": "蛛丝绣楼",
+    "source": "suno",
+    "source_sha256": "3e207b22a9fe38b61fdc4f5cf331646f9930fd261525c8ae0508a7f1670ed35e",
+    "original_duration_seconds": 103.224,
+    "trim_end_seconds": 103.224,
+    "source_seconds": 103.224,
+    "loop_seconds": 100.224,
+    "crossfade_seconds": 3,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k",
+    "subjective_listening_verified": false,
     "outputs": [
       {
         "file": "public/audio/silk-tower.ogg",
-        "bytes": 2340434,
-        "integrated_lufs": -19.99,
-        "true_peak_dbtp": -6.02,
-        "endpoint_sample_jump": 0.001129147014580667,
-        "sha256": "321a47c801d0ece44cc8c1a652f923ff35362afe9696b923aa0e1651e295ce26"
+        "bytes": 1406859,
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -7.5,
+        "endpoint_sample_jump": 0.0016584504919592291,
+        "sha256": "b91b642f02f72243083c8357468e82e811f74c01a469e5c01ae2c22b4336a221"
       },
       {
         "file": "public/audio/silk-tower.mp3",
-        "bytes": 2214765,
-        "integrated_lufs": -20.45,
-        "true_peak_dbtp": -6.53,
-        "endpoint_sample_jump": 0.00010298693086951971,
-        "sha256": "6c9c71bf11efe05577ad813f9dada1416870b285ce2a0186f50ab77fa400f531"
+        "bytes": 2005005,
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -7.75,
+        "endpoint_sample_jump": 0.0008248940721387044,
+        "sha256": "7fb717c7ddd0ef3b18012e471279ab884a17c13e8278aac91343384445c686bf"
       }
     ],
-    "stem": "silk-tower",
-    "theme": "蛛丝绣楼",
-    "bpm": 76,
-    "meter": 4,
-    "bars": 36,
-    "events": 378,
-    "subjective_listening_verified": false,
-    "crossfade_seconds": 3.0,
+    "encoded_duration_seconds": {
+      "ogg": 100.207,
+      "mp3": 100.224
+    }
+  },
+  {
+    "stem": "wisteria-boat",
+    "theme": "紫藤画舫",
+    "source": "suno",
+    "source_sha256": "92ff58afab6a720333c8dde5be91204a75063ab34536e6d815e4c7fea57e98fe",
+    "original_duration_seconds": 196.872,
+    "trim_end_seconds": 195.779,
+    "source_seconds": 195.779,
+    "loop_seconds": 192.779,
+    "crossfade_seconds": 3,
     "endpoint_declick_seconds": 0.01,
     "sample_rate": 48000,
     "channels": 2,
     "loudness_target_lufs": -20,
     "true_peak_ceiling_dbtp": -2,
     "opus_bitrate": "96k",
-    "mp3_bitrate": "160k"
-  },
-  {
-    "source_seconds": 101.739,
-    "loop_seconds": 98.739,
+    "mp3_bitrate": "160k",
+    "subjective_listening_verified": false,
     "outputs": [
       {
         "file": "public/audio/wisteria-boat.ogg",
-        "bytes": 1551957,
-        "integrated_lufs": -20.01,
-        "true_peak_dbtp": -10.1,
-        "endpoint_sample_jump": 0.0013401926262304187,
-        "sha256": "6fe8d6ed9c7ae4c859450ac7686acd720bfdb6a0b8dbb23d452fb331db5b1de7"
+        "bytes": 2686461,
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -7.11,
+        "endpoint_sample_jump": 0.00027610883580564405,
+        "sha256": "b8fcdda103854cfe2ca015f9c53b423334951784a87d33d6d54dec1439ef3e64"
       },
       {
         "file": "public/audio/wisteria-boat.mp3",
-        "bytes": 1976205,
-        "integrated_lufs": -20.45,
-        "true_peak_dbtp": -10.6,
-        "endpoint_sample_jump": 0.0007429865654557943,
-        "sha256": "66c9a7602703aaa9fc4d591a76fda06a2b09bee53516dda0c0d2376fa083a44c"
+        "bytes": 3856845,
+        "integrated_lufs": -20.44,
+        "true_peak_dbtp": -8.08,
+        "endpoint_sample_jump": 0.00010295609081367729,
+        "sha256": "7379335e9bf13cc4d838231edf18a03b13d0d3f313cc7d6e3fbbcce32f4ea834"
       }
     ],
-    "stem": "wisteria-boat",
-    "theme": "紫藤画舫",
-    "bpm": 92,
-    "meter": 3,
-    "bars": 52,
-    "events": 858,
-    "subjective_listening_verified": false,
-    "crossfade_seconds": 3.0,
+    "encoded_duration_seconds": {
+      "ogg": 192.786,
+      "mp3": 192.816
+    }
+  },
+  {
+    "stem": "golden-arena",
+    "theme": "金沙斗场",
+    "source": "suno",
+    "source_sha256": "de9815fdc5b16fa0e84e2e66da0adc2edc987de0e0a87c99cf6859e5618265de",
+    "original_duration_seconds": 110.04,
+    "trim_end_seconds": 110.04,
+    "source_seconds": 110.04,
+    "loop_seconds": 107.04,
+    "crossfade_seconds": 3,
     "endpoint_declick_seconds": 0.01,
     "sample_rate": 48000,
     "channels": 2,
     "loudness_target_lufs": -20,
     "true_peak_ceiling_dbtp": -2,
     "opus_bitrate": "96k",
-    "mp3_bitrate": "160k"
-  },
-  {
-    "source_seconds": 97.627,
-    "loop_seconds": 94.627,
+    "mp3_bitrate": "160k",
+    "subjective_listening_verified": false,
     "outputs": [
       {
         "file": "public/audio/golden-arena.ogg",
-        "bytes": 1686496,
-        "integrated_lufs": -20.01,
-        "true_peak_dbtp": -5.84,
-        "endpoint_sample_jump": 0.0004883568471996114,
-        "sha256": "8aad10b334395c0b34afe3adc57069988efe265d9e894b81bef7142cadb2ac67"
+        "bytes": 1257878,
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -6.86,
+        "endpoint_sample_jump": 0.0005892556655453518,
+        "sha256": "7f7fec662942fbed54d1d3b7df3da14c28448f00800c68797d708a801c328e96"
       },
       {
         "file": "public/audio/golden-arena.mp3",
-        "bytes": 1893645,
-        "integrated_lufs": -20.48,
-        "true_peak_dbtp": -6.16,
-        "endpoint_sample_jump": 3.11444000544725e-05,
-        "sha256": "23d8f7e4ca839c0ed5aac410acc9c6763fa80befbac70150fe2788cf52f00645"
+        "bytes": 2141325,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -8.02,
+        "endpoint_sample_jump": 0.00024156306608347222,
+        "sha256": "4bf06750e20f1e8c6ee583b1c45da0f8d93973d126dc0eed289f82e9ed39b55f"
       }
     ],
-    "stem": "golden-arena",
-    "theme": "金沙斗场",
-    "bpm": 118,
-    "meter": 4,
-    "bars": 48,
-    "events": 1320,
-    "subjective_listening_verified": false,
-    "crossfade_seconds": 3.0,
+    "encoded_duration_seconds": {
+      "ogg": 107.007,
+      "mp3": 107.04
+    }
+  },
+  {
+    "stem": "jade-forest",
+    "theme": "翠角神林",
+    "source": "suno",
+    "source_sha256": "08a4a2acfb5f6d7fc20e2063b0f1a43e57ecbe46fea812b2625dd0e924e0f84a",
+    "original_duration_seconds": 194.04,
+    "trim_end_seconds": 194.04,
+    "source_seconds": 194.04,
+    "loop_seconds": 191.04,
+    "crossfade_seconds": 3,
     "endpoint_declick_seconds": 0.01,
     "sample_rate": 48000,
     "channels": 2,
     "loudness_target_lufs": -20,
     "true_peak_ceiling_dbtp": -2,
     "opus_bitrate": "96k",
-    "mp3_bitrate": "160k"
-  },
-  {
-    "source_seconds": 101.538,
-    "loop_seconds": 98.538,
+    "mp3_bitrate": "160k",
+    "subjective_listening_verified": false,
     "outputs": [
       {
         "file": "public/audio/jade-forest.ogg",
-        "bytes": 1408647,
-        "integrated_lufs": -19.99,
-        "true_peak_dbtp": -8.3,
-        "endpoint_sample_jump": 0.0016491312417201698,
-        "sha256": "bbe92de75af148dba5ed157bf73bc5923c0824bca4bd685415ae29c0d65cb548"
+        "bytes": 2625753,
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -8.6,
+        "endpoint_sample_jump": 0.0002989317072206177,
+        "sha256": "36e6043fb7b173f441a6abf155070ae7e2b9c4cfbece680b0c2b3981c6e5fccd"
       },
       {
         "file": "public/audio/jade-forest.mp3",
-        "bytes": 1971885,
-        "integrated_lufs": -20.45,
-        "true_peak_dbtp": -8.55,
-        "endpoint_sample_jump": 0.0007930116553325206,
-        "sha256": "2c2cab85380858ebabc44b38486e0f8a7fa1103cd80bbda580ec17b2b3e5bab6"
+        "bytes": 3821325,
+        "integrated_lufs": -20.43,
+        "true_peak_dbtp": -8.93,
+        "endpoint_sample_jump": 0.0001872539687610697,
+        "sha256": "dd33891ff16ddc377b4e5d584206640170f5299a97b28c8ddfb4321bba77c8d7"
       }
     ],
-    "stem": "jade-forest",
-    "theme": "翠角神林",
-    "bpm": 104,
-    "meter": 4,
-    "bars": 44,
-    "events": 792,
-    "subjective_listening_verified": false,
-    "crossfade_seconds": 3.0,
-    "endpoint_declick_seconds": 0.01,
-    "sample_rate": 48000,
-    "channels": 2,
-    "loudness_target_lufs": -20,
-    "true_peak_ceiling_dbtp": -2,
-    "opus_bitrate": "96k",
-    "mp3_bitrate": "160k"
+    "encoded_duration_seconds": {
+      "ogg": 191.006,
+      "mp3": 191.04
+    }
   },
   {
     "source_seconds": 99.048,
