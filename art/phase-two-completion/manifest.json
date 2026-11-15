@@ -41,10 +41,10 @@
       "source_png_sha256": "da7abd670944f0f450f7318b6591f0f6132362a63b632d5fdf4531983b3d1847"
     },
     "18": {
-      "file": "public/levels/18/v4/restored.webp",
-      "sha256": "da934fce13fe85137204b577bc99a941cef7f3f5971b8a272e22180709268c09",
-      "source_png_sha256": "3070f204ba5ce7cedf6652e64fe888d5c139cbf9eda1f111635c52b3b5a27125",
-      "revision": "v4: faint non-glowing thunder marks based on the v1 chest motifs; current composition, clothing and boots retained."
+      "file": "public/levels/18/v5/restored.webp",
+      "sha256": "8c87243a8e5039e560c3e8a9ce410914b199b09c4663868c4b1097c0b11492e6",
+      "source_png_sha256": "09bd3eefe08e3a5c2f649a90ec5b562afea95d9c00662530eaacebff49bbb10a",
+      "revision": "v5: clarify crossed leg anatomy, preserving subtle thunder marks and boots."
     },
     "19": {
       "file": "public/levels/19/v3/restored.webp",

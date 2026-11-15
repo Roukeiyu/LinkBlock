@@ -170,7 +170,7 @@ export const LEVELS: LevelDef[] = [
   ...campaignAfterTen(),
 ];
 
-/** Phase two: v3 human completion plates (level 18 v4); v2 supporting assets pending final art. */
+/** Phase two: v3 human completion plates (level 18 v5); v2 supporting assets pending final art. */
 function campaignAfterTen(): LevelDef[] {
   const themes = [
     ['蜘蛛妖', '蛛丝绣楼', '丝絮', '茧蛛', '绣纹', '络灯', '梭影', '绣楼蛛君', '#c45b6a', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。', 'silk-tower'],
@@ -211,7 +211,7 @@ function campaignAfterTen(): LevelDef[] {
     const zigzag = total - straight - orbit;
     const step = id - 10;
     const dir = `levels/${id}/v2`;
-    const completionVersion = id === 18 ? 'v4' : 'v3';
+    const completionVersion = id === 18 ? 'v5' : 'v3';
     return {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',
