@@ -98,7 +98,10 @@ test('old five-clear save opens level six, new rewards persist, and only level t
   await page.locator('#menu-gallery').click();
   await expect(page.locator('.gallery-level')).toHaveCount(20);
   await expect(page.locator('.gallery-item')).toHaveCount(60);
-  await page.locator('.gallery-item[data-level="20"][data-reward="ninety"]').click();
-  await expect(page.locator('#viewer-img')).toHaveJSProperty('src', new URL(LEVELS[19].rewardNinety!, page.url()).href);
+  const reward = page.locator('.gallery-item[data-level="20"][data-reward="ninety"]');
+  const galleryUrl = await reward.locator('img').evaluate((img: HTMLImageElement) => img.src);
+  expect(new URL(galleryUrl).pathname).toBe(new URL(LEVELS[19].rewardNinety!, page.url()).pathname);
+  await reward.click();
+  await expect(page.locator('#viewer-img')).toHaveJSProperty('src', galleryUrl);
   await expect.poll(() => page.locator('#viewer-img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
