@@ -1,0 +1,372 @@
+[
+  {
+    "source_seconds": 113.684,
+    "loop_seconds": 110.684,
+    "outputs": [
+      {
+        "file": "public/audio/silk-tower.ogg",
+        "bytes": 2340434,
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -6.02,
+        "endpoint_sample_jump": 0.001129147014580667,
+        "sha256": "321a47c801d0ece44cc8c1a652f923ff35362afe9696b923aa0e1651e295ce26"
+      },
+      {
+        "file": "public/audio/silk-tower.mp3",
+        "bytes": 2214765,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -6.53,
+        "endpoint_sample_jump": 0.00010298693086951971,
+        "sha256": "6c9c71bf11efe05577ad813f9dada1416870b285ce2a0186f50ab77fa400f531"
+      }
+    ],
+    "stem": "silk-tower",
+    "theme": "蛛丝绣楼",
+    "bpm": 76,
+    "meter": 4,
+    "bars": 36,
+    "events": 378,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 101.739,
+    "loop_seconds": 98.739,
+    "outputs": [
+      {
+        "file": "public/audio/wisteria-boat.ogg",
+        "bytes": 1551957,
+        "integrated_lufs": -20.01,
+        "true_peak_dbtp": -10.1,
+        "endpoint_sample_jump": 0.0013401926262304187,
+        "sha256": "6fe8d6ed9c7ae4c859450ac7686acd720bfdb6a0b8dbb23d452fb331db5b1de7"
+      },
+      {
+        "file": "public/audio/wisteria-boat.mp3",
+        "bytes": 1976205,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -10.6,
+        "endpoint_sample_jump": 0.0007429865654557943,
+        "sha256": "66c9a7602703aaa9fc4d591a76fda06a2b09bee53516dda0c0d2376fa083a44c"
+      }
+    ],
+    "stem": "wisteria-boat",
+    "theme": "紫藤画舫",
+    "bpm": 92,
+    "meter": 3,
+    "bars": 52,
+    "events": 858,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 97.627,
+    "loop_seconds": 94.627,
+    "outputs": [
+      {
+        "file": "public/audio/golden-arena.ogg",
+        "bytes": 1686496,
+        "integrated_lufs": -20.01,
+        "true_peak_dbtp": -5.84,
+        "endpoint_sample_jump": 0.0004883568471996114,
+        "sha256": "8aad10b334395c0b34afe3adc57069988efe265d9e894b81bef7142cadb2ac67"
+      },
+      {
+        "file": "public/audio/golden-arena.mp3",
+        "bytes": 1893645,
+        "integrated_lufs": -20.48,
+        "true_peak_dbtp": -6.16,
+        "endpoint_sample_jump": 3.11444000544725e-05,
+        "sha256": "23d8f7e4ca839c0ed5aac410acc9c6763fa80befbac70150fe2788cf52f00645"
+      }
+    ],
+    "stem": "golden-arena",
+    "theme": "金沙斗场",
+    "bpm": 118,
+    "meter": 4,
+    "bars": 48,
+    "events": 1320,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 101.538,
+    "loop_seconds": 98.538,
+    "outputs": [
+      {
+        "file": "public/audio/jade-forest.ogg",
+        "bytes": 1408647,
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -8.3,
+        "endpoint_sample_jump": 0.0016491312417201698,
+        "sha256": "bbe92de75af148dba5ed157bf73bc5923c0824bca4bd685415ae29c0d65cb548"
+      },
+      {
+        "file": "public/audio/jade-forest.mp3",
+        "bytes": 1971885,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -8.55,
+        "endpoint_sample_jump": 0.0007930116553325206,
+        "sha256": "2c2cab85380858ebabc44b38486e0f8a7fa1103cd80bbda580ec17b2b3e5bab6"
+      }
+    ],
+    "stem": "jade-forest",
+    "theme": "翠角神林",
+    "bpm": 104,
+    "meter": 4,
+    "bars": 44,
+    "events": 792,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 99.048,
+    "loop_seconds": 96.048,
+    "outputs": [
+      {
+        "file": "public/audio/clockwork-archive.ogg",
+        "bytes": 1877590,
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -5.97,
+        "endpoint_sample_jump": 0.0013702682917937636,
+        "sha256": "28552cf6452115fc8e98ca8b5be86c09f3dfa7eb89a3db29f7b1f33105d3e2e6"
+      },
+      {
+        "file": "public/audio/clockwork-archive.mp3",
+        "bytes": 1921965,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -6.72,
+        "endpoint_sample_jump": 0.00017263393965549767,
+        "sha256": "ae5faa5765d287d59535cedcfab456c82e5d9ef56697085cc158b25d9fe53b88"
+      }
+    ],
+    "stem": "clockwork-archive",
+    "theme": "钟械秘阁",
+    "bpm": 126,
+    "meter": 4,
+    "bars": 52,
+    "events": 1625,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 106.667,
+    "loop_seconds": 103.667,
+    "outputs": [
+      {
+        "file": "public/audio/amber-cave.ogg",
+        "bytes": 1582031,
+        "integrated_lufs": -20.01,
+        "true_peak_dbtp": -7.18,
+        "endpoint_sample_jump": 0.0015183231444098055,
+        "sha256": "a7ab1fd99539fec81a448e1a2a163c56772a1543854f5540f0a483215950ff71"
+      },
+      {
+        "file": "public/audio/amber-cave.mp3",
+        "bytes": 2074605,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -7.87,
+        "endpoint_sample_jump": 8.340179556398652e-05,
+        "sha256": "723785815c4a0f4adebdc7ab2aab872a8e06ab5ce473e41808a6dda70b6eb699"
+      }
+    ],
+    "stem": "amber-cave",
+    "theme": "琥珀龙窟",
+    "bpm": 72,
+    "meter": 4,
+    "bars": 32,
+    "events": 344,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 98.182,
+    "loop_seconds": 95.182,
+    "outputs": [
+      {
+        "file": "public/audio/eclipse-opera.ogg",
+        "bytes": 1405894,
+        "integrated_lufs": -19.99,
+        "true_peak_dbtp": -7.05,
+        "endpoint_sample_jump": 0.000673827191349119,
+        "sha256": "eaadc627cbff6165d0389b47381575ce5b569d989b9ae190c33c33ec39208690"
+      },
+      {
+        "file": "public/audio/eclipse-opera.mp3",
+        "bytes": 1904685,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -7.19,
+        "endpoint_sample_jump": 0.0013621810358017683,
+        "sha256": "e8a8627ba2c247568e98e807bfc6e462a29e4ad55dcf3644561265fd39915d54"
+      }
+    ],
+    "stem": "eclipse-opera",
+    "theme": "月蚀歌剧院",
+    "bpm": 132,
+    "meter": 3,
+    "bars": 72,
+    "events": 1080,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 105.205,
+    "loop_seconds": 102.205,
+    "outputs": [
+      {
+        "file": "public/audio/thunder-citadel.ogg",
+        "bytes": 2005225,
+        "integrated_lufs": -20.02,
+        "true_peak_dbtp": -6.95,
+        "endpoint_sample_jump": 0.0011101831478299573,
+        "sha256": "d579019df7849bd5d8d0b1a45819a84eecc34e04d3e90547ba2601c7fe991bf2"
+      },
+      {
+        "file": "public/audio/thunder-citadel.mp3",
+        "bytes": 2045325,
+        "integrated_lufs": -20.47,
+        "true_peak_dbtp": -7.42,
+        "endpoint_sample_jump": 0.00043811515206471086,
+        "sha256": "ec85a975a747276ccdea4ce82d741dc57dd0ef1ba2980f5092ae1fe6a5a94a24"
+      }
+    ],
+    "stem": "thunder-citadel",
+    "theme": "雷纹天城",
+    "bpm": 146,
+    "meter": 4,
+    "bars": 64,
+    "events": 1864,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 114.286,
+    "loop_seconds": 111.286,
+    "outputs": [
+      {
+        "file": "public/audio/fallen-star.ogg",
+        "bytes": 1772232,
+        "integrated_lufs": -20.0,
+        "true_peak_dbtp": -8.48,
+        "endpoint_sample_jump": 0.0028467804804677144,
+        "sha256": "3175e5e7413a73e2151dd5c37512e46b63ed2a439b92a1ab28bec1eda2a6ac63"
+      },
+      {
+        "file": "public/audio/fallen-star.mp3",
+        "bytes": 2226765,
+        "integrated_lufs": -20.45,
+        "true_peak_dbtp": -9.25,
+        "endpoint_sample_jump": 0.004015499027445912,
+        "sha256": "d0d44a41c78e9938f23d1847e939bdf9e887047b912537e43501c241f3c1ac96"
+      }
+    ],
+    "stem": "fallen-star",
+    "theme": "星陨神座",
+    "bpm": 84,
+    "meter": 4,
+    "bars": 40,
+    "events": 580,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  },
+  {
+    "source_seconds": 107.368,
+    "loop_seconds": 104.368,
+    "outputs": [
+      {
+        "file": "public/audio/myriad-gate.ogg",
+        "bytes": 1984321,
+        "integrated_lufs": -20.01,
+        "true_peak_dbtp": -6.44,
+        "endpoint_sample_jump": 0.0002601954183774069,
+        "sha256": "0e2501fe60d22708ceb46fcd5a863f3b2b4a1364ab9a52dfb72a13e6a461d10e"
+      },
+      {
+        "file": "public/audio/myriad-gate.mp3",
+        "bytes": 2088525,
+        "integrated_lufs": -20.46,
+        "true_peak_dbtp": -6.71,
+        "endpoint_sample_jump": 0.00018955767154693604,
+        "sha256": "824e7a88dcb2d5bbc69a087c9f3e0f1604ac906b2326240814031a4297be8148"
+      }
+    ],
+    "stem": "myriad-gate",
+    "theme": "万象封门",
+    "bpm": 152,
+    "meter": 4,
+    "bars": 68,
+    "events": 2355,
+    "subjective_listening_verified": false,
+    "crossfade_seconds": 3.0,
+    "endpoint_declick_seconds": 0.01,
+    "sample_rate": 48000,
+    "channels": 2,
+    "loudness_target_lufs": -20,
+    "true_peak_ceiling_dbtp": -2,
+    "opus_bitrate": "96k",
+    "mp3_bitrate": "160k"
+  }
+]

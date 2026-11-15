@@ -76,6 +76,35 @@ ember-crown (without -suno-v1) are the former synthesized expansion loops,
 rebuildable with scripts/build-expansion-assets.py --music. They are no longer
 selected by src/levels.ts. The synthesis script does not overwrite Suno exports.
 
+Levels 11–20 — one original loop per theme
+-------------------------------------------
+Each later chapter has its own stem, stored on the theme row in src/levels.ts.
+Swapping two themes (for example 紫藤画舫 and 翠角神林) moves the music with
+the theme. There is still one looping track per level and no separate boss or
+phase recording; the existing mood control only changes playback gain.
+
+  11 蛛丝绣楼 silk-tower            eerie plucked line, soft bells
+  12 紫藤画舫 wisteria-boat         flowing pentatonic flute in 3
+  13 金沙斗场 golden-arena          phrygian brass and arena drums
+  14 翠角神林 jade-forest           brighter flute over forest drums
+  15 钟械秘阁 clockwork-archive     sixteenth-note mechanism and ticks
+  16 琥珀龙窟 amber-cave            low brass, large drums, thunder
+  17 月蚀歌剧院 eclipse-opera       organ waltz in harmonic minor
+  18 雷纹天城 thunder-citadel       four-on-the-floor brass ostinato
+  19 星陨神座 fallen-star           lydian bells over a wide pad
+  20 万象封门 myriad-gate           organ, brass, ticks and full drums
+
+These are original compositions rendered by scripts/compose-campaign-music.py,
+not Suno recordings and not the retired expansion synth. Playback uses the
+same files and chain as levels 5–10: 48 kHz stereo, a 3 second equal-power
+crossfade, a 10 ms endpoint de-click, -20 LUFS with a -2 dBTP ceiling, Opus
+at 96 kbps and MP3 at 160 kbps. Loops are about 95–111 seconds so the Pages
+payload stays near the existing per-track size. Integrated loudness matches
+the earlier chapters; later levels get busier parts rather than a louder
+master. Measurements and hashes: public/audio/campaign-11-20.json.
+Subjective listening has not been verified. Rebuild with
+python3 scripts/compose-campaign-music.py (NumPy and ffmpeg).
+
 Sound effects
 -------------
 Every effect (drawing, capture, the seal, the boss, UI clicks) is still

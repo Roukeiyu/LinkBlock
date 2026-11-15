@@ -44,7 +44,9 @@ describe('ten-level campaign compatibility', () => {
   it('gives new levels independent assets, soundtracks and attack families', () => {
     const added = LEVELS.slice(5);
     expect(new Set(added.map(l => l.attackPattern)).size).toBe(5);
-    expect(new Set(LEVELS.map(l => l.music)).size).toBe(10);
+    expect(new Set(LEVELS.map(l => l.music)).size).toBe(LEVELS.length);
+    expect(LEVELS.find(level => level.title.includes('紫藤画舫'))?.music).toBe('wisteria-boat');
+    expect(LEVELS.find(level => level.title.includes('翠角神林'))?.music).toBe('jade-forest');
     for (const level of added) {
       expect(new Set([level.restored, level.sealed, level.mask, level.rewardNinety, level.rewardPerfect]).size).toBe(5);
       const game = new Game(72, 48, { ...gameOptionsFor(level), opening: false });

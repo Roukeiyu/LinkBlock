@@ -173,16 +173,16 @@ export const LEVELS: LevelDef[] = [
 /** Levels 11–20. Human plates live in public/levels/<id>/v1/. */
 function campaignAfterTen(): LevelDef[] {
   const themes = [
-    ['蜘蛛妖', '蛛丝绣楼', '丝茧', '绣针', '夜珠', '银丝环', '花格', '络新妇', '#c45b6a', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。'],
-    ['蛇妖', '紫藤画舫', '藤影', '莲灯', '鳞纹', '画舫环', '河雾', '紫藤蛇君', '#9b6bb5', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。'],
-    ['牛头人', '金沙斗场', '沙盾', '桂叶', '铜环', '拱门环', '金沙', '金沙牛首', '#e0a15a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。'],
-    ['鹿人', '翠角神林', '苔火', '白桦', '萤点', '石坛环', '卷须', '翠角神', '#7dcea0', '小怪巡行后突然折返；首领四翼弹幕逐轮旋转。避免贪长线。'],
-    ['机心造物', '钟械秘阁', '齿轮', '烛芯', '玻璃', '机芯环', '图纸', '钟械人偶', '#d4a574', '小怪高速冲锋；首领交替缺口环射与双向扇射。先读预警。'],
-    ['龙裔', '琥珀龙窟', '晶簇', '龙骨', '暗鳞', '琥珀环', '化石', '琥珀龙裔', '#c4843a', '小怪沿弧线游走；首领快慢双潮错位。别急着穿过慢潮。'],
-    ['歌剧魅影', '月蚀歌剧院', '乐谱', '绒座', '烛泪', '穹顶环', '吊灯', '月蚀魅影', '#8b3a4a', '小怪定时折返；首领三向扇射。注意身后折返的小怪。'],
-    ['雷兽', '雷纹天城', '符文', '断桥', '云脊', '电弧环', '浮石', '雷纹武神', '#7ec8e3', '小怪走直角路线；首领横竖排射交替。沿开放方向短线推进。'],
-    ['堕星看守', '星陨神座', '星屑', '金纹', '羽片', '星核环', '神阶', '堕星看守', '#b9a0ff', '小怪巡行后折返；首领四翼弹幕旋转。观察翼间通道。'],
-    ['封门主宰', '万象封门', '金印', '门扉', '碑石', '印环', '天光', '封门主宰', '#e6d39a', '小怪高速冲锋；首领缺口环射与双向扇射交替。每轮先读预警。'],
+    ['蜘蛛妖', '蛛丝绣楼', '丝茧', '绣针', '夜珠', '银丝环', '花格', '络新妇', '#c45b6a', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。', 'silk-tower'],
+    ['蛇妖', '紫藤画舫', '藤影', '莲灯', '鳞纹', '画舫环', '河雾', '紫藤蛇君', '#9b6bb5', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。', 'wisteria-boat'],
+    ['牛头人', '金沙斗场', '沙盾', '桂叶', '铜环', '拱门环', '金沙', '金沙牛首', '#e0a15a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。', 'golden-arena'],
+    ['鹿人', '翠角神林', '苔火', '白桦', '萤点', '石坛环', '卷须', '翠角神', '#7dcea0', '小怪巡行后突然折返；首领四翼弹幕逐轮旋转。避免贪长线。', 'jade-forest'],
+    ['机心造物', '钟械秘阁', '齿轮', '烛芯', '玻璃', '机芯环', '图纸', '钟械人偶', '#d4a574', '小怪高速冲锋；首领交替缺口环射与双向扇射。先读预警。', 'clockwork-archive'],
+    ['龙裔', '琥珀龙窟', '晶簇', '龙骨', '暗鳞', '琥珀环', '化石', '琥珀龙裔', '#c4843a', '小怪沿弧线游走；首领快慢双潮错位。别急着穿过慢潮。', 'amber-cave'],
+    ['歌剧魅影', '月蚀歌剧院', '乐谱', '绒座', '烛泪', '穹顶环', '吊灯', '月蚀魅影', '#8b3a4a', '小怪定时折返；首领三向扇射。注意身后折返的小怪。', 'eclipse-opera'],
+    ['雷兽', '雷纹天城', '符文', '断桥', '云脊', '电弧环', '浮石', '雷纹武神', '#7ec8e3', '小怪走直角路线；首领横竖排射交替。沿开放方向短线推进。', 'thunder-citadel'],
+    ['堕星看守', '星陨神座', '星屑', '金纹', '羽片', '星核环', '神阶', '堕星看守', '#b9a0ff', '小怪巡行后折返；首领四翼弹幕旋转。观察翼间通道。', 'fallen-star'],
+    ['封门主宰', '万象封门', '金印', '门扉', '碑石', '印环', '天光', '封门主宰', '#e6d39a', '小怪高速冲锋；首领缺口环射与双向扇射交替。每轮先读预警。', 'myriad-gate'],
   ] as const;
   const numbers = ['十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
   const attacks = ['tide', 'fox', 'frost', 'gargoyle', 'inferno'] as const;
@@ -193,7 +193,7 @@ function campaignAfterTen(): LevelDef[] {
     { straight: 'reverse', period: 1.3, orbitRate: 1.8, zigzagInterval: 0.44, zigzagAngle: 1.4 },
     { straight: 'surge', period: 1.25, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 },
   ] as const;
-  const tracks = ['moonlit-grove', 'desert-temple', 'storm-lab', 'rose-waltz', 'autumn-ride-suno-v1', 'sunken-court-suno-v1', 'fox-shrine-suno-v1', 'aurora-throne-suno-v1', 'dusk-belfry-suno-v1', 'ember-crown-suno-v1'];
+  // The music stem sits on the theme row, so swapping two themes also swaps their tracks.
   return themes.map((row, index) => {
     const id = 11 + index;
     const total = id + 7;
@@ -206,7 +206,7 @@ function campaignAfterTen(): LevelDef[] {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',
       tactic: row[9], attackPattern: attacks[index % attacks.length], enemyMotion: motions[index % motions.length],
-      restored: `${dir}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: tracks[index],
+      restored: `${dir}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
       portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
       rewardNinety: `${dir}/ninety.webp`, rewardPerfect: `${dir}/perfect.webp`,
       names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
