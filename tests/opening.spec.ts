@@ -10,9 +10,10 @@ for (const sample of [
   { level: 2, name: 'mummy hair and ears', edge: 26, points: [[740, 50], [710, 130], [850, 145]] },
   { level: 4, name: 'vampire white hair', edge: 14, points: [[520, 100], [570, 65], [615, 110]] },
   { level: 7, name: 'fox ears and hair', edge: 20, points: [[688, 42], [638, 145], [820, 90]] },
+  { level: 19, name: 'star throne figure', edge: 20, points: [[750, 120], [930, 500], [1200, 730], [510, 950]] },
 ]) {
   test(`${sample.name} stays sealed through an adjacent capture, pause and defeat`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 10, cleared: [] })));
+    await page.addInitScript(() => localStorage.setItem('linkblock.fenglin.levels', JSON.stringify({ version: 3, unlocked: 20, cleared: [] })));
     await page.route('**/src/main.ts*', async route => {
       const response = await route.fetch();
       await route.fulfill({ response, body: `${await response.text()}
