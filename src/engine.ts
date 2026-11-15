@@ -3,7 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
-import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, lerpClaimedRect, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
+import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -78,7 +78,8 @@ export class Game {
   powerUp: PowerUp | undefined;
   readonly powerUpEffects: Record<PowerUpKind, number> = { slow: 0, stop: 0, speed: 0, bomb: 0, shuffle: 0 };
   readonly bombRadius = BOMB_RADIUS;
-  private shufflePlan: { area: number; from: BoardRect; to: BoardRect } | undefined;
+  /** True after this pickup's rectangle has been committed. The timer may still be running. */
+  private shuffleCommitted = false;
   private powerUpWait = 0;
   protection = 0;
   events: GameEvent[] = [];
@@ -206,22 +207,13 @@ export class Game {
     return this.island?.landRings() ?? [];
   }
   private beginShuffle() {
+    if (this.shuffleCommitted) return;
     const exact = this.claimed;
-    if (exact <= EPS) { this.powerUpEffects.shuffle = 0; this.shufflePlan = undefined; return; }
-    const center = { x: this.width / 2, y: this.height / 2 };
-    const to = rectangleOfArea(this.width, this.height, exact, center);
-    const from = rectangleOfArea(this.width, this.height, exact, this.player);
-    this.shufflePlan = { area: exact, from, to };
+    if (exact <= EPS) { this.powerUpEffects.shuffle = 0; return; }
+    // Commit the equal-area rectangle once. Later frames only count down the timer.
+    this.shuffleCommitted = true;
     this.trail = []; this.cutRegion = -1; this.retracting = false;
-  }
-  private stepShuffle() {
-    const plan = this.shufflePlan;
-    if (!plan) return;
-    const done = this.powerUpEffects.shuffle === 0;
-    const progress = done ? 1 : 1 - this.powerUpEffects.shuffle / POWER_UP_DURATION.shuffle;
-    const rect = done ? plan.to : lerpClaimedRect(plan.from, plan.to, progress, plan.area, this.width, this.height);
-    this.applyClaimRect(rect);
-    if (done) this.shufflePlan = undefined;
+    this.applyClaimRect(rectangleOfArea(this.width, this.height, exact, { x: this.width / 2, y: this.height / 2 }));
   }
   private applyClaimRect(rect: BoardRect) {
     const polygon = [
@@ -598,14 +590,14 @@ export class Game {
       const slowed = Math.max(0, Math.min(dt, this.powerUpEffects.slow) - stopped);
       const enemyTime = active - slowed * 0.3;
       const playerTime = dt + Math.min(dt, this.powerUpEffects.speed) * 0.5;
-      if (this.powerUpEffects.shuffle > EPS && !this.shufflePlan) this.beginShuffle();
+      if (this.powerUpEffects.shuffle > EPS) this.beginShuffle();
       const bombArmed = this.powerUpEffects.bomb > EPS;
       for (const kind of POWER_UP_KINDS) {
         const remaining = this.powerUpEffects[kind] - dt;
         this.powerUpEffects[kind] = remaining > EPS ? remaining : 0;
       }
       if (bombArmed && this.powerUpEffects.bomb === 0) this.detonateBomb();
-      if (this.shufflePlan) this.stepShuffle();
+      if (this.shuffleCommitted && this.powerUpEffects.shuffle === 0) this.shuffleCommitted = false;
       this.elapsed += dt; this.protection = Math.max(0, this.protection - dt); this.bossFlash = Math.max(0, this.bossFlash - dt);
       if (enemyTime > 0) this.updateBossJump(enemyTime);
       if (active > 0 && this.updateReinforcements(active)) bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;

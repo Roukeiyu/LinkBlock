@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
+import { Island } from './island';
 import { Projectile } from './attacks';
 import { createEnemy } from './enemies';
 import { inside } from './geometry';
@@ -154,8 +155,21 @@ describe('persistent power-ups', () => {
     const field = new Game(72, 48, { opening: true, enemies: [], boss: null, powerUps: true, random: () => 0.2, victory: { territoryPercent: 100 } });
     field.start(); expect(field.confirmOpening()).toBe(true);
     const before = field.claimed;
-    field.powerUpEffects.shuffle = 3;
-    field.update(3);
+    let reshapes = 0;
+    const original = Island.prototype.reshape;
+    Island.prototype.reshape = function (polygon) { reshapes++; return original.call(this, polygon); };
+    try {
+      field.powerUpEffects.shuffle = 3;
+      field.update(0.05);
+      expect(reshapes).toBe(1);
+      const formed = field.claimedRings();
+      field.update(0.05);
+      expect(reshapes).toBe(1);
+      expect(field.claimedRings()).toEqual(formed);
+      field.update(3);
+    } finally {
+      Island.prototype.reshape = original;
+    }
     expect(field.claimed).toBeCloseTo(before, 6);
     expect(field.powerUpEffects.shuffle).toBe(0);
     const rings = field.claimedRings();
