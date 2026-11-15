@@ -53,7 +53,7 @@ test.beforeEach(async ({ page }, info) => {
   const randomOpening = info.title.includes('random opening'), islandPlay = info.title.includes('island coast');
   // Exercise slow first-sprite loading: moving to y=0 must not accept the
   // probe's uninitialized coordinates and skip the upward drawing stroke.
-  if (info.title.includes('stays visible and walkable at the frame')) await page.route('**/sprites/player-spirit.webp', async route => {
+  if (info.title.includes('stays visible and walkable at the frame') || info.title.includes('manual reverse')) await page.route('**/sprites/player-spirit.webp', async route => {
     const response = await route.fetch();
     await new Promise(resolve => setTimeout(resolve, 1000));
     await route.fulfill({ response });
@@ -392,7 +392,14 @@ for (const input of ['keyboard', 'one-hand', 'two-hand']) test(`island coast man
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   if (input === 'one-hand') await controlMode(page, 'one-hand');
   await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(32);
+  // The canvas probe has a placeholder (0, 0) until the player sprite's first
+  // rendered frame; do not let it satisfy the first upward movement target.
+  await expect.poll(async () => {
+    await page.clock.runFor(16);
+    return (await probe(page)).positions.length;
+  }).toBeGreaterThan(0);
   const anchor = (await probe(page)).player, percent = await page.locator('#percent').textContent();
+  expect(anchor).toEqual({ x: 24, y: 18 });
   type Direction = 'up' | 'right' | 'down' | 'left'; const keys = { up: 'ArrowUp', right: 'ArrowRight', down: 'ArrowDown', left: 'ArrowLeft' };
   const session = input === 'two-hand' ? await page.context().newCDPSession(page) : undefined;
   let direction: Direction | undefined, finger: Awaited<ReturnType<typeof touchJoystick>> | undefined, dx = 0, dy = 0;
