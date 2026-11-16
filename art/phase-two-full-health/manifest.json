@@ -1,5 +1,5 @@
 {
-  "version": "full-v3",
+  "version": "full-v3 with selected full-v4 revisions",
   "width": 1536,
   "height": 1024,
   "scope": "Phase-two human full-health rewards",
@@ -54,25 +54,25 @@
       "previous_file": "public/levels/17/full-v1/ninety.webp"
     },
     "18": {
-      "file": "public/levels/18/full-v3/ninety.webp",
+      "file": "public/levels/18/full-v4/ninety.webp",
       "token": "thunder crystal",
-      "sha256": "6cc4aa242ff07a35f196220ee723130b46bb114377910c466ac093ff7f0cd3dd",
-      "source_png_sha256": "61c5dc288a86b36ad8bc315b7e03177bdc3e29c697edce952fda0d5b648ddc1c",
-      "previous_file": "public/levels/18/full-v2/ninety.webp"
+      "sha256": "6f0c4333071a93ec05e710c431f135417c64932f08f8b09ba3f24c275a32318c",
+      "source_png_sha256": "20d56e4dc2671fda4d03c2954725821c6c595ed72b013aab002331e1409aaba7",
+      "previous_file": "public/levels/18/full-v3/ninety.webp"
     },
     "19": {
-      "file": "public/levels/19/full-v3/ninety.webp",
+      "file": "public/levels/19/full-v4/ninety.webp",
       "token": "star crystal",
-      "sha256": "4054cc1e732e75a635ba15943a711d6652451f9d80823ca3f79c4372b4043a27",
-      "source_png_sha256": "e283415b054528b4ee29fae46318082cb1e691c79a94f6c0e49050e7fd947c18",
-      "previous_file": "public/levels/19/full-v1/ninety.webp"
+      "sha256": "6b261aa08a0322bbb90713a2357e82d47cc627061af6dd9629030c135b77b584",
+      "source_png_sha256": "37e3b7905d56627ede86ac1ecaa908d3d97c1715b41fd0c56d92e54ee6b57e05",
+      "previous_file": "public/levels/19/full-v3/ninety.webp"
     },
     "20": {
-      "file": "public/levels/20/full-v3/ninety.webp",
+      "file": "public/levels/20/full-v4/ninety.webp",
       "token": "golden key",
-      "sha256": "4023e66a9c65e3b68d1f5bbee9c7c8eb4208a4f8c80f264af03dafeef824ac53",
-      "source_png_sha256": "f49c515b38cd32c460c0b17ed3c52216e0c1cefbf70c5811965554f3e965e47b",
-      "previous_file": "public/levels/20/full-v2/ninety.webp"
+      "sha256": "44910924970b68761c717b81c4f7a576bb380c39ea9d865d591e04c78e5919b5",
+      "source_png_sha256": "8926b8417a7e9aa062d2017a9025cc298134942142acfc633bf5feb07f3e4dd4",
+      "previous_file": "public/levels/20/full-v3/ninety.webp"
     }
   }
 }
