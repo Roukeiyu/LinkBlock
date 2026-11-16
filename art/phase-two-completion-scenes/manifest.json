@@ -1,0 +1,78 @@
+{
+  "version": "scene-v1",
+  "width": 1536,
+  "height": 1024,
+  "scope": "Phase-two human completion art with full-health scene references",
+  "levels": {
+    "11": {
+      "file": "public/levels/11/scene-v1/restored.webp",
+      "pose_reference": "public/levels/11/v6/restored.webp",
+      "background_reference": "public/levels/11/full-v3/ninety.webp",
+      "sha256": "0e9d389cd096a938613eaa5167c554d41ca510f3497c86120a2830e36a357b21",
+      "source_png_sha256": "24369cb176f4bb983cefa180709a61ea1fff25467c087796032e04be8ecabdfc"
+    },
+    "12": {
+      "file": "public/levels/12/scene-v1/restored.webp",
+      "pose_reference": "public/levels/12/v3/restored.webp",
+      "background_reference": "public/levels/12/full-v3/ninety.webp",
+      "sha256": "8fc7bec5b8716ab0bcd18334596c6036cb32c63cf4b2ca79af51305b315d98aa",
+      "source_png_sha256": "22975ac0d724d4c956545869dadaf73b9dd4a48edaf5261df604c89cc7197666"
+    },
+    "13": {
+      "file": "public/levels/13/scene-v1/restored.webp",
+      "pose_reference": "public/levels/13/v4/restored.webp",
+      "background_reference": "public/levels/13/full-v3/ninety.webp",
+      "sha256": "4bbc3f4635936bb69b7bb47093514ccb0834bd8d0a58bd801ec1f81b9e3ff175",
+      "source_png_sha256": "8993ab5def1721d76655b19f87eb2e7b57599edae94bcf0061e72598766e107c"
+    },
+    "14": {
+      "file": "public/levels/14/scene-v1/restored.webp",
+      "pose_reference": "public/levels/14/v8/restored.webp",
+      "background_reference": "public/levels/14/full-v3/ninety.webp",
+      "sha256": "ce61d706c1aec38565dd2471bfb3f56445597a308c7ef9ad7fd18e1ef9498485",
+      "source_png_sha256": "c7b7d3c7c76aaf4ac3b83735f35a443fe1cb8e81a50df2287fd40de484c82301"
+    },
+    "15": {
+      "file": "public/levels/15/scene-v1/restored.webp",
+      "pose_reference": "public/levels/15/v4/restored.webp",
+      "background_reference": "public/levels/15/full-v3/ninety.webp",
+      "sha256": "0541371945c80fc46e70b55cd7247d17b586648ff9e41f986300c98ca38643eb",
+      "source_png_sha256": "d2a7c4c9247d5158c07bc2dfecb212b408d91f7c4c69acd244577d9f6ba3709e"
+    },
+    "16": {
+      "file": "public/levels/16/scene-v1/restored.webp",
+      "pose_reference": "public/levels/16/v6/restored.webp",
+      "background_reference": "public/levels/16/full-v3/ninety.webp",
+      "sha256": "000b166ca965a2026f3e5a03b36df4296b811a18db4537ddb86f668e2e79b9e3",
+      "source_png_sha256": "d2c366895b4c10c78338864c4f2a4ee3ea220c7feba7f82dfbbf52d698c50820"
+    },
+    "17": {
+      "file": "public/levels/17/scene-v1/restored.webp",
+      "pose_reference": "public/levels/17/v5/restored.webp",
+      "background_reference": "public/levels/17/full-v3/ninety.webp",
+      "sha256": "75e47f5a8e2779b67a8dcd63e7e3684c4619496fa4e7785e6aa841dd54ddd59b",
+      "source_png_sha256": "9a3e9001c13fbb55faf16058839010e0507e783b08e60971c41ab5594d8c79bb"
+    },
+    "18": {
+      "file": "public/levels/18/scene-v1/restored.webp",
+      "pose_reference": "public/levels/18/v6/restored.webp",
+      "background_reference": "public/levels/18/full-v4/ninety.webp",
+      "sha256": "43e9728b655b8e13e945953aefe95d84875500784e6c80dc8b022dad2fa139eb",
+      "source_png_sha256": "a47ab178cf58abd7d2f97a91caff10e80f8d409f82dfe620a470ec81e479950e"
+    },
+    "19": {
+      "file": "public/levels/19/scene-v1/restored.webp",
+      "pose_reference": "public/levels/19/v5/restored.webp",
+      "background_reference": "public/levels/19/full-v4/ninety.webp",
+      "sha256": "7527c69e1e02dd0c842b47408bbd6f7717c844cc8dea5e66f09a0f4ab33d843d",
+      "source_png_sha256": "b6acef02ea5a0dd0d01886b2454a59a2057d2597420508a5c0725ba5080b9fac"
+    },
+    "20": {
+      "file": "public/levels/20/scene-v1/restored.webp",
+      "pose_reference": "public/levels/20/v9/restored.webp",
+      "background_reference": "public/levels/20/full-v4/ninety.webp",
+      "sha256": "5e9dca13ab2ccc7f091344be52162e6b8ba473a6381fbb1313a462c4d68fed30",
+      "source_png_sha256": "46d81f07763f9dfa27733b73d38b2961180a42e0f89059372ec264b640a26a4f"
+    }
+  }
+}
