@@ -26,8 +26,8 @@ export const FACE_REGIONS = {
   'levels/16/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 800, y: 15, width: 310, height: 320 },
   'levels/17/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 900, y: 15, width: 215, height: 260 },
   'levels/18/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 740, y: 5, width: 200, height: 245 },
-  'levels/19/v2/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 610, y: 0, width: 430, height: 320 },
-  'levels/20/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 690, y: 0, width: 440, height: 300 },
+  'levels/19/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 600, y: 35, width: 325, height: 320 },
+  'levels/20/v5/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 780, y: 25, width: 180, height: 245 },
 } as const;
 
 export type FaceArtwork = keyof typeof FACE_REGIONS;
