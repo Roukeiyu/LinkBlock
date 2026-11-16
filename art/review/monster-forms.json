@@ -161,7 +161,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/11/full-v2/ninety.webp",
+          "source": "levels/11/full-v3/ninety.webp",
           "file": "monster-forms/11-ninety.png",
           "previousHumanSource": "levels/11/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -180,7 +180,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/12/full-v1/ninety.webp",
+          "source": "levels/12/full-v3/ninety.webp",
           "file": "monster-forms/12-ninety.png",
           "previousHumanSource": "levels/12/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -199,7 +199,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/13/full-v2/ninety.webp",
+          "source": "levels/13/full-v3/ninety.webp",
           "file": "monster-forms/13-ninety.png",
           "previousHumanSource": "levels/13/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -218,7 +218,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/14/full-v1/ninety.webp",
+          "source": "levels/14/full-v3/ninety.webp",
           "file": "monster-forms/14-ninety.png",
           "previousHumanSource": "levels/14/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -237,7 +237,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/15/full-v2/ninety.webp",
+          "source": "levels/15/full-v3/ninety.webp",
           "file": "monster-forms/15-ninety.png",
           "previousHumanSource": "levels/15/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -256,7 +256,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/16/full-v2/ninety.webp",
+          "source": "levels/16/full-v3/ninety.webp",
           "file": "monster-forms/16-ninety.png",
           "previousHumanSource": "levels/16/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -275,7 +275,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/17/full-v1/ninety.webp",
+          "source": "levels/17/full-v3/ninety.webp",
           "file": "monster-forms/17-ninety.png",
           "previousHumanSource": "levels/17/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -294,7 +294,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/18/full-v2/ninety.webp",
+          "source": "levels/18/full-v3/ninety.webp",
           "file": "monster-forms/18-ninety.png",
           "previousHumanSource": "levels/18/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -313,7 +313,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/19/full-v1/ninety.webp",
+          "source": "levels/19/full-v3/ninety.webp",
           "file": "monster-forms/19-ninety.png",
           "previousHumanSource": "levels/19/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
@@ -332,7 +332,7 @@
       "transformation": "Same character in monster form.",
       "rewards": {
         "ninety": {
-          "source": "levels/20/full-v2/ninety.webp",
+          "source": "levels/20/full-v3/ninety.webp",
           "file": "monster-forms/20-ninety.png",
           "previousHumanSource": "levels/20/v2/ninety.webp",
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
