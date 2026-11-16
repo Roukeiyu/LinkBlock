@@ -218,7 +218,7 @@ function campaignAfterTen(): LevelDef[] {
       tactic: row[9], attackPattern: combat[row[0]].attack, enemyMotion: combat[row[0]].motion,
       restored: `levels/${id}/${completionVersion}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
       portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
-      rewardNinety: `levels/${id}/${id >= 18 ? 'full-v4' : 'full-v3'}/ninety.webp`, rewardPerfect: `levels/${id}/perfect-v1/perfect.webp`,
+      rewardNinety: `levels/${id}/${id === 20 ? 'full-v5' : id >= 18 ? 'full-v4' : 'full-v3'}/ninety.webp`, rewardPerfect: `levels/${id}/${[16, 17, 18, 20].includes(id) ? 'perfect-v2' : 'perfect-v1'}/perfect.webp`,
       names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
       sprites: sheet(`levels/${id}/v2`, ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
       enemySpeed: Math.round((1.4 + step * 0.03) * 100) / 100,

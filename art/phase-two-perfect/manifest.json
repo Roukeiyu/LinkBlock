@@ -1,5 +1,5 @@
 {
-  "version": "perfect-v1",
+  "version": "perfect-v1 with selected perfect-v2 revisions",
   "width": 1536,
   "height": 1024,
   "scope": "Phase-two human flawless-victory rewards",
@@ -45,28 +45,28 @@
       "source_png_sha256": "5c8b5937e1d572996f158ca4c95fe1352dfb85f5de2edcae0dc7f34e1d7831d9"
     },
     "16": {
-      "file": "public/levels/16/perfect-v1/perfect.webp",
+      "file": "public/levels/16/perfect-v2/perfect.webp",
       "reference": "public/levels/16/full-v3/ninety.webp",
       "setting": "amber cavern dwelling",
-      "previous_file": "public/levels/16/v2/perfect.webp",
-      "sha256": "45edef8876b854a4e149709134c94bae8af8f2ec9db0b0b3ae5db9f8f7adcb01",
-      "source_png_sha256": "72aeff28f98b81e18f7d66c7a6f37d5ca2fe3031dd96ddd1cbc5b1c0793c4238"
+      "previous_file": "public/levels/16/perfect-v1/perfect.webp",
+      "sha256": "bcd19bf8272f4675367a756645bb9b6ec1693152877387edc889ea5c65d2c22b",
+      "source_png_sha256": "7fae97ce6230d236914ed67a7aef6180150c6e2513ee02a01f4c59fe049dc657"
     },
     "17": {
-      "file": "public/levels/17/perfect-v1/perfect.webp",
+      "file": "public/levels/17/perfect-v2/perfect.webp",
       "reference": "public/levels/17/full-v3/ninety.webp",
       "setting": "opera house sitting room",
-      "previous_file": "public/levels/17/v2/perfect.webp",
-      "sha256": "9358dbadb868bd5049da23711f83a4e897481f65356190a24e64b0c10168e176",
-      "source_png_sha256": "80251e46feb2d118cf6484a3cd9bf90fed17f76c6c5ab2af85f9c74729bc2d01"
+      "previous_file": "public/levels/17/perfect-v1/perfect.webp",
+      "sha256": "8bc901377c016018d99ed571b4704338ce0646f9c07b9aeaa5da556c68525081",
+      "source_png_sha256": "133b003a2c5d49ea2b33adfb497876ac47cb686333b8f3a5b5ee2418eab44739"
     },
     "18": {
-      "file": "public/levels/18/perfect-v1/perfect.webp",
+      "file": "public/levels/18/perfect-v2/perfect.webp",
       "reference": "public/levels/18/full-v4/ninety.webp",
       "setting": "sheltered sky citadel",
-      "previous_file": "public/levels/18/v2/perfect.webp",
-      "sha256": "0fb81db7ff9a3ad6c5cb8930857daf96bcfde50175e4e4f8a1f82624154f33ec",
-      "source_png_sha256": "417c2966cbf6a3a37f82226b0cabd5391da0f0f5fb34ce90f5a6dbfe4fd674c1"
+      "previous_file": "public/levels/18/perfect-v1/perfect.webp",
+      "sha256": "89049a3835bf56e6e0b2c4c5bfccba01c765e70e7005e22b6ea96b934b00da23",
+      "source_png_sha256": "707571d8de288b3312dfca8185c539e7db155198d57652b44cabf22da6b471a0"
     },
     "19": {
       "file": "public/levels/19/perfect-v1/perfect.webp",
@@ -77,12 +77,12 @@
       "source_png_sha256": "b8b5a227b692a040ac717d3c639c13c375acd46d1be9ff307df1d6bb2a605822"
     },
     "20": {
-      "file": "public/levels/20/perfect-v1/perfect.webp",
+      "file": "public/levels/20/perfect-v2/perfect.webp",
       "reference": "public/levels/20/full-v4/ninety.webp",
       "setting": "gate sanctuary",
-      "previous_file": "public/levels/20/v2/perfect.webp",
-      "sha256": "61eebb27653849808446c1863c4477e84a5d759bf5e6f99f0dcca0fc3bd4e280",
-      "source_png_sha256": "24fe7a7d153d1920fbb7c51a3a5226eec043d8afd58ba090d928d383436700b9"
+      "previous_file": "public/levels/20/perfect-v1/perfect.webp",
+      "sha256": "4e7d80f907a952137e573eda5e1ec7b7475a9e6ba832928a409fd6fd56584087",
+      "source_png_sha256": "4aa39b8d562e2eb2dd81246fa455e46751978d4889fa41fc65ba3a9685122428"
     }
   }
 }
