@@ -59,10 +59,10 @@
       "revision": "Reframe to show full head and hair with background clearance."
     },
     "20": {
-      "file": "public/levels/20/v5/restored.webp",
-      "sha256": "53da82002733f87a2137d1c0c22543e506a0983496a86e5d1ed0c22defe5b65d",
-      "source_png_sha256": "6c79d329ec48a6d363b26dfecc9a0f41b5336a224333bd80308012ba2444775e",
-      "revision": "Reframe to show full head and hair with background clearance."
+      "file": "public/levels/20/v6/restored.webp",
+      "sha256": "0e0404a1d3f6585ba51f294d939d06f174b782e1d72de085018d5b452ab66f0e",
+      "source_png_sha256": "df1e544abda6916a5a73eec64f8c3ea49bc2b4bb2aef829a5aaa1657e9b9b8f4",
+      "revision": "Reference-inspired short textured hair and close-cut sides, masculine brows and short stubble."
     }
   }
 }

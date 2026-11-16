@@ -27,7 +27,7 @@ export const FACE_REGIONS = {
   'levels/17/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 900, y: 15, width: 215, height: 260 },
   'levels/18/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 740, y: 5, width: 200, height: 245 },
   'levels/19/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 600, y: 35, width: 325, height: 320 },
-  'levels/20/v5/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 780, y: 25, width: 180, height: 245 },
+  'levels/20/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 780, y: 25, width: 180, height: 245 },
 } as const;
 
 export type FaceArtwork = keyof typeof FACE_REGIONS;
