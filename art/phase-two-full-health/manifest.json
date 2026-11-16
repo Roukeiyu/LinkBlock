@@ -1,0 +1,68 @@
+{
+  "version": "full-v1",
+  "width": 1536,
+  "height": 1024,
+  "scope": "Phase-two human full-health rewards",
+  "levels": {
+    "11": {
+      "file": "public/levels/11/full-v1/ninety.webp",
+      "token": "spider-silk orb",
+      "sha256": "127c25b059dbc76e2ce7bbf99695f7291e8ddd12615e0563c34250e02e55525a",
+      "source_png_sha256": "11c04f5f8ac2582f550ed86279575fe658be41bb13f61c6b5be87a9d5c3cac49"
+    },
+    "12": {
+      "file": "public/levels/12/full-v1/ninety.webp",
+      "token": "woodland lantern",
+      "sha256": "bbce56a0abfd410404bdbf63c5adf191fcc2de26d5234b6f486ad6cf4940b74e",
+      "source_png_sha256": "a19c5356a10d0b37e861c29e457ab8c99ca12002d0513c67417fac9e5d2bdf85"
+    },
+    "13": {
+      "file": "public/levels/13/full-v1/ninety.webp",
+      "token": "bull medallion",
+      "sha256": "6a167161c6530f073515c73a846e8d5f47069c25de08a06cc0862ae12b1615a4",
+      "source_png_sha256": "e7e20763c9db3e7b59e5b472ed4d2ecbdbd72a6527f8f09c16973016ebb5f224"
+    },
+    "14": {
+      "file": "public/levels/14/full-v1/ninety.webp",
+      "token": "lotus",
+      "sha256": "10348c0b82bf202e7081cca8cf9b6699a0d7d7d8dbe16e52e15c21ff3a4f72da",
+      "source_png_sha256": "4e5c95d03f4d6233b2d3fc2569ea2af1c24993ccbee8cdb974776aa6db2f61fb"
+    },
+    "15": {
+      "file": "public/levels/15/full-v1/ninety.webp",
+      "token": "pocket watch",
+      "sha256": "f09bd2594c2c4c316414105110b85cad2667effd04ca7d0288fe5c1e9928037d",
+      "source_png_sha256": "52a325cd61b6ed5d3b3f9fcf6478906b817950d754d170a115f044ea6fd7cf95"
+    },
+    "16": {
+      "file": "public/levels/16/full-v1/ninety.webp",
+      "token": "amber dragon crystal",
+      "sha256": "6decc2efd6b9f7bb361ac0942ab8e17230ddbf17dfb7973efc1a45b44b4dee03",
+      "source_png_sha256": "3455373b2d43e7b2178a0a9c11ecafe061b1a94cf7360710daf72cc5163bddb8"
+    },
+    "17": {
+      "file": "public/levels/17/full-v1/ninety.webp",
+      "token": "white rose",
+      "sha256": "8d85f455edbb9bc6086445d5270fdded4e6f9597aadda177a836f3cd1b683833",
+      "source_png_sha256": "a08c3beac4921fedbc924dbf45fe1558a9afee3a66542b5de8cc048319319d31"
+    },
+    "18": {
+      "file": "public/levels/18/full-v1/ninety.webp",
+      "token": "thunder crystal",
+      "sha256": "a050f7702923c0e76957a88ebe2d5f451b70452ddaaae3336a39c4f74d53eaca",
+      "source_png_sha256": "6455aee7ce11ea8a6e18284c600d071c5d3dcf509b447e5016cd687ec7ffdf23"
+    },
+    "19": {
+      "file": "public/levels/19/full-v1/ninety.webp",
+      "token": "star crystal",
+      "sha256": "f4bab9e88400ac78c0e964e5434e255e2a51e46649487c1e9e9a85cbb7cbb65c",
+      "source_png_sha256": "4caf2a82cac464b73e6001102b5f1720bf9fc09a51f9c21339ad398f8f2eb0e9"
+    },
+    "20": {
+      "file": "public/levels/20/full-v1/ninety.webp",
+      "token": "golden key",
+      "sha256": "ea415a294cbd7296d261adcba5612f02233ef8c75609582d0207285ab2ddee68",
+      "source_png_sha256": "ba6e1c9f3abb9c1d6f83723cb1e1e6e53850a5a741e9ee506ab405423f401683"
+    }
+  }
+}
