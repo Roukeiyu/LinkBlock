@@ -211,6 +211,7 @@ function campaignAfterTen(): LevelDef[] {
     const zigzag = total - straight - orbit;
     const step = id - 10;
     const dir = `levels/${id}/v2`;
+    const fullHealthVersion = [11, 13, 15, 16, 18, 20].includes(id) ? 'full-v2' : 'full-v1';
     const completionVersion = id === 20 ? 'v9' : id === 14 ? 'v8' : id === 11 || id === 16 || id === 18 ? 'v6' : id === 17 || id === 19 ? 'v5' : id === 13 || id === 15 ? 'v4' : 'v3';
     return {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
@@ -218,7 +219,7 @@ function campaignAfterTen(): LevelDef[] {
       tactic: row[9], attackPattern: combat[row[0]].attack, enemyMotion: combat[row[0]].motion,
       restored: `levels/${id}/${completionVersion}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
       portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
-      rewardNinety: `levels/${id}/full-v1/ninety.webp`, rewardPerfect: `${dir}/perfect.webp`,
+      rewardNinety: `levels/${id}/${fullHealthVersion}/ninety.webp`, rewardPerfect: `${dir}/perfect.webp`,
       names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
       sprites: sheet(`levels/${id}/v2`, ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
       enemySpeed: Math.round((1.4 + step * 0.03) * 100) / 100,
