@@ -21,13 +21,13 @@ export const FACE_REGIONS = {
   'levels/11/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 730, y: 125, width: 290, height: 300 },
   'levels/12/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 360, y: 95, width: 340, height: 310 },
   'levels/13/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 570, y: 10, width: 250, height: 290 },
-  'levels/14/v7/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 960, y: 10, width: 240, height: 300 },
+  'levels/14/v8/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 960, y: 10, width: 240, height: 300 },
   'levels/15/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 790, y: 25, width: 210, height: 270 },
   'levels/16/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 800, y: 15, width: 310, height: 320 },
   'levels/17/v5/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 875, y: 50, width: 235, height: 265 },
   'levels/18/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 740, y: 5, width: 200, height: 245 },
   'levels/19/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 600, y: 35, width: 325, height: 320 },
-  'levels/20/v7/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 780, y: 25, width: 180, height: 245 },
+  'levels/20/v8/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 780, y: 25, width: 180, height: 245 },
 } as const;
 
 export type FaceArtwork = keyof typeof FACE_REGIONS;
