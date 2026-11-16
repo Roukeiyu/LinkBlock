@@ -55,6 +55,18 @@ for (const [screen, width, height] of [['desktop', 1280, 800], ['portrait', 390,
       });
       const interval = await page.evaluate(() => (window.battle().bossAttack as unknown as { interval: number }).interval);
       await page.clock.runFor((interval - 0.5) * 1000);
+      // The render loop caps large frame deltas. On a busy runner, advancing
+      // the browser clock is therefore not necessarily the same as advancing
+      // the attack clock; wait until the warning is actually near its end.
+      for (let i = 0; i < 50; i++) {
+        const state = await page.evaluate(() => ({
+          clock: (window.battle().bossAttack as unknown as { clock: number }).clock,
+          fired: window.firedProjectiles,
+        }));
+        if (state.clock >= interval - 0.5 || state.fired) break;
+        await page.clock.runFor(100);
+      }
+      expect(await page.evaluate(() => window.firedProjectiles), `level ${id} should still be warning`).toBe(0);
       expect(await page.evaluate(() => window.battle().bossAttack!.warning)).toBeGreaterThan(0);
       const angles = await page.evaluate(() => [...(window.battle().bossAttack!.warningAngles ?? [])]);
       if (id > 1) expect(angles.length).toBeGreaterThan(0);
@@ -69,7 +81,11 @@ for (const [screen, width, height] of [['desktop', 1280, 800], ['portrait', 390,
       expect(await page.evaluate(() => window.firedProjectiles)).toBe(beforePause);
       await page.locator('#combat-guide-close').click();
       await page.locator('#primary').click();
-      await page.clock.runFor(700);
+      const resumedAt = await page.evaluate(() => window.battle().elapsed);
+      for (let i = 0; i < 50 && await page.evaluate(() => window.battle().elapsed) < resumedAt + 0.7; i++) {
+        await page.clock.runFor(100);
+      }
+      expect(await page.evaluate(() => window.battle().elapsed), `level ${id} should resume`).toBeGreaterThanOrEqual(resumedAt + 0.7);
       expect(await page.evaluate(() => window.firedProjectiles), `level ${id} should fire its first volley`).toBeGreaterThan(0);
       await page.locator('#restart').click();
       await expect(page.locator('#state-label')).toHaveText('选择起点');
