@@ -167,8 +167,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/11/v2/perfect.webp",
-          "file": "monster-forms/11-perfect.png"
+          "source": "levels/11/perfect-v1/perfect.webp",
+          "file": "monster-forms/11-perfect.png",
+          "previousHumanSource": "levels/11/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/11/v6/restored.webp",
@@ -186,8 +188,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/12/v2/perfect.webp",
-          "file": "monster-forms/12-perfect.png"
+          "source": "levels/12/perfect-v1/perfect.webp",
+          "file": "monster-forms/12-perfect.png",
+          "previousHumanSource": "levels/12/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/12/v3/restored.webp",
@@ -205,8 +209,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/13/v2/perfect.webp",
-          "file": "monster-forms/13-perfect.png"
+          "source": "levels/13/perfect-v1/perfect.webp",
+          "file": "monster-forms/13-perfect.png",
+          "previousHumanSource": "levels/13/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/13/v4/restored.webp",
@@ -224,8 +230,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/14/v2/perfect.webp",
-          "file": "monster-forms/14-perfect.png"
+          "source": "levels/14/perfect-v1/perfect.webp",
+          "file": "monster-forms/14-perfect.png",
+          "previousHumanSource": "levels/14/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/14/v8/restored.webp",
@@ -243,8 +251,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/15/v2/perfect.webp",
-          "file": "monster-forms/15-perfect.png"
+          "source": "levels/15/perfect-v1/perfect.webp",
+          "file": "monster-forms/15-perfect.png",
+          "previousHumanSource": "levels/15/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/15/v4/restored.webp",
@@ -262,8 +272,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/16/v2/perfect.webp",
-          "file": "monster-forms/16-perfect.png"
+          "source": "levels/16/perfect-v1/perfect.webp",
+          "file": "monster-forms/16-perfect.png",
+          "previousHumanSource": "levels/16/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/16/v6/restored.webp",
@@ -281,8 +293,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/17/v2/perfect.webp",
-          "file": "monster-forms/17-perfect.png"
+          "source": "levels/17/perfect-v1/perfect.webp",
+          "file": "monster-forms/17-perfect.png",
+          "previousHumanSource": "levels/17/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/17/v5/restored.webp",
@@ -300,8 +314,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/18/v2/perfect.webp",
-          "file": "monster-forms/18-perfect.png"
+          "source": "levels/18/perfect-v1/perfect.webp",
+          "file": "monster-forms/18-perfect.png",
+          "previousHumanSource": "levels/18/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/18/v6/restored.webp",
@@ -319,8 +335,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/19/v2/perfect.webp",
-          "file": "monster-forms/19-perfect.png"
+          "source": "levels/19/perfect-v1/perfect.webp",
+          "file": "monster-forms/19-perfect.png",
+          "previousHumanSource": "levels/19/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/19/v5/restored.webp",
@@ -338,8 +356,10 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/20/v2/perfect.webp",
-          "file": "monster-forms/20-perfect.png"
+          "source": "levels/20/perfect-v1/perfect.webp",
+          "file": "monster-forms/20-perfect.png",
+          "previousHumanSource": "levels/20/v2/perfect.webp",
+          "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
       "previousHumanSource": "levels/20/v9/restored.webp",

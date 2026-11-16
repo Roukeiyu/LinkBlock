@@ -1,0 +1,88 @@
+{
+  "version": "perfect-v1",
+  "width": 1536,
+  "height": 1024,
+  "scope": "Phase-two human flawless-victory rewards",
+  "levels": {
+    "11": {
+      "file": "public/levels/11/perfect-v1/perfect.webp",
+      "reference": "public/levels/11/full-v3/ninety.webp",
+      "setting": "moonlit silk chamber",
+      "previous_file": "public/levels/11/v2/perfect.webp",
+      "sha256": "6c6b92dbe06f863cb9f23fec1a57508032e65ff77467c448d5bbdf6155b33d81",
+      "source_png_sha256": "f9f695fcfc8349741fd263bfbbdf908787feb85815cba8187d3a7ce8df16ee38"
+    },
+    "12": {
+      "file": "public/levels/12/perfect-v1/perfect.webp",
+      "reference": "public/levels/12/full-v3/ninety.webp",
+      "setting": "forest treehouse",
+      "previous_file": "public/levels/12/v2/perfect.webp",
+      "sha256": "81783efa737ffd1cc86c117153d6287e3a774de703d53d2b353f1d5c0d5eb3b3",
+      "source_png_sha256": "7ea2ff721a56265560f9e994b3849c3d0e0de5ee5ca0648a9a47fe9efd30531c"
+    },
+    "13": {
+      "file": "public/levels/13/perfect-v1/perfect.webp",
+      "reference": "public/levels/13/full-v3/ninety.webp",
+      "setting": "sandstone villa",
+      "previous_file": "public/levels/13/v2/perfect.webp",
+      "sha256": "452a33dacfd57e4583f07e35ea985e141eb147591456ba02359fa238667aef6e",
+      "source_png_sha256": "344c8f5015d171692f3e58915b250a83076ac370ded963a495d87ad78c8bc2ae"
+    },
+    "14": {
+      "file": "public/levels/14/perfect-v1/perfect.webp",
+      "reference": "public/levels/14/full-v3/ninety.webp",
+      "setting": "wisteria lakeside home",
+      "previous_file": "public/levels/14/v2/perfect.webp",
+      "sha256": "8c83f371176c74d6e338c274424e89e08da6048c553d678d80bc49b34b4549fa",
+      "source_png_sha256": "150241e17369b1fafe8ba43f442a7b49ae882cf32db52ce71a9668243e8547b9"
+    },
+    "15": {
+      "file": "public/levels/15/perfect-v1/perfect.webp",
+      "reference": "public/levels/15/full-v3/ninety.webp",
+      "setting": "clockwork library lounge",
+      "previous_file": "public/levels/15/v2/perfect.webp",
+      "sha256": "7a1f4d402a7caf5e17639bbb3a70ab1d5b37e3301f02713d7927af280c08ba78",
+      "source_png_sha256": "5c8b5937e1d572996f158ca4c95fe1352dfb85f5de2edcae0dc7f34e1d7831d9"
+    },
+    "16": {
+      "file": "public/levels/16/perfect-v1/perfect.webp",
+      "reference": "public/levels/16/full-v3/ninety.webp",
+      "setting": "amber cavern dwelling",
+      "previous_file": "public/levels/16/v2/perfect.webp",
+      "sha256": "45edef8876b854a4e149709134c94bae8af8f2ec9db0b0b3ae5db9f8f7adcb01",
+      "source_png_sha256": "72aeff28f98b81e18f7d66c7a6f37d5ca2fe3031dd96ddd1cbc5b1c0793c4238"
+    },
+    "17": {
+      "file": "public/levels/17/perfect-v1/perfect.webp",
+      "reference": "public/levels/17/full-v3/ninety.webp",
+      "setting": "opera house sitting room",
+      "previous_file": "public/levels/17/v2/perfect.webp",
+      "sha256": "9358dbadb868bd5049da23711f83a4e897481f65356190a24e64b0c10168e176",
+      "source_png_sha256": "80251e46feb2d118cf6484a3cd9bf90fed17f76c6c5ab2af85f9c74729bc2d01"
+    },
+    "18": {
+      "file": "public/levels/18/perfect-v1/perfect.webp",
+      "reference": "public/levels/18/full-v4/ninety.webp",
+      "setting": "sheltered sky citadel",
+      "previous_file": "public/levels/18/v2/perfect.webp",
+      "sha256": "0fb81db7ff9a3ad6c5cb8930857daf96bcfde50175e4e4f8a1f82624154f33ec",
+      "source_png_sha256": "417c2966cbf6a3a37f82226b0cabd5391da0f0f5fb34ce90f5a6dbfe4fd674c1"
+    },
+    "19": {
+      "file": "public/levels/19/perfect-v1/perfect.webp",
+      "reference": "public/levels/19/full-v4/ninety.webp",
+      "setting": "celestial home",
+      "previous_file": "public/levels/19/v2/perfect.webp",
+      "sha256": "6f3626ec8bf94df4f09e5aa0d9e82708f670ff33b21d54f7f90847a6d23e9ebc",
+      "source_png_sha256": "b8b5a227b692a040ac717d3c639c13c375acd46d1be9ff307df1d6bb2a605822"
+    },
+    "20": {
+      "file": "public/levels/20/perfect-v1/perfect.webp",
+      "reference": "public/levels/20/full-v4/ninety.webp",
+      "setting": "gate sanctuary",
+      "previous_file": "public/levels/20/v2/perfect.webp",
+      "sha256": "61eebb27653849808446c1863c4477e84a5d759bf5e6f99f0dcca0fc3bd4e280",
+      "source_png_sha256": "24fe7a7d153d1920fbb7c51a3a5226eec043d8afd58ba090d928d383436700b9"
+    }
+  }
+}

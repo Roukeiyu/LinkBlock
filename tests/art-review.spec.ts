@@ -47,7 +47,7 @@ function reviewed(file: string) {
   const path = file.replace(/^\.\.\//, '');
   const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(path)
     || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
-  const revision = /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety)-human\.webp$/.test(path) ? '?v=phase2-v21' : bust ? '?v=r9' : '';
+  const revision = /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(path) ? '?v=phase2-v22' : bust ? '?v=r9' : '';
   return `../${path}${revision}`;
 }
 
@@ -197,7 +197,7 @@ for (const width of [1280, 390]) {
         const img = image as HTMLImageElement;
         const path = expected[index] as string;
         const bust = /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
-        const revision = /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety)-human\.webp$/.test(path) ? '?v=phase2-v21' : bust ? '?v=r9' : '';
+        const revision = /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(path) ? '?v=phase2-v22' : bust ? '?v=r9' : '';
         const url = `../${path}${revision}`;
         return img.getAttribute('src') === url &&
           img.currentSrc === new URL(url, document.baseURI).href &&
