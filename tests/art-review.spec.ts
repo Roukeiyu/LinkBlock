@@ -1,6 +1,47 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
+for (const width of [1280, 390]) {
+  test(`reward image types filter alongside levels and viewer at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/review/rewards.html');
+    const types = page.locator('#image-type-filter');
+    const visibleCards = page.locator('#levels section:visible figure:visible');
+    await expect(visibleCards).toHaveCount(LEVELS.length * 3);
+    await types.locator('summary').click();
+    await types.getByLabel('满血完成图').uncheck();
+    await types.getByLabel('Boss 击溃图').uncheck();
+    await expect(visibleCards).toHaveCount(LEVELS.length);
+    await expect(visibleCards.first()).toHaveAttribute('data-image-type', 'clear');
+    await page.locator('#level-filter').selectOption('11');
+    await expect(visibleCards).toHaveCount(1);
+    await types.getByLabel('Boss 击溃图').check();
+    await expect(visibleCards).toHaveCount(2);
+    await types.locator('summary').click();
+    await visibleCards.first().locator('button').first().click();
+    await expect(page.locator('#position')).toHaveText('1 / 2');
+    await page.locator('#next').click();
+    await expect(page.locator('#position')).toHaveText('2 / 2');
+    await expect(page.locator('#caption')).toContainText('击败 Boss');
+    await page.locator('#viewer-form-toggle').click();
+    await expect(page.locator('#caption')).toContainText('魔物');
+    await page.locator('#close').click();
+    await types.locator('summary').click();
+    await types.getByLabel('完成图', { exact: true }).uncheck();
+    await types.getByLabel('Boss 击溃图').uncheck();
+    await expect(page.locator('#filter-empty')).toBeVisible();
+    await expect(visibleCards).toHaveCount(0);
+    await types.getByLabel('满血完成图').check();
+    await expect(page.locator('#filter-empty')).toBeHidden();
+    await expect(visibleCards).toHaveCount(1);
+    await expect(visibleCards.first()).toHaveAttribute('data-image-type', 'full');
+    await page.keyboard.press('Escape');
+    await expect(types).not.toHaveAttribute('open', '');
+    await page.locator('#level-filter').selectOption('all');
+    await expect(visibleCards).toHaveCount(LEVELS.length);
+  });
+}
+
 /** Human plates replaced in place for r9. Level 12 kept the previous file. */
 function reviewed(file: string) {
   const path = file.replace(/^\.\.\//, '');
