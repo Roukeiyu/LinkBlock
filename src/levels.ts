@@ -211,7 +211,7 @@ function campaignAfterTen(): LevelDef[] {
     const zigzag = total - straight - orbit;
     const step = id - 10;
     const dir = `levels/${id}/v2`;
-    const completionVersion = id === 14 || id === 20 ? 'v8' : id === 11 || id === 16 || id === 18 ? 'v6' : id === 17 ? 'v5' : id === 13 || id === 15 || id === 19 ? 'v4' : 'v3';
+    const completionVersion = id === 20 ? 'v9' : id === 14 ? 'v8' : id === 11 || id === 16 || id === 18 ? 'v6' : id === 17 || id === 19 ? 'v5' : id === 13 || id === 15 ? 'v4' : 'v3';
     return {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',

@@ -53,16 +53,16 @@
       "revision": "Correct lower-leg proportions and anatomy."
     },
     "19": {
-      "file": "public/levels/19/v4/restored.webp",
-      "sha256": "1476bb8c805e7661f204acf44a0f874287fd7e305fa7ffe837e34f4db8210c2c",
-      "source_png_sha256": "e5f6a655292cda5be40b83c0807c5ba194e940065d51b6db27e0601521076f0b",
-      "revision": "Reframe to show full head and hair with background clearance."
+      "file": "public/levels/19/v5/restored.webp",
+      "sha256": "c6d9021febfad370a354a0138ef842dc82d38b2007ed78a94ec7a038bf53a6fe",
+      "source_png_sha256": "f65db70d1b821629b5458dcce769da5ec9ed73a7515afb25ebc8518d03a33a7e",
+      "revision": "Refine character and architectural detail; add subdued celestial foreground ornaments."
     },
     "20": {
-      "file": "public/levels/20/v8/restored.webp",
-      "sha256": "284e2903dc98efb4396fe954b179cb8d8ed699cff6ff2b8d4683128a071f337e",
-      "source_png_sha256": "b231db5fb0da72f0ca2f6afb1288f3dc213c59244fe7033db15aa2c9821ee5a4",
-      "revision": "Replace foreground mask and tag with gold olive branches."
+      "file": "public/levels/20/v9/restored.webp",
+      "sha256": "383870e164c64589efe3a1b5c135c67b6ee3da8695aa2a0b993cedcd253257cc",
+      "source_png_sha256": "f9868ade6b3c5c2b1614f401733791bc8b102ba4e5fd6bd05843919b95e78ecd",
+      "revision": "Add golden sand flowing from the gate down the steps and dispersing in the background."
     }
   }
 }
