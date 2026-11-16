@@ -207,7 +207,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "14": {
-      "source": "levels/14/v6/restored.webp",
+      "source": "levels/14/v7/restored.webp",
       "file": "monster-forms/14.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -309,7 +309,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "20": {
-      "source": "levels/20/v6/restored.webp",
+      "source": "levels/20/v7/restored.webp",
       "file": "monster-forms/20.png",
       "transformation": "Same character in monster form.",
       "rewards": {

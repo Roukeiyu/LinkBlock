@@ -23,10 +23,10 @@
       "revision": "Correct lower-leg proportions and anatomy."
     },
     "14": {
-      "file": "public/levels/14/v6/restored.webp",
-      "sha256": "a7892930c773f00b5e72be8f270fa251a21080f824b79aeecea2035ec71185af",
-      "source_png_sha256": "3a10983bd7d210b9e75649fc34a71871b0796304ca0bcafbad0514b70b4a2924",
-      "revision": "Seat character in a small carved open boat under a wisteria tree, subdued night palette."
+      "file": "public/levels/14/v7/restored.webp",
+      "sha256": "3dd75cda497d5ce5437a6fb3587e33e1f13f8cfec02ac8364c94854b92015ea5",
+      "source_png_sha256": "abf94c152eb3e1a465b5db28e46d362d5732d4064f8dd3b5519230929220a8ce",
+      "revision": "Place viewer-right leg over the near gunwale, outside the open boat."
     },
     "15": {
       "file": "public/levels/15/v4/restored.webp",
@@ -59,10 +59,10 @@
       "revision": "Reframe to show full head and hair with background clearance."
     },
     "20": {
-      "file": "public/levels/20/v6/restored.webp",
-      "sha256": "0e0404a1d3f6585ba51f294d939d06f174b782e1d72de085018d5b452ab66f0e",
-      "source_png_sha256": "df1e544abda6916a5a73eec64f8c3ea49bc2b4bb2aef829a5aaa1657e9b9b8f4",
-      "revision": "Reference-inspired short textured hair and close-cut sides, masculine brows and short stubble."
+      "file": "public/levels/20/v7/restored.webp",
+      "sha256": "1acb4d4ba1f547743a3d96710716c9b021c9fe6c07909b48efb2c6372b0bbc32",
+      "source_png_sha256": "2ee36dc8e58c7fdf00fddfb0b140854fb7c68967a3afe4e6aaea528123959f10",
+      "revision": "Add surreal floating gate fragments and restrained foreground seal ornaments."
     }
   }
 }
