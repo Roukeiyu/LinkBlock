@@ -190,7 +190,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "13": {
-      "source": "levels/13/v3/restored.webp",
+      "source": "levels/13/v4/restored.webp",
       "file": "monster-forms/13.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -207,7 +207,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "14": {
-      "source": "levels/14/v3/restored.webp",
+      "source": "levels/14/v4/restored.webp",
       "file": "monster-forms/14.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -224,7 +224,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "15": {
-      "source": "levels/15/v3/restored.webp",
+      "source": "levels/15/v4/restored.webp",
       "file": "monster-forms/15.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -275,7 +275,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "18": {
-      "source": "levels/18/v5/restored.webp",
+      "source": "levels/18/v6/restored.webp",
       "file": "monster-forms/18.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -309,7 +309,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "20": {
-      "source": "levels/20/v2/restored.webp",
+      "source": "levels/20/v4/restored.webp",
       "file": "monster-forms/20.png",
       "transformation": "Same character in monster form.",
       "rewards": {

@@ -17,19 +17,22 @@
       "source_png_sha256": "820b13bc8e464722ef47f21f4f86929c3ed1e18817748cf3a93f1943a3c7da68"
     },
     "13": {
-      "file": "public/levels/13/v3/restored.webp",
-      "sha256": "7873502f4b10590def460a3a438b5cc0d0a8a7351916c0fcd22da55f1863f040",
-      "source_png_sha256": "cc74fdaa2911aae5a2ba740aaf54f1764db7c89b71f295a9d7329c9fa5d11097"
+      "file": "public/levels/13/v4/restored.webp",
+      "sha256": "06bcc73023e4fb2cecae7adc76cec6ab5c10799aaf8f251cd094347eac5948b5",
+      "source_png_sha256": "d1dd3e03c136284d297b9fd53deef97ca724376ef0c42bb2e4fb543585fee402",
+      "revision": "Correct lower-leg proportions and anatomy."
     },
     "14": {
-      "file": "public/levels/14/v3/restored.webp",
-      "sha256": "5f2ccaa05f8d65f2119683d968be14db12e95418398c317a1f2616a0981b302f",
-      "source_png_sha256": "05c37f5b2c9ba2e3d0696c865559edac8ba57a9ca62bf86a2f303006fe966862"
+      "file": "public/levels/14/v4/restored.webp",
+      "sha256": "c9e12197d5bb97bfc546140bab94dd45a634966967a4aeabcf6502b2a19505af",
+      "source_png_sha256": "049b262965771cdf3bbea4e00676d0345ce6e8c96249fa513c58f855bf1c2682",
+      "revision": "Correct lower-leg proportions and anatomy."
     },
     "15": {
-      "file": "public/levels/15/v3/restored.webp",
-      "sha256": "7f2c4190b1789720e4d587bf582cf9039c80f51dcc2b7b9a5200a9267944028d",
-      "source_png_sha256": "716d56563e1268b6f132559b9e6836c30f344f59b3c6c3d85ad7bd629fa95ff1"
+      "file": "public/levels/15/v4/restored.webp",
+      "sha256": "d95805b920a583834c57cae997424bbf8f06f475c1b5e7ce5131276e982451ec",
+      "source_png_sha256": "6c76f14ab4d381940c0ac2b61a258f3b89d373cc9b4de95bb432ea5999c61b87",
+      "revision": "Correct lower-leg proportions and anatomy."
     },
     "16": {
       "file": "public/levels/16/v6/restored.webp",
@@ -44,10 +47,10 @@
       "revision": "Restore the distinctive white forelock using the full-health reward as reference."
     },
     "18": {
-      "file": "public/levels/18/v5/restored.webp",
-      "sha256": "8c87243a8e5039e560c3e8a9ce410914b199b09c4663868c4b1097c0b11492e6",
-      "source_png_sha256": "09bd3eefe08e3a5c2f649a90ec5b562afea95d9c00662530eaacebff49bbb10a",
-      "revision": "v5: clarify crossed leg anatomy, preserving subtle thunder marks and boots."
+      "file": "public/levels/18/v6/restored.webp",
+      "sha256": "74f7109e60c230ed6bf2f176cefde932da59ababaa4f52a8d335f83196e5b552",
+      "source_png_sha256": "f1da5f91be1a7c78aaccae904157a1821093ed24433061013d530d7a6b893c46",
+      "revision": "Correct lower-leg proportions and anatomy."
     },
     "19": {
       "file": "public/levels/19/v3/restored.webp",
@@ -58,12 +61,10 @@
       "revision": "User requested restoring previous barefoot completion artwork."
     },
     "20": {
-      "file": "public/levels/20/v3/restored.webp",
-      "sha256": "c04c48d882b9458f342b27e36c9d7d5398302d317a22b6e6ffa45674cc203e9e",
-      "source_png_sha256": "66bb368e5e75929817f642eb92794b498900221011566c8bf453e1b4d041d29a",
-      "superseded": true,
-      "activeFile": "public/levels/20/v2/restored.webp",
-      "revision": "User requested restoring previous barefoot completion artwork."
+      "file": "public/levels/20/v4/restored.webp",
+      "sha256": "f302bff5161171724ea495b9c53c08d906d52303b992fef9f622b6245a3ed910",
+      "source_png_sha256": "f5fc15aa26148d122f3a71afd5a2b72f8da0b95872f8b376617d5007ee2d8b8e",
+      "revision": "Adjust feet to rest on stair treads."
     }
   }
 }
