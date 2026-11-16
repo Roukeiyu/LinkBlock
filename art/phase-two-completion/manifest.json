@@ -6,10 +6,10 @@
   "maskStatus": "Deferred by explicit user instruction; v2 masks, seals and portraits remain provisional.",
   "levels": {
     "11": {
-      "file": "public/levels/11/v4/restored.webp",
-      "sha256": "33034c28aeb7be9b4279cf5ddbf4e4b5c31edc8f42f033920e9e65e7690ecfb2",
-      "source_png_sha256": "4f4467d29b8b8c4403efe3311faddaa84b42ed4fc5ec3875fbfdf8f3fe818454",
-      "revision": "v4: sheer black high-neck undershirt and leather gloves."
+      "file": "public/levels/11/v6/restored.webp",
+      "sha256": "4f2870bbd52c17dbf16b9d2d2f2fd2107db0783e2e964427c676cb74b46e23ad",
+      "source_png_sha256": "380a32a6fc7a4ff044644b05e8f413c9fd67fd429ca09f7ccc6bb807b0eead0c",
+      "revision": "Relaxed open-legged seated pose, feet out of frame; retain mesh eye mask and faint stubble."
     },
     "12": {
       "file": "public/levels/12/v3/restored.webp",
@@ -23,10 +23,10 @@
       "revision": "Correct lower-leg proportions and anatomy."
     },
     "14": {
-      "file": "public/levels/14/v4/restored.webp",
-      "sha256": "c9e12197d5bb97bfc546140bab94dd45a634966967a4aeabcf6502b2a19505af",
-      "source_png_sha256": "049b262965771cdf3bbea4e00676d0345ce6e8c96249fa513c58f855bf1c2682",
-      "revision": "Correct lower-leg proportions and anatomy."
+      "file": "public/levels/14/v6/restored.webp",
+      "sha256": "a7892930c773f00b5e72be8f270fa251a21080f824b79aeecea2035ec71185af",
+      "source_png_sha256": "3a10983bd7d210b9e75649fc34a71871b0796304ca0bcafbad0514b70b4a2924",
+      "revision": "Seat character in a small carved open boat under a wisteria tree, subdued night palette."
     },
     "15": {
       "file": "public/levels/15/v4/restored.webp",
@@ -41,10 +41,10 @@
       "revision": "v6: restore natural leg proportions, allowing lower legs to extend beyond frame."
     },
     "17": {
-      "file": "public/levels/17/v4/restored.webp",
-      "sha256": "8705edc6f7b68515bf3fd771dbf9952daba21840b2361c3a41db7a8730a475fd",
-      "source_png_sha256": "02680eaf9fd506e25ba5784dfe14c9fa0dbb2718a80eed9cca4c83a9eccb91f8",
-      "revision": "Restore the distinctive white forelock using the full-health reward as reference."
+      "file": "public/levels/17/v5/restored.webp",
+      "sha256": "b136046b7afd5d5b1d9b9b3d19c4c279194e9f16bcbde496bf81f79888de895c",
+      "source_png_sha256": "adaeebe8dd5a0e50721da088219ce747894cac84816708208dcfc90343233e1b",
+      "revision": "Center character, cross legs naturally and direct gaze toward viewer."
     },
     "18": {
       "file": "public/levels/18/v6/restored.webp",

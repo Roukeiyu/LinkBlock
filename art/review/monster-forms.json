@@ -156,7 +156,7 @@
       }
     },
     "11": {
-      "source": "levels/11/v4/restored.webp",
+      "source": "levels/11/v6/restored.webp",
       "file": "monster-forms/11.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -207,7 +207,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "14": {
-      "source": "levels/14/v4/restored.webp",
+      "source": "levels/14/v6/restored.webp",
       "file": "monster-forms/14.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -258,7 +258,7 @@
       "humanRevisionNote": "Human completion replaced with approved composition/footwear preview. Monster art unchanged; human mask/seal/portrait synchronization explicitly deferred by owner."
     },
     "17": {
-      "source": "levels/17/v4/restored.webp",
+      "source": "levels/17/v5/restored.webp",
       "file": "monster-forms/17.png",
       "transformation": "Same character in monster form.",
       "rewards": {
