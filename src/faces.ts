@@ -23,7 +23,7 @@ export const FACE_REGIONS = {
   'levels/13/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 570, y: 10, width: 250, height: 290 },
   'levels/14/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 960, y: 10, width: 240, height: 300 },
   'levels/15/v3/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 790, y: 25, width: 210, height: 270 },
-  'levels/16/v5/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 800, y: 15, width: 310, height: 320 },
+  'levels/16/v6/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 800, y: 15, width: 310, height: 320 },
   'levels/17/v4/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 900, y: 15, width: 215, height: 260 },
   'levels/18/v5/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 740, y: 5, width: 200, height: 245 },
   'levels/19/v2/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 610, y: 0, width: 430, height: 320 },

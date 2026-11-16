@@ -32,10 +32,10 @@
       "source_png_sha256": "716d56563e1268b6f132559b9e6836c30f344f59b3c6c3d85ad7bd629fa95ff1"
     },
     "16": {
-      "file": "public/levels/16/v5/restored.webp",
-      "sha256": "06d870301e9c8b4714a10ffd62c63c2afc0982eb9abd3ea124dde0835a74e2ee",
-      "source_png_sha256": "30c8b1632257ae109ee4129c621c1ef72a121750a23507c214ae2071a23c2f97",
-      "revision": "Rework seated pose so each leg connects clearly to its own boot."
+      "file": "public/levels/16/v6/restored.webp",
+      "sha256": "0c57c0501dbbbde6d14fa6478b9beb1c97d24e1b0c9a655d61fa20be7d415037",
+      "source_png_sha256": "2bfe170c11821de6e3abfeac89d76ed2130bd141ad0615f76dbab1405fee6177",
+      "revision": "v6: restore natural leg proportions, allowing lower legs to extend beyond frame."
     },
     "17": {
       "file": "public/levels/17/v4/restored.webp",
