@@ -14,11 +14,11 @@ const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundl
 const monsterForms = JSON.parse(readFileSync(resolve(root, 'art/review/monster-forms.json'), 'utf8'));
 // Phase-two monster completion artwork is still awaiting approval. Keep it
 // separate from the game assets while making it available in the main review.
-const completionDrafts = { 11: 'v7', 12: 'v3', 13: 'v6', 14: 'v2', 15: 'v9', 16: 'v4', 17: 'v10', 18: 'v5', 19: 'v3', 20: 'v2' };
+const completionDrafts = { 11: 'v7', 12: 'v3', 13: 'v6', 14: 'v2', 15: 'v10', 16: 'v4', 17: 'v11', 18: 'v5', 19: 'v3', 20: 'v2' };
 const draftFile = id => `review/monster-completion-drafts/${id}-${completionDrafts[id]}.png`;
 const draftPreview = id => `review/previews/${id}-restored-draft-${completionDrafts[id]}.webp`;
-const ninetyDraftVersion = id => ({ 11: 'v4', 12: 'v2', 15: 'v4', 16: 'v2', 17: 'v4', 18: 'v2', 19: 'v2' })[id] || 'v1';
-const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v2', 15: 'v6', 16: 'v4', 17: 'v4', 18: 'v2', 19: 'v2' })[id] || 'v1';
+const ninetyDraftVersion = id => ({ 11: 'v5', 12: 'v2', 15: 'v4', 16: 'v2', 17: 'v5', 18: 'v2', 19: 'v2' })[id] || 'v1';
+const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v3', 15: 'v7', 16: 'v4', 17: 'v5', 18: 'v3', 19: 'v2' })[id] || 'v1';
 const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-${ninetyDraftVersion(id)}.png`;
 const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-${ninetyDraftVersion(id)}.webp`;
 const perfectDraftFile = id => `review/monster-perfect-drafts/${id}-${perfectDraftVersion(id)}.png`;
@@ -75,7 +75,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   }
   const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme, music: level.music,
     items: kind === 'rewards' ? [
-      { type: 'clear', label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`), ...(monsterForms.levels[level.id].file !== `monster-forms/${level.id}.png` ? { monsterMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}), ...(completionDrafts[level.id] ? { draft: ref(draftFile(level.id)), draftPreview: ref(draftPreview(level.id)), draftMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}) },
+      { type: 'clear', label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`), ...(level.id === 17 ? { humanDraft: ref('review/human-completion-drafts/17-mask-v1.png') } : {}), ...(monsterForms.levels[level.id].file !== `monster-forms/${level.id}.png` ? { monsterMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}), ...(completionDrafts[level.id] ? { draft: ref(draftFile(level.id)), draftPreview: ref(draftPreview(level.id)), draftMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}) },
       { type: 'full', label: '满血通关', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`), ...(completionDrafts[level.id] ? { draft: ref(ninetyDraftFile(level.id)), draftPreview: ref(ninetyDraftPreview(level.id)) } : {}) },
       { type: 'boss', label: '击败 Boss', file: ref(level.rewardPerfect), monster: ref(`review/monster-forms/${level.id}-perfect.png`), preview: ref(`review/previews/${level.id}-perfect-human.webp`), monsterPreview: ref(`review/previews/${level.id}-perfect-monster.webp`), ...(completionDrafts[level.id] ? { draft: ref(perfectDraftFile(level.id)), draftPreview: ref(perfectDraftPreview(level.id)) } : {}) },
     ] : [
@@ -312,6 +312,10 @@ for(const level of levels){
       }else apply();
     });
     cap.append(label,size,file);
+    if(item.humanDraft){
+      const link=document.createElement('a');link.href=sources[item.humanDraft];link.target='_blank';link.rel='noopener';link.textContent='查看人形面具草稿';
+      cap.append(link);cardUpdates.push(()=>{link.hidden=monsterMode;});
+    }
     if(item.mask){const maskButton=document.createElement('button');maskButton.className='mask-button';maskButton.textContent='查看 Alpha';maskButton.setAttribute('aria-label',level.title+' 查看 Alpha 遮罩');maskButton.onclick=()=>openMask(level,item);cap.append(maskButton);}
     figure.append(button,cap);grid.append(figure);
   }
