@@ -16,32 +16,32 @@ for (const width of [1280, 390]) {
     const card = page.locator('#levels section:visible figure').first();
     await expect(page.getByLabel('查看第 11～20 关魔物草稿')).toBeChecked();
     await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v9.webp');
+    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v10.webp');
     await expect(card.locator('figcaption')).toContainText('草稿');
     await card.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v9.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', /17-v9\.png$/);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v10.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', /17-v10\.png$/);
     await page.locator('#viewer-form-toggle').click();
     await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/scene-v2\/restored\.webp/);
     await page.locator('#viewer-form-toggle').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v9.png');
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v10.png');
     await page.locator('#close').click();
     const ninetyCard = page.locator('#levels section:visible figure').nth(1);
-    await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-draft-v3.webp');
+    await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-draft-v4.webp');
     await expect(ninetyCard.locator('figcaption')).toContainText('草稿');
     await ninetyCard.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/17-v3.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/17-v3\.png$/);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/17-v4.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/17-v4\.png$/);
     await page.locator('#viewer-form-toggle').click();
     await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/full-v3\/ninety\.webp/);
     await page.locator('#viewer-form-toggle').click();
     await page.locator('#close').click();
     const perfectCard = page.locator('#levels section:visible figure').nth(2);
-    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-draft-v3.webp');
+    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-draft-v4.webp');
     await expect(perfectCard.locator('figcaption')).toContainText('草稿');
     await perfectCard.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/17-v3.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', /monster-perfect-drafts\/17-v3\.png$/);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/17-v4.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', /monster-perfect-drafts\/17-v4\.png$/);
     await page.locator('#viewer-form-toggle').click();
     await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/perfect-v3\/perfect\.webp/);
     await page.locator('#viewer-form-toggle').click();
@@ -50,14 +50,14 @@ for (const width of [1280, 390]) {
     await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
     await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
     await page.locator('#mask-close').click();
-    for (const [level, version] of [[11, 'v7'], [12, 'v3'], [13, 'v6'], [14, 'v2'], [15, 'v8'], [16, 'v3'], [18, 'v5'], [19, 'v3'], [20, 'v2']] as const) {
+    for (const [level, version] of [[11, 'v7'], [12, 'v3'], [13, 'v6'], [14, 'v2'], [15, 'v9'], [16, 'v4'], [18, 'v5'], [19, 'v3'], [20, 'v2']] as const) {
       await page.locator('#level-filter').selectOption(String(level));
       const image = page.locator('#levels section:visible figure').first().locator('img');
       await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      const ninetyVersion = level === 11 ? 'v3' : level === 15 ? 'v4' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
-      const perfectVersion = level === 11 ? 'v3' : level === 15 ? 'v5' : level === 16 ? 'v3' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
+      const ninetyVersion = [11, 15].includes(level) ? 'v4' : [12, 16, 18, 19].includes(level) ? 'v2' : 'v1';
+      const perfectVersion = level === 15 ? 'v6' : [11, 16].includes(level) ? 'v4' : [12, 14, 18, 19].includes(level) ? 'v2' : 'v1';
       await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${ninetyVersion}.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
@@ -67,7 +67,7 @@ for (const width of [1280, 390]) {
         await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
         await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/15-v4.png');
         await page.locator('#next').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/15-v5.png');
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/15-v6.png');
         await page.locator('#close').click();
       }
     }
