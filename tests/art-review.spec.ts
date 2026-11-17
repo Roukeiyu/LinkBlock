@@ -1,13 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
+test.beforeEach(async ({ page }, info) => {
+  if (!info.title.startsWith('phase-two monster drafts')) {
+    await page.addInitScript(() => localStorage.setItem('linkblock.review.drafts', 'false'));
+  }
+});
+
 for (const width of [1280, 390]) {
   test(`phase-two monster drafts use the main review at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => localStorage.setItem('linkblock.review.monster-form', 'true'));
     await page.goto('/review/rewards.html');
     await page.locator('#level-filter').selectOption('17');
     const card = page.locator('#levels section:visible figure').first();
-    await page.getByLabel('查看第 11～20 关魔物完成图草稿').check();
+    await expect(page.getByLabel('查看第 11～20 关魔物完成图草稿')).toBeChecked();
     await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v7.webp');
     await expect(card.locator('figcaption')).toContainText('草稿');
@@ -33,6 +40,10 @@ for (const width of [1280, 390]) {
     await page.getByLabel('查看第 11～20 关魔物完成图草稿').uncheck();
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
     await expect(card.locator('figcaption')).not.toContainText('草稿');
+    await page.reload();
+    await expect(page.getByLabel('查看第 11～20 关魔物完成图草稿')).not.toBeChecked();
+    await page.locator('#level-filter').selectOption('17');
+    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   });
 }

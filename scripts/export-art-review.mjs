@@ -95,8 +95,8 @@ const filter=document.querySelector('#level-filter'),full=document.querySelector
 const typeFilter=document.querySelector('#image-type-filter');
 function selectedTypes(){return typeFilter?new Set([...typeFilter.querySelectorAll('input:checked')].map(input=>input.value)):null;}
 const catalog=levels.flatMap(level=>level.items.map(item=>({...item,levelId:level.id,title:level.title})));
-let currentItems=[],currentIndex=0,monsterMode=false,draftMode=false;
-try{monsterMode=localStorage.getItem('linkblock.review.monster-form')==='true';}catch{}
+let currentItems=[],currentIndex=0,monsterMode=false,draftMode=true;
+try{monsterMode=localStorage.getItem('linkblock.review.monster-form')==='true';draftMode=localStorage.getItem('linkblock.review.drafts')!=='false';}catch{}
 const cardUpdates=[];
 const maskViewer=document.querySelector('#mask-viewer');
 let maskRequest=0;
@@ -166,12 +166,17 @@ document.querySelectorAll('[data-form-toggle]').forEach(button=>button.onclick=(
   syncForm();
 });
 const draftToggle=document.querySelector('#draft-toggle');
-if(draftToggle)draftToggle.onchange=()=>{
+if(draftToggle){
+draftToggle.checked=draftMode;
+document.querySelector('#draft-note').hidden=!draftMode;
+draftToggle.onchange=()=>{
   draftMode=draftToggle.checked;
   document.querySelector('#draft-note').hidden=!draftMode;
+  try{localStorage.setItem('linkblock.review.drafts',String(draftMode));}catch{}
   if(draftMode){monsterMode=true;try{localStorage.setItem('linkblock.review.monster-form','true');}catch{}}
   syncForm();
 };
+}
 function showImage(index){
   currentIndex=(index+currentItems.length)%currentItems.length;
   const item=currentItems[currentIndex],file=activeFile(item),label=item.title+' / '+activeLabel(item);
@@ -284,7 +289,7 @@ for(const level of levels){
     button.append(img);button.onclick=()=>openImage(level.id,item.file);
     file.className='file';size.className='dimensions';size.style.display='block';size.style.minHeight='1.65em';
     let nearby=false, generation=0;
-    function preloadBoth(priority){const jobs=[preparePreview(item.preview,priority),preparePreview(item.monsterPreview,priority)];if(draftMode&&item.draftPreview)jobs.push(preparePreview(item.draftPreview,priority));return jobs;}
+    function preloadBoth(priority){const jobs=[preparePreview(item.preview,priority),preparePreview(item.monsterPreview,priority)];if(monsterMode&&draftMode&&item.draftPreview)jobs.push(preparePreview(item.draftPreview,priority));return jobs;}
     figure.updatePreload=visible=>{nearby=visible;if(visible)preloadBoth(true);};
     if(item.preview){previewCards.push({figure,preloadBoth});if(preloadObserver)preloadObserver.observe(figure);}
     cardUpdates.push(()=>{
