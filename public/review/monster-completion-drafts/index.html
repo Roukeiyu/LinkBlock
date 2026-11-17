@@ -37,8 +37,8 @@
     const nav = document.querySelector('#navigation'), container = document.querySelector('#levels');
     names.forEach((name,index) => {
       const id = index + 11, version = id === 17 ? 'scene-v2' : 'scene-v1';
-      const draftVersion = id === 17 ? 'v5' : id === 11 ? 'v4' : [15, 16].includes(id) ? 'v3' : 'v2';
-      const draft = `${id}-${draftVersion}.png`, previous = id === 15 ? `${id}-v4.png` : draftVersion === 'v5' ? `${id}-v4.png` : draftVersion === 'v4' ? `${id}-v3.png` : draftVersion === 'v3' ? `${id}-v2.png` : `${id}.png`;
+      const draftVersion = id === 17 ? 'v6' : id === 11 ? 'v4' : [15, 16].includes(id) ? 'v3' : 'v2';
+      const draft = `${id}-${draftVersion}.png`, previous = id === 15 ? `${id}-v4.png` : draftVersion === 'v6' ? `${id}-v5.png` : draftVersion === 'v4' ? `${id}-v3.png` : draftVersion === 'v3' ? `${id}-v2.png` : `${id}.png`;
       const link = document.createElement('a'); link.href = '#level-' + id; link.textContent = id; nav.append(link);
       const section = document.createElement('section'); section.id = 'level-' + id;
       section.innerHTML = `<div class="heading"><h2>第 ${id} 关 · ${name}</h2><span>人形原图 / 魔物新稿</span></div>
