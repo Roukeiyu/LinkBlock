@@ -1,5 +1,5 @@
 {
-  "version": "perfect-v1 with selected perfect-v2 and perfect-v3 revisions",
+  "version": "perfect-v1 with selected later revisions",
   "width": 1536,
   "height": 1024,
   "scope": "Phase-two human flawless-victory rewards",
@@ -77,12 +77,12 @@
       "source_png_sha256": "b8b5a227b692a040ac717d3c639c13c375acd46d1be9ff307df1d6bb2a605822"
     },
     "20": {
-      "file": "public/levels/20/perfect-v3/perfect.webp",
+      "file": "public/levels/20/perfect-v4/perfect.webp",
       "reference": "public/levels/20/full-v4/ninety.webp",
       "setting": "gate sanctuary",
-      "previous_file": "public/levels/20/perfect-v2/perfect.webp",
-      "sha256": "bd51dfa65adb9d1577b24dc8cd5799d434d4b34e0a82ec31acc89865d1729d04",
-      "source_png_sha256": "ed1797b96a40f60b266e576e5af192d3d4fd0176910c39252210c2c7056e4971"
+      "previous_file": "public/levels/20/perfect-v3/perfect.webp",
+      "sha256": "06f8b00e6d68b1d4567c6e113fd9897830ed7a72e421e44affe71274dd14269c",
+      "source_png_sha256": "35694aa820bd5982ec8dd7ddd4eda8582a99b6410eab5419b2a4e1cd797a9aed"
     }
   }
 }
