@@ -1,5 +1,5 @@
 {
-  "version": "scene-v1",
+  "version": "scene-v1 with selected scene-v2 revision",
   "width": 1536,
   "height": 1024,
   "scope": "Phase-two human completion art with full-health scene references",
@@ -47,11 +47,12 @@
       "source_png_sha256": "d2c366895b4c10c78338864c4f2a4ee3ea220c7feba7f82dfbbf52d698c50820"
     },
     "17": {
-      "file": "public/levels/17/scene-v1/restored.webp",
+      "file": "public/levels/17/scene-v2/restored.webp",
       "pose_reference": "public/levels/17/v5/restored.webp",
       "background_reference": "public/levels/17/full-v3/ninety.webp",
-      "sha256": "75e47f5a8e2779b67a8dcd63e7e3684c4619496fa4e7785e6aa841dd54ddd59b",
-      "source_png_sha256": "9a3e9001c13fbb55faf16058839010e0507e783b08e60971c41ab5594d8c79bb"
+      "sha256": "60a349e0eed8cdbcc1af961c40d2d522e64cc618d8b882caf5ac201adf346a16",
+      "source_png_sha256": "3f2997720563a050d129f41db741b52cd75b5d4333c1f11c3bdd156e8d2512e7",
+      "previous_file": "public/levels/17/scene-v1/restored.webp"
     },
     "18": {
       "file": "public/levels/18/scene-v1/restored.webp",

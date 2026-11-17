@@ -282,7 +282,7 @@
       "humanRevisionNote": "Human completion background revised; existing monster form retained independently."
     },
     "17": {
-      "source": "levels/17/scene-v1/restored.webp",
+      "source": "levels/17/scene-v2/restored.webp",
       "file": "monster-forms/17.png",
       "transformation": "Same character in monster form.",
       "rewards": {
@@ -293,13 +293,13 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/17/perfect-v2/perfect.webp",
+          "source": "levels/17/perfect-v3/perfect.webp",
           "file": "monster-forms/17-perfect.png",
-          "previousHumanSource": "levels/17/perfect-v1/perfect.webp",
+          "previousHumanSource": "levels/17/perfect-v2/perfect.webp",
           "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
-      "previousHumanSource": "levels/17/v5/restored.webp",
+      "previousHumanSource": "levels/17/scene-v1/restored.webp",
       "humanRevisionNote": "Human completion background revised; existing monster form retained independently."
     },
     "18": {

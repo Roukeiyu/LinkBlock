@@ -35,6 +35,7 @@ export const FACE_REGIONS = {
   'levels/15/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 785, y: 15, width: 190, height: 250 },
   'levels/16/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 760, y: 15, width: 275, height: 290 },
   'levels/17/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 875, y: 40, width: 195, height: 255 },
+  'levels/17/scene-v2/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 875, y: 40, width: 195, height: 255 },
   'levels/18/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 735, y: 0, width: 195, height: 235 },
   'levels/19/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 600, y: 20, width: 290, height: 280 },
   'levels/20/scene-v1/restored.webp': { imageWidth: 1536, imageHeight: 1024, x: 750, y: 20, width: 180, height: 235 },

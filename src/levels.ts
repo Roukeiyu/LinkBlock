@@ -211,14 +211,14 @@ function campaignAfterTen(): LevelDef[] {
     const zigzag = total - straight - orbit;
     const step = id - 10;
     const dir = `levels/${id}/v2`;
-    const completionVersion = 'scene-v1';
+    const completionVersion = id === 17 ? 'scene-v2' : 'scene-v1';
     return {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',
       tactic: row[9], attackPattern: combat[row[0]].attack, enemyMotion: combat[row[0]].motion,
       restored: `levels/${id}/${completionVersion}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
       portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
-      rewardNinety: `levels/${id}/${id === 20 ? 'full-v5' : id >= 18 ? 'full-v4' : 'full-v3'}/ninety.webp`, rewardPerfect: `levels/${id}/${[16, 17, 18, 20].includes(id) ? 'perfect-v2' : 'perfect-v1'}/perfect.webp`,
+      rewardNinety: `levels/${id}/${id === 20 ? 'full-v5' : id >= 18 ? 'full-v4' : 'full-v3'}/ninety.webp`, rewardPerfect: `levels/${id}/${id === 17 ? 'perfect-v3' : [16, 18, 20].includes(id) ? 'perfect-v2' : 'perfect-v1'}/perfect.webp`,
       names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
       sprites: sheet(`levels/${id}/v2`, ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),
       enemySpeed: Math.round((1.4 + step * 0.03) * 100) / 100,

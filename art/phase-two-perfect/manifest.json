@@ -1,5 +1,5 @@
 {
-  "version": "perfect-v1 with selected perfect-v2 revisions",
+  "version": "perfect-v1 with selected perfect-v2 and perfect-v3 revisions",
   "width": 1536,
   "height": 1024,
   "scope": "Phase-two human flawless-victory rewards",
@@ -53,12 +53,12 @@
       "source_png_sha256": "7fae97ce6230d236914ed67a7aef6180150c6e2513ee02a01f4c59fe049dc657"
     },
     "17": {
-      "file": "public/levels/17/perfect-v2/perfect.webp",
+      "file": "public/levels/17/perfect-v3/perfect.webp",
       "reference": "public/levels/17/full-v3/ninety.webp",
       "setting": "opera house sitting room",
-      "previous_file": "public/levels/17/perfect-v1/perfect.webp",
-      "sha256": "8bc901377c016018d99ed571b4704338ce0646f9c07b9aeaa5da556c68525081",
-      "source_png_sha256": "133b003a2c5d49ea2b33adfb497876ac47cb686333b8f3a5b5ee2418eab44739"
+      "previous_file": "public/levels/17/perfect-v2/perfect.webp",
+      "sha256": "5c23edf25d537bccd5b559534fa4dccfe114a5089e8a34421dba763eb10fe1e3",
+      "source_png_sha256": "d09113c7e82d6341222f811cf3dd8a4fd0ce9ed2e61d6184d121cd6073b9dc12"
     },
     "18": {
       "file": "public/levels/18/perfect-v2/perfect.webp",
