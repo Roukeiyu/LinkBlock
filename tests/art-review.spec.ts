@@ -50,14 +50,14 @@ for (const width of [1280, 390]) {
     await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
     await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
     await page.locator('#mask-close').click();
-    for (const [level, version] of [[11, 'v6'], [12, 'v3'], [13, 'v6'], [14, 'v2'], [15, 'v8'], [16, 'v3'], [18, 'v5'], [19, 'v3'], [20, 'v2']] as const) {
+    for (const [level, version] of [[11, 'v7'], [12, 'v3'], [13, 'v6'], [14, 'v2'], [15, 'v8'], [16, 'v3'], [18, 'v5'], [19, 'v3'], [20, 'v2']] as const) {
       await page.locator('#level-filter').selectOption(String(level));
       const image = page.locator('#levels section:visible figure').first().locator('img');
       await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      const ninetyVersion = level === 15 ? 'v4' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
-      const perfectVersion = level === 15 ? 'v5' : level === 16 ? 'v3' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
+      const ninetyVersion = level === 11 ? 'v3' : level === 15 ? 'v4' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
+      const perfectVersion = level === 11 ? 'v3' : level === 15 ? 'v5' : level === 16 ? 'v3' : [11, 12, 18, 19].includes(level) ? 'v2' : 'v1';
       await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${ninetyVersion}.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
