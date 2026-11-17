@@ -2,6 +2,42 @@ import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
 for (const width of [1280, 390]) {
+  test(`phase-two monster drafts use the main review at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/review/rewards.html');
+    await page.locator('#level-filter').selectOption('17');
+    const card = page.locator('#levels section:visible figure').first();
+    await page.getByLabel('查看第 11～20 关魔物完成图草稿').check();
+    await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v7.webp');
+    await expect(card.locator('figcaption')).toContainText('草稿');
+    await card.locator(':scope > button').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v7.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', /17-v7\.png$/);
+    await page.locator('#viewer-form-toggle').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/scene-v2\/restored\.webp/);
+    await page.locator('#viewer-form-toggle').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v7.png');
+    await page.locator('#close').click();
+    await card.getByRole('button', { name: /查看 Alpha/ }).click();
+    await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
+    await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
+    await page.locator('#mask-close').click();
+    for (const [level, version] of [[11, 'v5'], [12, 'v2'], [13, 'v3'], [14, 'v2'], [15, 'v3'], [16, 'v3'], [18, 'v3'], [19, 'v2'], [20, 'v2']] as const) {
+      await page.locator('#level-filter').selectOption(String(level));
+      const image = page.locator('#levels section:visible figure').first().locator('img');
+      await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
+      await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
+    }
+    await page.locator('#level-filter').selectOption('17');
+    await page.getByLabel('查看第 11～20 关魔物完成图草稿').uncheck();
+    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
+    await expect(card.locator('figcaption')).not.toContainText('草稿');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
+for (const width of [1280, 390]) {
   test(`reward image types filter alongside levels and viewer at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/review/rewards.html');
