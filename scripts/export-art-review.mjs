@@ -17,7 +17,7 @@ const monsterForms = JSON.parse(readFileSync(resolve(root, 'art/review/monster-f
 const completionDrafts = { 11: 'v7', 12: 'v3', 13: 'v6', 14: 'v2', 15: 'v10', 16: 'v4', 17: 'v11', 18: 'v5', 19: 'v3', 20: 'v2' };
 const draftFile = id => `review/monster-completion-drafts/${id}-${completionDrafts[id]}.png`;
 const draftPreview = id => `review/previews/${id}-restored-draft-${completionDrafts[id]}.webp`;
-const ninetyDraftVersion = id => ({ 11: 'v5', 12: 'v2', 15: 'v4', 16: 'v2', 17: 'v5', 18: 'v3', 19: 'v2' })[id] || 'v1';
+const ninetyDraftVersion = id => ({ 11: 'v6', 12: 'v2', 15: 'v4', 16: 'v2', 17: 'v5', 18: 'v3', 19: 'v2' })[id] || 'v1';
 const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v3', 15: 'v7', 16: 'v4', 17: 'v5', 18: 'v4', 19: 'v2' })[id] || 'v1';
 const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-${ninetyDraftVersion(id)}.png`;
 const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-${ninetyDraftVersion(id)}.webp`;

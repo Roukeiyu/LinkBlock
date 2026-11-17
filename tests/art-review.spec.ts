@@ -63,13 +63,19 @@ for (const width of [1280, 390]) {
       await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      const ninetyVersion = level === 11 ? 'v5' : level === 15 ? 'v4' : level === 18 ? 'v3' : [12, 16, 19].includes(level) ? 'v2' : 'v1';
+      const ninetyVersion = level === 11 ? 'v6' : level === 15 ? 'v4' : level === 18 ? 'v3' : [12, 16, 19].includes(level) ? 'v2' : 'v1';
       const perfectVersion = level === 15 ? 'v7' : [11, 16, 18].includes(level) ? 'v4' : level === 14 ? 'v3' : [12, 19].includes(level) ? 'v2' : 'v1';
       await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${ninetyVersion}.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
       await expect(perfect).toHaveAttribute('src', `../review/previews/${level}-perfect-draft-${perfectVersion}.webp`);
       await expect.poll(() => perfect.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
+      if (level === 11) {
+        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/11-v6.png');
+        await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/11-v6\.png$/);
+        await page.locator('#close').click();
+      }
       if (level === 15) {
         await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
         await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/15-v4.png');
