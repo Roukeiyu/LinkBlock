@@ -14,7 +14,7 @@ for (const width of [1280, 390]) {
     await page.goto('/review/rewards.html');
     await page.locator('#level-filter').selectOption('17');
     const card = page.locator('#levels section:visible figure').first();
-    await expect(page.getByLabel('查看第 11～20 关魔物完成图和九成图草稿')).toBeChecked();
+    await expect(page.getByLabel('查看第 11～20 关魔物草稿')).toBeChecked();
     await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v7.webp');
     await expect(card.locator('figcaption')).toContainText('草稿');
@@ -36,6 +36,16 @@ for (const width of [1280, 390]) {
     await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/full-v3\/ninety\.webp/);
     await page.locator('#viewer-form-toggle').click();
     await page.locator('#close').click();
+    const perfectCard = page.locator('#levels section:visible figure').nth(2);
+    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-draft-v1.webp');
+    await expect(perfectCard.locator('figcaption')).toContainText('草稿');
+    await perfectCard.locator(':scope > button').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/17-v1.png');
+    await expect(page.locator('#download')).toHaveAttribute('href', /monster-perfect-drafts\/17-v1\.png$/);
+    await page.locator('#viewer-form-toggle').click();
+    await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/perfect-v3\/perfect\.webp/);
+    await page.locator('#viewer-form-toggle').click();
+    await page.locator('#close').click();
     await card.getByRole('button', { name: /查看 Alpha/ }).click();
     await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
     await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
@@ -48,14 +58,18 @@ for (const width of [1280, 390]) {
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
       await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-v1.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
+      const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
+      await expect(perfect).toHaveAttribute('src', `../review/previews/${level}-perfect-draft-v1.webp`);
+      await expect.poll(() => perfect.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
     }
     await page.locator('#level-filter').selectOption('17');
-    await page.getByLabel('查看第 11～20 关魔物完成图和九成图草稿').uncheck();
+    await page.getByLabel('查看第 11～20 关魔物草稿').uncheck();
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
     await expect(card.locator('figcaption')).not.toContainText('草稿');
     await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-monster.webp');
+    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-monster.webp');
     await page.reload();
-    await expect(page.getByLabel('查看第 11～20 关魔物完成图和九成图草稿')).not.toBeChecked();
+    await expect(page.getByLabel('查看第 11～20 关魔物草稿')).not.toBeChecked();
     await page.locator('#level-filter').selectOption('17');
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
