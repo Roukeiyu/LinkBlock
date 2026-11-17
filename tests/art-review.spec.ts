@@ -50,17 +50,25 @@ for (const width of [1280, 390]) {
     await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
     await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
     await page.locator('#mask-close').click();
-    for (const [level, version] of [[11, 'v5'], [12, 'v2'], [13, 'v3'], [14, 'v2'], [15, 'v3'], [16, 'v3'], [18, 'v3'], [19, 'v2'], [20, 'v2']] as const) {
+    for (const [level, version] of [[11, 'v5'], [12, 'v2'], [13, 'v4'], [14, 'v2'], [15, 'v6'], [16, 'v3'], [18, 'v3'], [19, 'v2'], [20, 'v2']] as const) {
       await page.locator('#level-filter').selectOption(String(level));
       const image = page.locator('#levels section:visible figure').first().locator('img');
       await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-v1.webp`);
+      const rewardVersion = level === 15 ? 'v2' : 'v1';
+      await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${rewardVersion}.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
-      await expect(perfect).toHaveAttribute('src', `../review/previews/${level}-perfect-draft-v1.webp`);
+      await expect(perfect).toHaveAttribute('src', `../review/previews/${level}-perfect-draft-${rewardVersion}.webp`);
       await expect.poll(() => perfect.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
+      if (level === 15) {
+        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/15-v2.png');
+        await page.locator('#next').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/15-v2.png');
+        await page.locator('#close').click();
+      }
     }
     await page.locator('#level-filter').selectOption('17');
     await page.getByLabel('查看第 11～20 关魔物草稿').uncheck();

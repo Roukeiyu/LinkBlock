@@ -14,13 +14,14 @@ const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundl
 const monsterForms = JSON.parse(readFileSync(resolve(root, 'art/review/monster-forms.json'), 'utf8'));
 // Phase-two monster completion artwork is still awaiting approval. Keep it
 // separate from the game assets while making it available in the main review.
-const completionDrafts = { 11: 'v5', 12: 'v2', 13: 'v3', 14: 'v2', 15: 'v3', 16: 'v3', 17: 'v7', 18: 'v3', 19: 'v2', 20: 'v2' };
+const completionDrafts = { 11: 'v5', 12: 'v2', 13: 'v4', 14: 'v2', 15: 'v6', 16: 'v3', 17: 'v7', 18: 'v3', 19: 'v2', 20: 'v2' };
 const draftFile = id => `review/monster-completion-drafts/${id}-${completionDrafts[id]}.png`;
 const draftPreview = id => `review/previews/${id}-restored-draft-${completionDrafts[id]}.webp`;
-const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-v1.png`;
-const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-v1.webp`;
-const perfectDraftFile = id => `review/monster-perfect-drafts/${id}-v1.png`;
-const perfectDraftPreview = id => `review/previews/${id}-perfect-draft-v1.webp`;
+const rewardDraftVersion = id => id === 15 ? 'v2' : 'v1';
+const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-${rewardDraftVersion(id)}.png`;
+const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-${rewardDraftVersion(id)}.webp`;
+const perfectDraftFile = id => `review/monster-perfect-drafts/${id}-${rewardDraftVersion(id)}.png`;
+const perfectDraftPreview = id => `review/previews/${id}-perfect-draft-${rewardDraftVersion(id)}.webp`;
 const monsterFolder = resolve(root, 'public/review/monster-forms');
 mkdirSync(monsterFolder, { recursive: true });
 for (const level of LEVELS) {
