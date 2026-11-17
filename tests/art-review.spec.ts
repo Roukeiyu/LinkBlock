@@ -63,8 +63,8 @@ for (const width of [1280, 390]) {
       await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      const ninetyVersion = level === 11 ? 'v5' : level === 15 ? 'v4' : [12, 16, 18, 19].includes(level) ? 'v2' : 'v1';
-      const perfectVersion = level === 15 ? 'v7' : [11, 16].includes(level) ? 'v4' : [14, 18].includes(level) ? 'v3' : [12, 19].includes(level) ? 'v2' : 'v1';
+      const ninetyVersion = level === 11 ? 'v5' : level === 15 ? 'v4' : level === 18 ? 'v3' : [12, 16, 19].includes(level) ? 'v2' : 'v1';
+      const perfectVersion = level === 15 ? 'v7' : [11, 16, 18].includes(level) ? 'v4' : level === 14 ? 'v3' : [12, 19].includes(level) ? 'v2' : 'v1';
       await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${ninetyVersion}.webp`);
       await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
       const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
@@ -75,6 +75,13 @@ for (const width of [1280, 390]) {
         await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/15-v4.png');
         await page.locator('#next').click();
         await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/15-v7.png');
+        await page.locator('#close').click();
+      }
+      if (level === 18) {
+        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/18-v3.png');
+        await page.locator('#next').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/18-v4.png');
         await page.locator('#close').click();
       }
     }
