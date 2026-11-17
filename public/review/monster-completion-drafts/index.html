@@ -27,7 +27,7 @@
   <header>
     <small>封林 / 第二期角色审阅</small>
     <h1>魔物形态 · 完成图新稿</h1>
-    <p>第 11～20 关。第 11、17 关已更新，机械人已恢复之前的造型；拖动滑杆，对照左侧人形原图与右侧魔物新稿，也可查看上一稿。</p>
+    <p>第 11～20 关。第 11、13、17、18 关已按反馈更新；拖动滑杆，对照左侧人形原图与右侧魔物新稿，也可查看上一稿。</p>
     <p class="notice">这些图供确认角色形态。背景采用相同场景，但生成时部分细节有重绘，尚未做到完全一致。</p>
     <nav aria-label="跳转关卡" id="navigation"></nav>
   </header>
@@ -37,8 +37,10 @@
     const nav = document.querySelector('#navigation'), container = document.querySelector('#levels');
     names.forEach((name,index) => {
       const id = index + 11, version = id === 17 ? 'scene-v2' : 'scene-v1';
-      const draftVersion = id === 17 ? 'v6' : id === 11 ? 'v4' : [15, 16].includes(id) ? 'v3' : 'v2';
-      const draft = `${id}-${draftVersion}.png`, previous = id === 15 ? `${id}-v4.png` : draftVersion === 'v6' ? `${id}-v5.png` : draftVersion === 'v4' ? `${id}-v3.png` : draftVersion === 'v3' ? `${id}-v2.png` : `${id}.png`;
+      const versions = {11: 'v5', 13: 'v3', 15: 'v3', 16: 'v3', 17: 'v7', 18: 'v3'};
+      const previousVersions = {11: 'v4', 13: 'v2', 15: 'v4', 16: 'v2', 17: 'v6', 18: 'v2'};
+      const draftVersion = versions[id] || 'v2';
+      const draft = `${id}-${draftVersion}.png`, previous = previousVersions[id] ? `${id}-${previousVersions[id]}.png` : `${id}.png`;
       const link = document.createElement('a'); link.href = '#level-' + id; link.textContent = id; nav.append(link);
       const section = document.createElement('section'); section.id = 'level-' + id;
       section.innerHTML = `<div class="heading"><h2>第 ${id} 关 · ${name}</h2><span>人形原图 / 魔物新稿</span></div>
