@@ -77,12 +77,12 @@
       "source_png_sha256": "b8b5a227b692a040ac717d3c639c13c375acd46d1be9ff307df1d6bb2a605822"
     },
     "20": {
-      "file": "public/levels/20/perfect-v2/perfect.webp",
+      "file": "public/levels/20/perfect-v3/perfect.webp",
       "reference": "public/levels/20/full-v4/ninety.webp",
       "setting": "gate sanctuary",
-      "previous_file": "public/levels/20/perfect-v1/perfect.webp",
-      "sha256": "4e7d80f907a952137e573eda5e1ec7b7475a9e6ba832928a409fd6fd56584087",
-      "source_png_sha256": "4aa39b8d562e2eb2dd81246fa455e46751978d4889fa41fc65ba3a9685122428"
+      "previous_file": "public/levels/20/perfect-v2/perfect.webp",
+      "sha256": "bd51dfa65adb9d1577b24dc8cd5799d434d4b34e0a82ec31acc89865d1729d04",
+      "source_png_sha256": "ed1797b96a40f60b266e576e5af192d3d4fd0176910c39252210c2c7056e4971"
     }
   }
 }

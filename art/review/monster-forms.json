@@ -356,9 +356,9 @@
           "humanRevisionNote": "Human full-health image replaced; existing monster reward retained independently."
         },
         "perfect": {
-          "source": "levels/20/perfect-v2/perfect.webp",
+          "source": "levels/20/perfect-v3/perfect.webp",
           "file": "monster-forms/20-perfect.png",
-          "previousHumanSource": "levels/20/perfect-v1/perfect.webp",
+          "previousHumanSource": "levels/20/perfect-v2/perfect.webp",
           "humanRevisionNote": "Human flawless-victory image replaced; existing monster reward retained independently."
         }
       },
