@@ -18,7 +18,7 @@ const completionDrafts = { 11: 'v7', 12: 'v3', 13: 'v6', 14: 'v2', 15: 'v10', 16
 const draftFile = id => `review/monster-completion-drafts/${id}-${completionDrafts[id]}.png`;
 const draftPreview = id => `review/previews/${id}-restored-draft-${completionDrafts[id]}.webp`;
 const ninetyDraftVersion = id => ({ 11: 'v6', 12: 'v2', 15: 'v4', 16: 'v3', 17: 'v7', 18: 'v3', 19: 'v2' })[id] || 'v1';
-const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v3', 15: 'v9', 16: 'v5', 17: 'v7', 18: 'v4', 19: 'v2' })[id] || 'v1';
+const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v3', 15: 'v10', 16: 'v5', 17: 'v7', 18: 'v4', 19: 'v2' })[id] || 'v1';
 const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-${ninetyDraftVersion(id)}.png`;
 const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-${ninetyDraftVersion(id)}.webp`;
 const perfectDraftFile = id => `review/monster-perfect-drafts/${id}-${perfectDraftVersion(id)}.png`;
