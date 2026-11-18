@@ -149,7 +149,7 @@ if(maskViewer){
 }
 function activeFile(item){return monsterMode&&draftMode&&item.draft?item.draft:monsterMode&&item.monster?item.monster:item.file;}
 function activePreview(item){return monsterMode&&draftMode&&item.draftPreview?item.draftPreview:monsterMode&&item.monsterPreview?item.monsterPreview:(item.preview||item.file);}
-function activeLabel(item){return item.label+(item.monster?' · '+(monsterMode?'魔物形态':'人形'):'')+(monsterMode&&draftMode&&item.draft?' · 草稿':'');}
+function activeLabel(item){return item.label+(item.monster?' · '+(monsterMode?'魔物形态':'人形'):'');}
 function syncForm(){
   document.querySelectorAll('[data-form-toggle]').forEach(button=>{
     const action=monsterMode?'切换人形':'切换魔物形态';

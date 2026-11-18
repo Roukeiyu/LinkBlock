@@ -17,9 +17,10 @@ for (const width of [1280, 390]) {
     await expect(page.getByLabel('查看第 11～20 关魔物草稿')).toBeChecked();
     await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v11.webp');
-    await expect(card.locator('figcaption')).toContainText('草稿');
+    await expect(card.locator('figcaption > span').first()).toHaveText('完整成图 · 通关解封 · 魔物形态');
     await card.locator(':scope > button').click();
     await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v11.png');
+    await expect(page.locator('#caption')).toHaveText('第十七关 · 月蚀歌剧院 / 完整成图 · 通关解封 · 魔物形态');
     await expect(page.locator('#download')).toHaveAttribute('href', /17-v11\.png$/);
     await page.locator('#viewer-form-toggle').click();
     await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/scene-v2\/restored\.webp/);
@@ -35,7 +36,7 @@ for (const width of [1280, 390]) {
     await page.locator('#form-toggle').click();
     const ninetyCard = page.locator('#levels section:visible figure').nth(1);
     await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-draft-v6.webp');
-    await expect(ninetyCard.locator('figcaption')).toContainText('草稿');
+    await expect(ninetyCard.locator('figcaption > span').first()).toHaveText('满血通关 · 魔物形态');
     await ninetyCard.locator(':scope > button').click();
     await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/17-v6.png');
     await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/17-v6\.png$/);
@@ -45,7 +46,7 @@ for (const width of [1280, 390]) {
     await page.locator('#close').click();
     const perfectCard = page.locator('#levels section:visible figure').nth(2);
     await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-draft-v6.webp');
-    await expect(perfectCard.locator('figcaption')).toContainText('草稿');
+    await expect(perfectCard.locator('figcaption > span').first()).toHaveText('击败 Boss · 魔物形态');
     await perfectCard.locator(':scope > button').click();
     await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/17-v6.png');
     await expect(page.locator('#download')).toHaveAttribute('href', /monster-perfect-drafts\/17-v6\.png$/);
