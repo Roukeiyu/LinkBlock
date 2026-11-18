@@ -9,8 +9,7 @@ const geometry = (points: Polygon): MultiPolygon => [(points.rings ?? [points]).
 // their boundary walks at the actual shared vertex so a cut may start on one
 // island and end on another. Repeated junctions add no area or artificial edge;
 // land, rendering and collisions continue to use the original Boolean rings.
-function connectedBoundaries(land: MultiPolygon): Polygon[] {
-  const pending = land.flatMap(polygon => polygon.map(source => source.slice(0, -1).map(([x, y]) => ({ x, y }))));
+function connectedBoundaries(pending: Polygon[]): Polygon[] {
   const result: Polygon[] = [];
   while (pending.length) {
     let boundary = pending.pop()!;
@@ -140,7 +139,7 @@ export class Island {
     trail = [{ ...start }, ...trail.slice(1, -1), { ...end }];
     const loops: Polygon[] = [];
     if (same(start, end)) loops.push(simplify(trail, true));
-    else for (const boundary of connectedBoundaries(this.land)) {
+    else for (const boundary of connectedBoundaries(this.landRings())) {
       if (!edges(boundary).some(([a, b]) => onSegment(start, a, b))
         || !edges(boundary).some(([a, b]) => onSegment(end, a, b))) continue;
       // split expects a positive source ring. The Boolean difference below

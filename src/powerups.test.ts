@@ -181,6 +181,36 @@ describe('persistent power-ups', () => {
     const target = rectangleOfArea(72, 48, before, { x: 36, y: 24 });
     expect(target.w * target.h).toBeCloseTo(before, 6);
   });
+  it.each([
+    ['left', 0, 0.5, 'down', 'right'],
+    ['right', 1, 0.5, 'down', 'left'],
+    ['up', 0.5, 0, 'right', 'down'],
+    ['down', 0.5, 1, 'right', 'up'],
+  ] as const)('can close a new pocket on the %s side immediately after collecting shuffle', (out, x, y, along, back) => {
+    const field = new Game(100, 100, { opening: true, enemies: [], boss: null, powerUps: true, random: () => 0.5 });
+    field.start();
+    field.opening!.region = [{ x: 20, y: 20 }, { x: 40, y: 20 }, { x: 40, y: 40 }, { x: 20, y: 40 }];
+    field.confirmOpening();
+    pickup(field, 'shuffle');
+
+    const before = field.claimed;
+    const rect = rectangleOfArea(100, 100, before, { x: 50, y: 50 });
+    field.player = { x: rect.x + x * rect.w, y: rect.y + y * rect.h };
+    field.move(out, true, 3);
+    field.move(along, true, 4);
+    field.move(back, true, 3);
+    expect(field.retracting).toBe(false);
+    expect(field.trail).toHaveLength(0);
+    expect(field.claimed).toBeCloseTo(before + 12, 7);
+
+    field.update(POWER_UP_DURATION.shuffle);
+    expect(field.claimed).toBeCloseTo(before + 12, 7);
+    field.move(along, false, 2);
+    field.move(out, true, 3);
+    field.move(along, true, 4);
+    field.move(back, true, 3);
+    expect(field.claimed).toBeCloseTo(before + 24, 7);
+  });
   it('restarts without a stale pickup or active effect', () => {
     const first = game(); pickup(first, 'speed');
     const fresh = game(); expect(fresh.powerUp).toBeDefined();
