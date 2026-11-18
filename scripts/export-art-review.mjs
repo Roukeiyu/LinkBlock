@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = await build({ entryPoints: [resolve(root, 'src/levels.ts')], bundle: true,
   platform: 'node', format: 'esm', write: false });
-const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
+const { LEVELS, artworkRevision } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
 // Thumbnails are generated from the active originals so review cards never download
 // the full-size files. The originals remain available to the viewer and downloads.
 const previewFolder = resolve(root, 'public/review/previews');
@@ -34,11 +34,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   function ref(file) {
     if (!(file in sources)) {
       const bytes = readFileSync(resolve(root, 'public', file));
-      const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(file)
-        || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(file);
-      const revision = /^monster\/(?:1[1-9]|20)\//.test(file) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(file) ? '?v=phase2-final' : file === 'levels/13/perfect-v1/perfect.webp' || file === 'review/previews/13-perfect-human.webp'
-        ? '?v=2' : /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(file) ? '?v=phase2-v26' : bust ? '?v=r9' : '';
-      sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}${revision}`;
+      sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}${artworkRevision(file)}`;
     }
     return file;
   }
@@ -102,7 +98,7 @@ async function openMask(level,item){
     context.drawImage(raw,0,0);const pixels=context.getImageData(0,0,canvas.width,canvas.height);
     for(let i=0;i<pixels.data.length;i+=4){
       const a=pixels.data[i+3],coverage=Math.max(pixels.data[i],pixels.data[i+1],pixels.data[i+2],a<255?a:0);
-      pixels.data[i]=255;pixels.data[i+1]=45;pixels.data[i+2]=35;pixels.data[i+3]=a>127&&coverage>127?110:0;
+      pixels.data[i]=255;pixels.data[i+1]=45;pixels.data[i+2]=35;pixels.data[i+3]=110*(a/255)*(coverage/255);
     }
     context.putImageData(pixels,0,0);
     document.querySelector('#mask-note').textContent='红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。';

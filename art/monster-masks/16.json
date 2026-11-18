@@ -7,17 +7,17 @@
   "source": "art/review/monster-forms/16.png",
   "source_sha256": "5a9d10e1d9ed9d835b7cf430074cd2f0b57daac8f6323c6257ccfa323469fbd2",
   "matte": "art/monster-masks/mattes/16.png",
-  "matte_sha256": "a46d40bcf44c607ca925aaa56f152c6d4966dc75b9100cea18b7ca23c4959495",
+  "matte_sha256": "0e0ca23893c6cf74f36916a42d9077582fc751e3c2500486d289337356afb992",
   "generated_source": "art/review/monster-forms/16.png",
-  "method": "Prompt-guided segmentation and component refinement on the approved illustration",
-  "background_holes": [],
-  "guard_pixels": 1,
+  "method": "Full-resolution RGB matting with SAM 2.1 and BiRefNet segmentation and inspected character boundaries",
+  "guard_pixels": 0,
   "portrait_crop": [
     710,
     0,
     500
   ],
-  "mask_sha256": "90ce6756acacf970e41cbdfd2a4d38ea56ddad6c8a84e4e1b51e7fe12bf45496",
-  "sealed_sha256": "77b33eb323db31cbf4eaaf34188216e681e5ed11ea1262a53b83151a306b6441",
-  "portrait_sealed_sha256": "1b23b95d66ce076ff6ce4ac64c7f3f770f9209840e4485fc81b1109d6d9a91de"
+  "mask_sha256": "0e0ca23893c6cf74f36916a42d9077582fc751e3c2500486d289337356afb992",
+  "sealed_sha256": "10ef93a202e369ce0c5dc7ea1d4a2dfb93487a0d51fd3a82fcb39eab51e86951",
+  "portrait_sealed_sha256": "53ed6e753de79747f38f0f246a54b73a0e392334104e67db79bc9d8334e6da9b",
+  "coverage": "grayscale"
 }

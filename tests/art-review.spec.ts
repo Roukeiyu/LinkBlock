@@ -75,7 +75,7 @@ function reviewed(file: string) {
   const path = file.replace(/^\.\.\//, '');
   const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(path)
     || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
-  const revision = /^monster\/(?:1[1-9]|20)\//.test(path) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(path) ? '?v=phase2-final' : path === 'levels/13/perfect-v1/perfect.webp' || path === 'review/previews/13-perfect-human.webp'
+  const revision = /^(?:levels\/(?:1[1-9]|20)\/alpha-v1|monster\/(?:1[1-9]|20))\/(?:mask\.png|(?:portrait-)?sealed\.webp)$/.test(path) ? '?v=alpha-detail-2' : /^monster\/(?:1[1-9]|20)\//.test(path) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(path) ? '?v=phase2-final' : path === 'levels/13/perfect-v1/perfect.webp' || path === 'review/previews/13-perfect-human.webp'
     ? '?v=2' : /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(path) ? '?v=phase2-v26' : bust ? '?v=r9' : '';
   return `../${path}${revision}`;
 }
@@ -104,12 +104,17 @@ for (const width of [1280, 390]) {
         await expect(page.locator('#mask-caption')).toContainText(monster ? '魔物形态' : '人形');
         const overlay = await page.locator('#mask-overlay').evaluate((canvas: HTMLCanvasElement) => {
           const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
-          let colored = 0, clear = 0;
-          for (let i = 3; i < data.length; i += 4) data[i] ? colored++ : clear++;
-          return { colored, clear };
+          let colored = 0, clear = 0, partial = 0;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i]) colored++;
+            else clear++;
+            if (data[i] > 0 && data[i] < 110) partial++;
+          }
+          return { colored, clear, partial };
         });
         expect(overlay.colored).toBeGreaterThan(1000);
         expect(overlay.clear).toBeGreaterThan(1000);
+        if (id >= 11) expect(overlay.partial).toBeGreaterThan(0);
         await page.locator('#mask-show-raw').click();
         await expect(page.locator('#mask-raw')).toBeVisible();
         await expect(page.locator('#mask-overlay')).toBeHidden();

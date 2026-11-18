@@ -6,7 +6,7 @@ import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
-import { LEVELS, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
+import { LEVELS, artworkRevision, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
@@ -200,10 +200,7 @@ restored.src = `${import.meta.env.BASE_URL}${theme.landscape}`;
 if (theme.ruinedLandscape) ruined.src = `${import.meta.env.BASE_URL}${theme.ruinedLandscape}`;
 function syncScene() { bindLandscapes(restored, ruined, game.width, game.height); }
 syncScene();
-/** Bust cached gallery plates replaced in place. Level 12 stayed on the previous plate. */
-const GALLERY_REV = 'r9';
-const replacedGallery = (file: string) => /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\/(?:restored|ninety|perfect|sealed|portrait(?:-sealed)?|mask)\./.test(file);
-const asset = (file: string) => `${import.meta.env.BASE_URL}${file}${/^monster\/(?:1[1-9]|20)\//.test(file) ? '?v=phase2-final' : file === 'levels/13/perfect-v1/perfect.webp' ? '?v=2' : replacedGallery(file) ? `?v=${GALLERY_REV}` : ''}`;
+const asset = (file: string) => `${import.meta.env.BASE_URL}${file}${artworkRevision(file)}`;
 const sameAsset = (src: string, file: string) => {
   try { return new URL(src, location.href).pathname.endsWith(file); }
   catch { return src.split('?')[0].endsWith(file); }
@@ -993,8 +990,8 @@ function characterAura(image: HTMLImageElement) {
   const data = pixels.data;
   for (let i = 0; i < data.length; i += 4) {
     const coverage = Math.max(data[i], data[i + 1], data[i + 2]);
-    const solid = data[i + 3] > 127 && coverage > 127;
-    data[i] = 255; data[i + 1] = 255; data[i + 2] = 255; data[i + 3] = solid ? 255 : 0;
+    const opacity = data[i + 3] * coverage / 255;
+    data[i] = 255; data[i + 1] = 255; data[i + 2] = 255; data[i + 3] = opacity;
   }
   source.putImageData(pixels, 0, 0);
   const aura = document.createElement('canvas');

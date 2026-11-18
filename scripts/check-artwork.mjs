@@ -22,6 +22,8 @@ for (const level of LEVELS) {
     const human = JSON.parse(readFileSync(resolve(root, 'art/phase-two-masks', `${level.id}.json`), 'utf8'));
     if (human.source !== level.restored || digest(`public/${human.source}`) !== human.source_sha256 || digest(human.matte) !== human.matte_sha256)
       errors.push(`Level ${level.id}: human artwork or reviewed matte changed`);
+    if (digest(`public/${level.mask}`) !== human.matte_sha256 || contour.mask_sha256 !== contour.matte_sha256)
+      errors.push(`Level ${level.id}: gameplay masks must preserve the full reviewed grayscale mattes`);
     for (const [file, hash] of Object.entries(human.files)) {
       if (digest(`public/levels/${level.id}/alpha-v1/${file}`) !== hash)
         errors.push(`Level ${level.id}: ${file} does not match its reviewed human matte`);
@@ -44,11 +46,13 @@ for (const level of LEVELS) {
   }
   for (const file of [level.mask, `monster/${level.id}/mask.png`]) {
     const { data } = await sharp(resolve(root, 'public', file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    let character = 0, background = 0;
+    let character = 0, background = 0, partial = 0;
     for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 0 && data[i] < 255) partial++;
       if (data[i + 3] > 127 && Math.max(data[i], data[i + 1], data[i + 2]) > 127) character++;
       else background++;
     }
+    if (level.id >= 11 && !partial) errors.push(`${file}: expected graduated edge coverage`);
     if (!character || !background) errors.push(`${file}: mask must contain both character and background`);
   }
 }

@@ -5,6 +5,21 @@ import { faceProtection, monsterFaceProtection, type FaceArtwork } from './faces
 import type { GameOptions } from './engine';
 import type { SpriteSheet } from './render-enemies';
 
+/** Cache key for artwork shared by the game and the review gallery. */
+export function artworkRevision(file: string): string {
+  if (/^(?:levels\/(?:1[1-9]|20)\/alpha-v1|monster\/(?:1[1-9]|20))\/(?:mask\.png|(?:portrait-)?sealed\.webp)$/.test(file))
+    return '?v=alpha-detail-2';
+  if (/^monster\/(?:1[1-9]|20)\//.test(file) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(file))
+    return '?v=phase2-final';
+  if (file === 'levels/13/perfect-v1/perfect.webp' || file === 'review/previews/13-perfect-human.webp')
+    return '?v=2';
+  if (/^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(file))
+    return '?v=phase2-v26';
+  if (/^levels\/(?:11|1[3-9]|20)\/v2\//.test(file) || /^review\/previews\/(?:11|1[3-9]|20)-[^-]+-human\.webp$/.test(file))
+    return '?v=r9';
+  return '';
+}
+
 export interface Squad {
   straight: number;
   orbit: number;

@@ -2,15 +2,17 @@
   "source": "levels/12/scene-v1/restored.webp",
   "source_sha256": "8fc7bec5b8716ab0bcd18334596c6036cb32c63cf4b2ca79af51305b315d98aa",
   "matte": "art/phase-two-masks/12.png",
-  "matte_sha256": "571c14a84ff68a95a132a185f18149244dce032388dd876134191bf727969e53",
+  "matte_sha256": "69242cb5d851c2bf1ef20a693d1b3fd5eee8d902b3cb63d58634e7a61ad2bdc6",
   "canvas": [
     1536,
     1024
   ],
   "files": {
-    "mask.png": "4b87a3f5aa3a2705876e7b28c90473791770b0bb03c432c27da093987bbc6eb8",
-    "sealed.webp": "8b6c4a0e2781a5f53e68db74180d80efd1e66eece5f4c268b29498ebb055fbdc",
-    "portrait-sealed.webp": "9ddf5a7d924ca00faf2101adf9e2e757b3bac8398711b804d3017ee1a6a9d1c8",
+    "mask.png": "69242cb5d851c2bf1ef20a693d1b3fd5eee8d902b3cb63d58634e7a61ad2bdc6",
+    "sealed.webp": "aecb9bbd3b8f7b7aa3ede2922fa8e3f0979903e4151b8535f0ed68a9b9a29234",
+    "portrait-sealed.webp": "a73dee1c8a6aff27fd6840552e75bb9331d0df436c369b5a41cfc98a6f61d1d7",
     "portrait.webp": "2c36a8be9f365817619fb9c67647b3bfdd3c2f7517ffca3b8a338a513c00c7a3"
-  }
+  },
+  "coverage": "grayscale",
+  "method": "Full-resolution RGB matting with SAM 2.1 and BiRefNet segmentation and inspected character boundaries"
 }

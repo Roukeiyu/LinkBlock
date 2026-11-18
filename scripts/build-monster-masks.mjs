@@ -3,6 +3,7 @@
  * Original artwork is never rewritten. Review-only art is not a mask source.
  */
 import sharp from 'sharp';
+import { makeCharacterSeal } from './character-seal.mjs';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -13,21 +14,7 @@ const digest = data => createHash('sha256').update(data).digest('hex');
 const levels = process.argv.length > 2 ? process.argv.slice(2).map(Number) : Array.from({ length: 20 }, (_, i) => i + 1);
 if (levels.some(id => !Number.isInteger(id) || id < 1 || id > 20)) throw new Error('Expected level IDs from 1 to 20');
 
-for (const id of levels) {
-  const specPath = resolve(root, `art/monster-masks/${id}.json`);
-  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
-  if (spec.version !== 2) throw new Error(`Level ${id}: expected an extracted raster matte`);
-  const source = readFileSync(resolve(root, spec.source));
-  const matte = readFileSync(resolve(root, spec.matte));
-  if (digest(source) !== spec.source_sha256 || digest(matte) !== spec.matte_sha256)
-    throw new Error(`Level ${id}: artwork or matte changed; inspect the overlay before updating provenance`);
-  const { data: rgb, info: plate } = await sharp(source).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  const { data: gray, info } = await sharp(matte).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
-  const [width, height] = spec.canvas;
-  if (width !== 1536 || height !== 1024 || plate.width !== width || plate.height !== height || info.width !== width || info.height !== height)
-    throw new Error(`Level ${id}: artwork and matte must share the original 1536 × 1024 canvas`);
-  if (!Number.isInteger(spec.guard_pixels) || spec.guard_pixels < 0 || spec.guard_pixels > 3)
-    throw new Error(`Level ${id}: invalid edge guard`);
+function guardedBinaryMask(id, gray, width, height, spec) {
   const mask = Buffer.from(gray.map(value => value > 127 ? 255 : 0));
   const preserved = new Set(spec.background_holes.map(({ point: [x, y] }) => {
     if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= width || y >= height || mask[y * width + x])
@@ -66,17 +53,30 @@ for (const id of levels) {
     }
     guarded = next;
   }
+  return guarded;
+}
+
+for (const id of levels) {
+  const specPath = resolve(root, `art/monster-masks/${id}.json`);
+  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
+  if (spec.version !== 2) throw new Error(`Level ${id}: expected an extracted raster matte`);
+  const source = readFileSync(resolve(root, spec.source));
+  const matte = readFileSync(resolve(root, spec.matte));
+  if (digest(source) !== spec.source_sha256 || digest(matte) !== spec.matte_sha256)
+    throw new Error(`Level ${id}: artwork or matte changed; inspect the overlay before updating provenance`);
+  const { data: rgb, info: plate } = await sharp(source).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data: gray, info } = await sharp(matte).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
+  const [width, height] = spec.canvas;
+  if (width !== 1536 || height !== 1024 || plate.width !== width || plate.height !== height || info.width !== width || info.height !== height)
+    throw new Error(`Level ${id}: artwork and matte must share the original 1536 × 1024 canvas`);
+  if (!Number.isInteger(spec.guard_pixels) || spec.guard_pixels < 0 || spec.guard_pixels > 3)
+    throw new Error(`Level ${id}: invalid edge guard`);
   const target = resolve(root, `public/monster/${id}`);
-  await sharp(guarded, { raw: { width, height, channels: 1 } }).png().toFile(resolve(target, 'mask.png'));
-  // Rebuild only mask-dependent art, using the same dark veil as the original
-  // monster packer. Completion paintings, rewards and rescued portraits stay intact.
-  const sealed = Buffer.alloc(rgb.length);
-  for (let i = 0; i < guarded.length; i++) {
-    const offset = i * 3;
-    const luminance = Math.round(rgb[offset] * .299 + rgb[offset + 1] * .587 + rgb[offset + 2] * .114);
-    for (let c = 0; c < 3; c++) sealed[offset + c] = guarded[i] ? [32, 32, 44][c]
-      : Math.floor(Math.floor(luminance * .75 + rgb[offset + c] * .25) * .52);
-  }
+  const continuous = spec.coverage === 'grayscale';
+  const coverage = continuous ? gray : guardedBinaryMask(id, gray, width, height, spec);
+  if (continuous) writeFileSync(resolve(target, 'mask.png'), matte);
+  else await sharp(coverage, { raw: { width, height, channels: 1 } }).png().toFile(resolve(target, 'mask.png'));
+  const sealed = makeCharacterSeal(rgb, coverage);
   const raw = { width, height, channels: 3 };
   await sharp(sealed, { raw }).webp({ quality: 88, effort: 5 }).toFile(resolve(target, 'sealed.webp'));
   const [left, top, size] = spec.portrait_crop;
@@ -86,5 +86,5 @@ for (const id of levels) {
   spec.sealed_sha256 = digest(readFileSync(resolve(target, 'sealed.webp')));
   spec.portrait_sealed_sha256 = digest(readFileSync(resolve(target, 'portrait-sealed.webp')));
   writeFileSync(specPath, JSON.stringify(spec, null, 2) + '\n');
-  console.log(`Level ${id}: extracted matte packaged; ${(guarded.filter(v => v > 0).length / guarded.length * 100).toFixed(1)}% character; seal and portrait synchronized`);
+  console.log(`Level ${id}: extracted matte packaged; ${(coverage.filter(v => v > 127).length / coverage.length * 100).toFixed(1)}% character; seal and portrait synchronized`);
 }
