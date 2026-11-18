@@ -1,4 +1,5 @@
 {
+  "reference_commit": "f3677a26462f148305b1f7e460a9aeb02e76d13e",
   "version": "perfect-v1 with selected later revisions",
   "width": 1536,
   "height": 1024,
@@ -25,8 +26,9 @@
       "reference": "public/levels/13/full-v3/ninety.webp",
       "setting": "sandstone villa",
       "previous_file": "public/levels/13/v2/perfect.webp",
-      "sha256": "452a33dacfd57e4583f07e35ea985e141eb147591456ba02359fa238667aef6e",
-      "source_png_sha256": "344c8f5015d171692f3e58915b250a83076ac370ded963a495d87ad78c8bc2ae"
+      "sha256": "db6687037055d1873fb0f04e8e618abf6b781a48f587321731d21061eb499bbd",
+      "source_commit": "5aac1b80725286947ed87aee0cb9f4fc43ccb7ae",
+      "previous_source_png_sha256": "344c8f5015d171692f3e58915b250a83076ac370ded963a495d87ad78c8bc2ae"
     },
     "14": {
       "file": "public/levels/14/perfect-v1/perfect.webp",
