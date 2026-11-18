@@ -1,5 +1,5 @@
 /** Package full-resolution image-generated monster mattes and their seals.
- * Usage: node scripts/build-monster-masks.mjs [1 ... 10]
+ * Usage: node scripts/build-monster-masks.mjs [1 ... 20]
  * Original artwork is never rewritten. Review-only art is not a mask source.
  */
 import sharp from 'sharp';
@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const digest = data => createHash('sha256').update(data).digest('hex');
-const levels = process.argv.length > 2 ? process.argv.slice(2).map(Number) : Array.from({ length: 10 }, (_, i) => i + 1);
-if (levels.some(id => !Number.isInteger(id) || id < 1 || id > 10)) throw new Error('Expected level IDs from 1 to 10');
+const levels = process.argv.length > 2 ? process.argv.slice(2).map(Number) : Array.from({ length: 20 }, (_, i) => i + 1);
+if (levels.some(id => !Number.isInteger(id) || id < 1 || id > 20)) throw new Error('Expected level IDs from 1 to 20');
 
 for (const id of levels) {
   const specPath = resolve(root, `art/monster-masks/${id}.json`);

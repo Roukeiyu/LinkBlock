@@ -170,7 +170,7 @@ export const LEVELS: LevelDef[] = [
   ...campaignAfterTen(),
 ];
 
-/** Phase two: mixed-version human completion plates; v2 supporting assets pending final art. */
+/** Phase two: completion plates and their matching character masks. */
 function campaignAfterTen(): LevelDef[] {
   const themes = [
     ['蜘蛛妖', '蛛丝绣楼', '丝絮', '茧蛛', '绣纹', '络灯', '梭影', '绣楼蛛君', '#c45b6a', '小怪沿弧线游走；首领快慢双潮错位。先避快潮，再短线圈地。', 'silk-tower'],
@@ -216,8 +216,8 @@ function campaignAfterTen(): LevelDef[] {
       id, theme: row[0], title: `第${numbers[index]}关 · ${row[1]}`,
       difficulty: id <= 12 ? '入章' : id <= 15 ? '高难' : id <= 17 ? '深域' : id <= 19 ? '险境' : '终章',
       tactic: row[9], attackPattern: combat[row[0]].attack, enemyMotion: combat[row[0]].motion,
-      restored: `levels/${id}/${completionVersion}/restored.webp` as FaceArtwork, sealed: `${dir}/sealed.webp`, mask: `${dir}/mask.png`, music: row[10],
-      portraitSealed: `${dir}/portrait-sealed.webp`, portraitRescued: `${dir}/portrait.webp`,
+      restored: `levels/${id}/${completionVersion}/restored.webp` as FaceArtwork, sealed: `levels/${id}/alpha-v1/sealed.webp`, mask: `levels/${id}/alpha-v1/mask.png`, music: row[10],
+      portraitSealed: `levels/${id}/alpha-v1/portrait-sealed.webp`, portraitRescued: `levels/${id}/alpha-v1/portrait.webp`,
       rewardNinety: `levels/${id}/${id === 20 ? 'full-v5' : id >= 18 ? 'full-v4' : 'full-v3'}/ninety.webp`, rewardPerfect: `levels/${id}/${id === 20 ? 'perfect-v4' : id === 17 ? 'perfect-v3' : [16, 18].includes(id) ? 'perfect-v2' : 'perfect-v1'}/perfect.webp`,
       names: { straight: [row[2], row[3], row[4]], orbit: row[5], zigzag: row[6], boss: row[7] },
       sprites: sheet(`levels/${id}/v2`, ['mist.webp', 'thorn.webp', 'ghost.webp', 'spore.webp', 'crow.webp', 'boss.webp']),

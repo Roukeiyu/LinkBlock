@@ -2,7 +2,7 @@ import './export-face-review.mjs';
 /** Export the active artwork catalog. Optional: --offline /absolute/output/folder */
 import { build } from 'esbuild';
 import sharp from 'sharp';
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,50 +10,19 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = await build({ entryPoints: [resolve(root, 'src/levels.ts')], bundle: true,
   platform: 'node', format: 'esm', write: false });
 const { LEVELS } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
-// The manifest also records which human artwork each monster variant follows.
-const monsterForms = JSON.parse(readFileSync(resolve(root, 'art/review/monster-forms.json'), 'utf8'));
-// Phase-two monster completion artwork is still awaiting approval. Keep it
-// separate from the game assets while making it available in the main review.
-const completionDrafts = { 11: 'v7', 12: 'v3', 13: 'v6', 14: 'v2', 15: 'v10', 16: 'v5', 17: 'v11', 18: 'v5', 19: 'v3', 20: 'v2' };
-const draftFile = id => `review/monster-completion-drafts/${id}-${completionDrafts[id]}.png`;
-const draftPreview = id => `review/previews/${id}-restored-draft-${completionDrafts[id]}.webp`;
-const ninetyDraftVersion = id => ({ 11: 'v6', 12: 'v2', 15: 'v4', 16: 'v3', 17: 'v7', 18: 'v3', 19: 'v2' })[id] || 'v1';
-const perfectDraftVersion = id => ({ 11: 'v4', 12: 'v2', 14: 'v3', 15: 'v10', 16: 'v5', 17: 'v7', 18: 'v4', 19: 'v2' })[id] || 'v1';
-const ninetyDraftFile = id => `review/monster-ninety-drafts/${id}-${ninetyDraftVersion(id)}.png`;
-const ninetyDraftPreview = id => `review/previews/${id}-ninety-draft-${ninetyDraftVersion(id)}.webp`;
-const perfectDraftFile = id => `review/monster-perfect-drafts/${id}-${perfectDraftVersion(id)}.png`;
-const perfectDraftPreview = id => `review/previews/${id}-perfect-draft-${perfectDraftVersion(id)}.webp`;
-const monsterFolder = resolve(root, 'public/review/monster-forms');
-mkdirSync(monsterFolder, { recursive: true });
-for (const level of LEVELS) {
-  const variant = monsterForms.levels[level.id];
-  for (const [kind, source] of [['restored', level.restored], ['ninety', level.rewardNinety], ['perfect', level.rewardPerfect]]) {
-    const image = kind === 'restored' ? variant : variant?.rewards?.[kind];
-    if (!image || image.source !== source) throw new Error(`Stale monster review for level ${level.id}: ${kind}`);
-    const name = kind === 'restored' ? `${level.id}.png` : `${level.id}-${kind}.png`;
-    copyFileSync(resolve(root, 'art/review', image.file), resolve(monsterFolder, name));
-  }
-}
 // Thumbnails are generated from the active originals so review cards never download
 // the full-size files. The originals remain available to the viewer and downloads.
 const previewFolder = resolve(root, 'public/review/previews');
 mkdirSync(previewFolder, { recursive: true });
 for (const level of LEVELS) {
   for (const [kind, human] of [['restored', level.restored], ['ninety', level.rewardNinety], ['perfect', level.rewardPerfect]]) {
-    const monster = `review/monster-forms/${level.id}${kind === 'restored' ? '' : '-' + kind}.png`;
+    const monster = `monster/${level.id}/${kind}.webp`;
     for (const [form, source] of [['human', human], ['monster', monster]]) {
       await sharp(resolve(root, 'public', source)).resize(768, 512).webp({ quality: 80 })
         .toFile(resolve(previewFolder, `${level.id}-${kind}-${form}.webp`));
     }
   }
-  if (completionDrafts[level.id]) {
-    await sharp(resolve(root, 'public', draftFile(level.id))).resize(768, 512).webp({ quality: 80 })
-      .toFile(resolve(root, 'public', draftPreview(level.id)));
-    await sharp(resolve(root, 'public', ninetyDraftFile(level.id))).resize(768, 512).webp({ quality: 80 })
-      .toFile(resolve(root, 'public', ninetyDraftPreview(level.id)));
-    await sharp(resolve(root, 'public', perfectDraftFile(level.id))).resize(768, 512).webp({ quality: 80 })
-      .toFile(resolve(root, 'public', perfectDraftPreview(level.id)));
-  }
+
 }
 const offlineAt = process.argv.indexOf('--offline');
 if (offlineAt >= 0 && !process.argv[offlineAt + 1]) throw new Error('--offline requires an output folder');
@@ -67,7 +36,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
       const bytes = readFileSync(resolve(root, 'public', file));
       const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(file)
         || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(file);
-      const revision = file === 'levels/13/perfect-v1/perfect.webp' || file === 'review/previews/13-perfect-human.webp'
+      const revision = /^monster\/(?:1[1-9]|20)\//.test(file) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(file) ? '?v=phase2-final' : file === 'levels/13/perfect-v1/perfect.webp' || file === 'review/previews/13-perfect-human.webp'
         ? '?v=2' : /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(file) ? '?v=phase2-v26' : bust ? '?v=r9' : '';
       sources[file] = offline ? `data:image/${file.endsWith('.png') ? 'png' : 'webp'};base64,${bytes.toString('base64')}` : `../${file}${revision}`;
     }
@@ -75,9 +44,9 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
   }
   const levels = LEVELS.map(level => ({ id: level.id, title: level.title, theme: level.theme, music: level.music,
     items: kind === 'rewards' ? [
-      { type: 'clear', label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`review/monster-forms/${level.id}.png`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`), ...(level.id === 17 ? { humanDraft: ref('review/human-completion-drafts/17-mask-v1.png') } : {}), ...(monsterForms.levels[level.id].file !== `monster-forms/${level.id}.png` ? { monsterMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}), ...(completionDrafts[level.id] ? { draft: ref(draftFile(level.id)), draftPreview: ref(draftPreview(level.id)), draftMaskBase: ref(`monster/${level.id}/restored.webp`) } : {}) },
-      { type: 'full', label: '满血通关', file: ref(level.rewardNinety), monster: ref(`review/monster-forms/${level.id}-ninety.png`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`), ...(completionDrafts[level.id] ? { draft: ref(ninetyDraftFile(level.id)), draftPreview: ref(ninetyDraftPreview(level.id)) } : {}) },
-      { type: 'boss', label: '击败 Boss', file: ref(level.rewardPerfect), monster: ref(`review/monster-forms/${level.id}-perfect.png`), preview: ref(`review/previews/${level.id}-perfect-human.webp`), monsterPreview: ref(`review/previews/${level.id}-perfect-monster.webp`), ...(completionDrafts[level.id] ? { draft: ref(perfectDraftFile(level.id)), draftPreview: ref(perfectDraftPreview(level.id)) } : {}) },
+      { type: 'clear', label: '完整成图 · 通关解封', file: ref(level.restored), monster: ref(`monster/${level.id}/restored.webp`), preview: ref(`review/previews/${level.id}-restored-human.webp`), monsterPreview: ref(`review/previews/${level.id}-restored-monster.webp`), mask: ref(level.mask), monsterMask: ref(`monster/${level.id}/mask.png`) },
+      { type: 'full', label: '满血通关', file: ref(level.rewardNinety), monster: ref(`monster/${level.id}/ninety.webp`), preview: ref(`review/previews/${level.id}-ninety-human.webp`), monsterPreview: ref(`review/previews/${level.id}-ninety-monster.webp`) },
+      { type: 'boss', label: '击败 Boss', file: ref(level.rewardPerfect), monster: ref(`monster/${level.id}/perfect.webp`), preview: ref(`review/previews/${level.id}-perfect-human.webp`), monsterPreview: ref(`review/previews/${level.id}-perfect-monster.webp`) },
     ] : [
       { label: `Boss · ${level.names.boss}`, file: ref(level.sprites.tree) },
       ...['mist', 'spore', 'crow'].map((key, i) => ({ label: `直行小怪 · ${level.names.straight[i]}`, file: ref(level.sprites[key]) })),
@@ -96,7 +65,7 @@ for (const { folder, offline } of destinations) for (const kind of ['rewards', '
 .rewards figcaption{position:relative}.rewards figure:has(.mask-button) figcaption{padding-right:105px}.rewards figure .mask-button{position:absolute;right:10px;top:8px;width:auto;padding:4px 8px;border:1px solid #8b795b;border-radius:5px;background:#332d25;color:#f0e7d9;font-size:12px;cursor:pointer}.rewards figure .mask-button:hover{background:#574933}#mask-viewer{width:min(96vw,1200px)}#mask-stage{position:relative;background:#111;line-height:0}#mask-stage img{width:100%;height:auto;max-width:none;max-height:none}#mask-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#mask-viewer footer{gap:10px}#mask-viewer footer button[aria-pressed="true"]{background:#584024;border-color:#bd9b61}#mask-note{padding:0 16px 12px;color:#b7a98f;font-size:13px}
 
 #image-type-filter{position:relative}#image-type-filter summary{cursor:pointer;list-style:none;border:1px solid #645a48;background:#2c2924;border-radius:6px;padding:7px 12px;color:#f0e7d9}#image-type-filter summary::-webkit-details-marker{display:none}#image-type-filter summary:focus-visible{outline:2px solid #f4cd7c;outline-offset:4px}#image-type-filter .choices{position:absolute;z-index:20;top:calc(100% + 4px);left:0;min-width:190px;padding:8px;background:#2c2924;border:1px solid #645a48;border-radius:6px;box-shadow:0 4px 14px #0009}#image-type-filter label{display:flex;gap:9px;align-items:center;padding:7px;cursor:pointer;white-space:nowrap}#image-type-filter input{accent-color:#bd9b61;width:17px;height:17px}#filter-empty{color:#d9c7a8}.viewer-stage{position:relative;min-width:160px}#full{touch-action:pan-y pinch-zoom}.viewer-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:52px;padding:0;background:#15151acc;border-color:#b99b6b;color:#fff4dc;font-size:32px;line-height:1;box-shadow:0 2px 10px #0008}.viewer-nav:hover{background:#493c2ee6}#previous{left:8px}#next{right:8px}#position{flex:0 0 auto;color:#c9b68f;font-variant-numeric:tabular-nums}#caption{min-width:120px}.viewer-help{margin:0;padding:0 16px 12px;font-size:12px;color:#b7a98f}
-</style></head><body class="${kind}">${kind === 'rewards' ? '<div id="form-dock" data-collapsed="false"><button id="dock-toggle" type="button" aria-label="收起形态切换" aria-expanded="true" aria-controls="form-toggle" title="收起"><svg id="dock-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button><button id="form-toggle" type="button" data-form-toggle aria-pressed="false" aria-controls="levels" aria-label="切换魔物形态" title="切换魔物形态"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3.5 18v-3.2a5.5 5.5 0 0 1 11 0V18M23 5h3c4.5 0 7 2.5 7 7v2m-3-3 3 3 3-3M30 23l-3-2 .7 4a6 6 0 1 0 10.6 0l.7-4-3 2a6 6 0 0 0-6 0ZM17 35h-3c-4.5 0-7-2.5-7-7v-2m-3 3 3-3 3 3"/></svg></button></div>' : ''}<header><p>封林 / 美术审阅</p><h1>${title}</h1><p>${description}</p>${kind === 'rewards' ? '<p id="form-status" role="status">当前：人形</p><label><input id="draft-toggle" type="checkbox"> 查看第 11～20 关魔物草稿</label><p id="draft-note" hidden>草稿尚未应用到游戏；背景部分细节有重绘。查看 Alpha 时显示游戏中的图片和遮罩。</p>' : ''}<p>点击图片放大，用左右按钮、键盘方向键或左右滑动切图；筛选关卡后只切换该关图片。“保存原图”可下载当前图片。</p><nav><a href="rewards.html">奖励图片</a><a href="enemies.html">Boss / 小怪 / 玩家</a><label>关卡 <select id="level-filter"><option value="all">全部 ${LEVELS.length} 关</option>${levels.map(l => `<option value="${l.id}">${l.title}</option>`).join('')}</select></label>${kind === 'rewards' ? '<details id="image-type-filter"><summary>图片类型：全部</summary><div class="choices" role="group" aria-label="显示图片类型"><label><input type="checkbox" value="clear" checked>完成图</label><label><input type="checkbox" value="full" checked>满血完成图</label><label><input type="checkbox" value="boss" checked>Boss 击溃图</label></div></details>' : ''}</nav></header><main>
+</style></head><body class="${kind}">${kind === 'rewards' ? '<div id="form-dock" data-collapsed="false"><button id="dock-toggle" type="button" aria-label="收起形态切换" aria-expanded="true" aria-controls="form-toggle" title="收起"><svg id="dock-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button><button id="form-toggle" type="button" data-form-toggle aria-pressed="false" aria-controls="levels" aria-label="切换魔物形态" title="切换魔物形态"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3.5 18v-3.2a5.5 5.5 0 0 1 11 0V18M23 5h3c4.5 0 7 2.5 7 7v2m-3-3 3 3 3-3M30 23l-3-2 .7 4a6 6 0 1 0 10.6 0l.7-4-3 2a6 6 0 0 0-6 0ZM17 35h-3c-4.5 0-7-2.5-7-7v-2m-3 3 3-3 3 3"/></svg></button></div>' : ''}<header><p>封林 / 美术审阅</p><h1>${title}</h1><p>${description}</p>${kind === 'rewards' ? '<p id="form-status" role="status">当前：人形</p>' : ''}<p>点击图片放大，用左右按钮、键盘方向键或左右滑动切图；筛选关卡后只切换该关图片。“保存原图”可下载当前图片。</p><nav><a href="rewards.html">奖励图片</a><a href="enemies.html">Boss / 小怪 / 玩家</a><label>关卡 <select id="level-filter"><option value="all">全部 ${LEVELS.length} 关</option>${levels.map(l => `<option value="${l.id}">${l.title}</option>`).join('')}</select></label>${kind === 'rewards' ? '<details id="image-type-filter"><summary>图片类型：全部</summary><div class="choices" role="group" aria-label="显示图片类型"><label><input type="checkbox" value="clear" checked>完成图</label><label><input type="checkbox" value="full" checked>满血完成图</label><label><input type="checkbox" value="boss" checked>Boss 击溃图</label></div></details>' : ''}</nav></header><main>
 ${kind === 'enemies' ? `<section id="player-preview"><h2>玩家标记 · 金色灵火</h2><p>亮芯固定，短尾轻轻跳动，四帧循环；游戏中随移动方向转动。</p><div class="spirit-row"><div class="spirit-stage"><canvas class="spirit-loop" width="160" height="160" aria-label="灵火循环动画，深色背景"></canvas></div><div class="spirit-stage light"><canvas class="spirit-loop" width="160" height="160" aria-label="灵火循环动画，浅色背景"></canvas></div><button id="animation-toggle" aria-pressed="true">暂停预览</button></div><div class="frames">${[0,1,2,3].map(i => `<figure><canvas data-frame="${i}" width="128" height="128" aria-label="第 ${i + 1} 帧"></canvas><figcaption>第 ${i + 1} 帧</figcaption></figure>`).join('')}</div><p class="note">上方为放大预览，游戏内以小尺寸显示。<a id="spirit-download" download="player-spirit.webp">保存四帧图集</a></p></section>` : ''}
 <div id="levels"></div>${kind === 'rewards' ? '<p id="filter-empty" role="status" hidden>请选择至少一种图片类型。</p>' : ''}</main><dialog id="viewer" aria-label="图片放大预览"><div class="viewer-stage"><img id="full" alt=""><button id="previous" class="viewer-nav" aria-label="上一张">‹</button><button id="next" class="viewer-nav" aria-label="下一张">›</button></div><footer><span id="caption" aria-live="polite"></span><span id="position" aria-label="图片位置"></span><a id="download" download>保存原图</a>${kind === 'rewards' ? '<button id="viewer-form-toggle" data-form-toggle aria-pressed="false">切换魔物</button>' : ''}<button id="close" autofocus>关闭</button></footer><p class="viewer-help">← → 切图 · 左右滑动 · Esc 关闭</p></dialog>${kind === 'rewards' ? '<dialog id="mask-viewer" aria-label="Alpha 遮罩审阅"><div id="mask-stage"><img id="mask-base" alt=""><img id="mask-raw" alt="" hidden><canvas id="mask-overlay" width="1536" height="1024"></canvas></div><footer><span id="mask-caption"></span><button id="mask-show-overlay" aria-pressed="true">叠加查看</button><button id="mask-show-raw" aria-pressed="false">黑白遮罩</button><a id="mask-download" download>保存遮罩</a><button id="mask-close" autofocus>关闭</button></footer><p id="mask-note">红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。</p></dialog>' : ''}<script>
 const levels=${JSON.stringify(levels)},sources=${JSON.stringify(sources)};
@@ -105,8 +74,8 @@ const filter=document.querySelector('#level-filter'),full=document.querySelector
 const typeFilter=document.querySelector('#image-type-filter');
 function selectedTypes(){return typeFilter?new Set([...typeFilter.querySelectorAll('input:checked')].map(input=>input.value)):null;}
 const catalog=levels.flatMap(level=>level.items.map(item=>({...item,levelId:level.id,title:level.title})));
-let currentItems=[],currentIndex=0,monsterMode=false,draftMode=true;
-try{monsterMode=localStorage.getItem('linkblock.review.monster-form')==='true';draftMode=localStorage.getItem('linkblock.review.drafts')!=='false';}catch{}
+let currentItems=[],currentIndex=0,monsterMode=false;
+try{monsterMode=localStorage.getItem('linkblock.review.monster-form')==='true';}catch{}
 const cardUpdates=[];
 const maskViewer=document.querySelector('#mask-viewer');
 let maskRequest=0;
@@ -121,10 +90,9 @@ async function openMask(level,item){
   const request=++maskRequest,form=monsterMode?'魔物形态':'人形',mask=monsterMode?item.monsterMask:item.mask;
   const base=document.querySelector('#mask-base'),raw=document.querySelector('#mask-raw'),canvas=document.querySelector('#mask-overlay');
   const context=canvas.getContext('2d');context.clearRect(0,0,canvas.width,canvas.height);
-  const gameMonster=monsterMode&&((draftMode&&item.draftMaskBase)||item.monsterMaskBase);
-  base.src=sources[gameMonster||activeFile(item)];base.alt=level.title+' / '+form+(gameMonster?' 游戏中完整成图':' 完整成图');
+  base.src=sources[activeFile(item)];base.alt=level.title+' / '+form+' 完整成图';
   raw.src=sources[mask];raw.alt=level.title+' / '+form+' Alpha 遮罩';
-  document.querySelector('#mask-caption').textContent=level.title+' / '+form+(gameMonster?' · 游戏中成图与 Alpha 遮罩':' · Alpha 遮罩');
+  document.querySelector('#mask-caption').textContent=level.title+' / '+form+' · Alpha 遮罩';
   document.querySelector('#mask-note').textContent='正在加载遮罩…';
   const download=document.querySelector('#mask-download');download.href=sources[mask];download.download='level-'+level.id+'-'+(monsterMode?'monster':'human')+'-mask.png';
   maskView(false);maskViewer.showModal();
@@ -137,7 +105,7 @@ async function openMask(level,item){
       pixels.data[i]=255;pixels.data[i+1]=45;pixels.data[i+2]=35;pixels.data[i+3]=a>127&&coverage>127?110:0;
     }
     context.putImageData(pixels,0,0);
-    document.querySelector('#mask-note').textContent=(gameMonster?'当前叠加的是游戏中使用的魔物成图；审阅图为另一个版本。':'')+'红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。';
+    document.querySelector('#mask-note').textContent='红色区域为角色遮罩，可对照原图检查边缘；黑白视图显示实际遮罩文件。';
   }catch{if(request===maskRequest)document.querySelector('#mask-note').textContent='遮罩加载失败，请关闭后重试。';}
 }
 if(maskViewer){
@@ -147,8 +115,8 @@ if(maskViewer){
   maskViewer.addEventListener('close',()=>{maskRequest++;});
   maskViewer.onclick=e=>{if(e.target===maskViewer)maskViewer.close();};
 }
-function activeFile(item){return monsterMode&&draftMode&&item.draft?item.draft:monsterMode&&item.monster?item.monster:item.file;}
-function activePreview(item){return monsterMode&&draftMode&&item.draftPreview?item.draftPreview:monsterMode&&item.monsterPreview?item.monsterPreview:(item.preview||item.file);}
+function activeFile(item){return monsterMode&&item.monster?item.monster:item.file;}
+function activePreview(item){return monsterMode&&item.monsterPreview?item.monsterPreview:(item.preview||item.file);}
 function activeLabel(item){return item.label+(item.monster?' · '+(monsterMode?'魔物形态':'人形'):'');}
 function syncForm(){
   document.querySelectorAll('[data-form-toggle]').forEach(button=>{
@@ -175,18 +143,6 @@ document.querySelectorAll('[data-form-toggle]').forEach(button=>button.onclick=(
   try{localStorage.setItem('linkblock.review.monster-form',String(monsterMode));}catch{}
   syncForm();
 });
-const draftToggle=document.querySelector('#draft-toggle');
-if(draftToggle){
-draftToggle.checked=draftMode;
-document.querySelector('#draft-note').hidden=!draftMode;
-draftToggle.onchange=()=>{
-  draftMode=draftToggle.checked;
-  document.querySelector('#draft-note').hidden=!draftMode;
-  try{localStorage.setItem('linkblock.review.drafts',String(draftMode));}catch{}
-  if(draftMode){monsterMode=true;try{localStorage.setItem('linkblock.review.monster-form','true');}catch{}}
-  syncForm();
-};
-}
 function showImage(index){
   currentIndex=(index+currentItems.length)%currentItems.length;
   const item=currentItems[currentIndex],file=activeFile(item),label=item.title+' / '+activeLabel(item);
@@ -299,7 +255,7 @@ for(const level of levels){
     button.append(img);button.onclick=()=>openImage(level.id,item.file);
     file.className='file';size.className='dimensions';size.style.display='block';size.style.minHeight='1.65em';
     let nearby=false, generation=0;
-    function preloadBoth(priority){const jobs=[preparePreview(item.preview,priority),preparePreview(item.monsterPreview,priority)];if(monsterMode&&draftMode&&item.draftPreview)jobs.push(preparePreview(item.draftPreview,priority));return jobs;}
+    function preloadBoth(priority){return [preparePreview(item.preview,priority),preparePreview(item.monsterPreview,priority)];}
     figure.updatePreload=visible=>{nearby=visible;if(visible)preloadBoth(true);};
     if(item.preview){previewCards.push({figure,preloadBoth});if(preloadObserver)preloadObserver.observe(figure);}
     cardUpdates.push(()=>{
@@ -312,10 +268,6 @@ for(const level of levels){
       }else apply();
     });
     cap.append(label,size,file);
-    if(item.humanDraft){
-      const link=document.createElement('a');link.href=sources[item.humanDraft];link.target='_blank';link.rel='noopener';link.textContent='查看人形面具草稿';
-      cap.append(link);cardUpdates.push(()=>{link.hidden=monsterMode;});
-    }
     if(item.mask){const maskButton=document.createElement('button');maskButton.className='mask-button';maskButton.textContent='查看 Alpha';maskButton.setAttribute('aria-label',level.title+' 查看 Alpha 遮罩');maskButton.onclick=()=>openMask(level,item);cap.append(maskButton);}
     figure.append(button,cap);grid.append(figure);
   }

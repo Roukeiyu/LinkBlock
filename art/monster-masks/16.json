@@ -5,19 +5,19 @@
     1024
   ],
   "source": "art/review/monster-forms/16.png",
-  "source_sha256": "e368ebdebeaaca1ac2d56c8952b4bbe77d69112d4fa8f32e6310ea9523a42326",
+  "source_sha256": "5a9d10e1d9ed9d835b7cf430074cd2f0b57daac8f6323c6257ccfa323469fbd2",
   "matte": "art/monster-masks/mattes/16.png",
-  "matte_sha256": "e1559b3829519edc60bb41af43d23a08407ff719068ae000cfca250fac5442ba",
+  "matte_sha256": "a46d40bcf44c607ca925aaa56f152c6d4966dc75b9100cea18b7ca23c4959495",
   "generated_source": "art/review/monster-forms/16.png",
-  "method": "Supplied rembg mask, white character on black, matching the existing loader",
+  "method": "Prompt-guided segmentation and component refinement on the approved illustration",
   "background_holes": [],
-  "guard_pixels": 2,
+  "guard_pixels": 1,
   "portrait_crop": [
-    560,
-    40,
-    400
+    710,
+    0,
+    500
   ],
-  "mask_sha256": "e1559b3829519edc60bb41af43d23a08407ff719068ae000cfca250fac5442ba",
-  "sealed_sha256": "255cff7462b052500bf3b6362be17eb8dbc24e5e3068f4f6083051533156e8ce",
-  "portrait_sealed_sha256": "eb95b7f1ef609399d788001048de8e6b76ed96ea9d6da18de1e143b3734524c2"
+  "mask_sha256": "90ce6756acacf970e41cbdfd2a4d38ea56ddad6c8a84e4e1b51e7fe12bf45496",
+  "sealed_sha256": "77b33eb323db31cbf4eaaf34188216e681e5ed11ea1262a53b83151a306b6441",
+  "portrait_sealed_sha256": "1b23b95d66ce076ff6ce4ac64c7f3f770f9209840e4485fc81b1109d6d9a91de"
 }

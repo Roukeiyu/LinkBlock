@@ -203,7 +203,7 @@ syncScene();
 /** Bust cached gallery plates replaced in place. Level 12 stayed on the previous plate. */
 const GALLERY_REV = 'r9';
 const replacedGallery = (file: string) => /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\/(?:restored|ninety|perfect|sealed|portrait(?:-sealed)?|mask)\./.test(file);
-const asset = (file: string) => `${import.meta.env.BASE_URL}${file}${file === 'levels/13/perfect-v1/perfect.webp' ? '?v=2' : replacedGallery(file) ? `?v=${GALLERY_REV}` : ''}`;
+const asset = (file: string) => `${import.meta.env.BASE_URL}${file}${/^monster\/(?:1[1-9]|20)\//.test(file) ? '?v=phase2-final' : file === 'levels/13/perfect-v1/perfect.webp' ? '?v=2' : replacedGallery(file) ? `?v=${GALLERY_REV}` : ''}`;
 const sameAsset = (src: string, file: string) => {
   try { return new URL(src, location.href).pathname.endsWith(file); }
   catch { return src.split('?')[0].endsWith(file); }

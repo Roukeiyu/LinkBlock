@@ -1,116 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '../src/levels';
 
-test.beforeEach(async ({ page }, info) => {
-  if (!info.title.startsWith('phase-two monster drafts')) {
-    await page.addInitScript(() => localStorage.setItem('linkblock.review.drafts', 'false'));
-  }
-});
-
 for (const width of [1280, 390]) {
-  test(`phase-two monster drafts use the main review at ${width}px`, async ({ page }) => {
+  test(`phase-two approved artwork and masks use game assets at ${width}px`, async ({ page }) => {
+    test.setTimeout(180000);
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => localStorage.setItem('linkblock.review.monster-form', 'true'));
     await page.goto('/review/rewards.html');
-    await page.locator('#level-filter').selectOption('17');
-    const card = page.locator('#levels section:visible figure').first();
-    await expect(page.getByLabel('查看第 11～20 关魔物草稿')).toBeChecked();
-    await expect(page.locator('#form-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-draft-v11.webp');
-    await expect(card.locator('figcaption > span').first()).toHaveText('完整成图 · 通关解封 · 魔物形态');
-    await card.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v11.png');
-    await expect(page.locator('#caption')).toHaveText('第十七关 · 月蚀歌剧院 / 完整成图 · 通关解封 · 魔物形态');
-    await expect(page.locator('#download')).toHaveAttribute('href', /17-v11\.png$/);
-    await page.locator('#viewer-form-toggle').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/scene-v2\/restored\.webp/);
-    await page.locator('#viewer-form-toggle').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/17-v11.png');
-    await page.locator('#close').click();
-    const humanDraft = card.getByRole('link', { name: '查看人形面具草稿', includeHidden: true });
-    await expect(humanDraft).toBeHidden();
-    await page.locator('#form-toggle').click();
-    await expect(humanDraft).toBeVisible();
-    await expect(humanDraft).toHaveAttribute('href', '../review/human-completion-drafts/17-mask-v1.png');
-    expect((await page.request.get(await humanDraft.getAttribute('href') as string)).ok()).toBe(true);
-    await page.locator('#form-toggle').click();
-    const ninetyCard = page.locator('#levels section:visible figure').nth(1);
-    await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-draft-v7.webp');
-    await expect(ninetyCard.locator('figcaption > span').first()).toHaveText('满血通关 · 魔物形态');
-    await ninetyCard.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/17-v7.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/17-v7\.png$/);
-    await page.locator('#viewer-form-toggle').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/full-v3\/ninety\.webp/);
-    await page.locator('#viewer-form-toggle').click();
-    await page.locator('#close').click();
-    const perfectCard = page.locator('#levels section:visible figure').nth(2);
-    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-draft-v7.webp');
-    await expect(perfectCard.locator('figcaption > span').first()).toHaveText('击败 Boss · 魔物形态');
-    await perfectCard.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/17-v7.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', /monster-perfect-drafts\/17-v7\.png$/);
-    await page.locator('#viewer-form-toggle').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', /levels\/17\/perfect-v3\/perfect\.webp/);
-    await page.locator('#viewer-form-toggle').click();
-    await page.locator('#close').click();
-    await card.getByRole('button', { name: /查看 Alpha/ }).click();
-    await expect(page.locator('#mask-base')).toHaveAttribute('src', '../monster/17/restored.webp');
-    await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
-    await page.locator('#mask-close').click();
-    for (const [level, version] of [[11, 'v7'], [12, 'v3'], [13, 'v6'], [14, 'v2'], [15, 'v10'], [16, 'v5'], [18, 'v5'], [19, 'v3'], [20, 'v2']] as const) {
+    for (let level = 11; level <= 20; level++) {
       await page.locator('#level-filter').selectOption(String(level));
-      const image = page.locator('#levels section:visible figure').first().locator('img');
-      await expect(image).toHaveAttribute('src', `../review/previews/${level}-restored-draft-${version}.webp`);
-      await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
-      const ninety = page.locator('#levels section:visible figure').nth(1).locator('img');
-      const ninetyVersion = level === 11 ? 'v6' : level === 15 ? 'v4' : [16, 18].includes(level) ? 'v3' : [12, 19].includes(level) ? 'v2' : 'v1';
-      const perfectVersion = level === 15 ? 'v10' : level === 16 ? 'v5' : [11, 18].includes(level) ? 'v4' : level === 14 ? 'v3' : [12, 19].includes(level) ? 'v2' : 'v1';
-      await expect(ninety).toHaveAttribute('src', `../review/previews/${level}-ninety-draft-${ninetyVersion}.webp`);
-      await expect.poll(() => ninety.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
-      const perfect = page.locator('#levels section:visible figure').nth(2).locator('img');
-      await expect(perfect).toHaveAttribute('src', `../review/previews/${level}-perfect-draft-${perfectVersion}.webp`);
-      await expect.poll(() => perfect.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 768)).toBe(true);
-      if (level === 11) {
-        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/11-v6.png');
-        await expect(page.locator('#download')).toHaveAttribute('href', /monster-ninety-drafts\/11-v6\.png$/);
-        await page.locator('#close').click();
+      const cards = page.locator('#levels section:visible figure');
+      for (const [index, kind] of ['restored', 'ninety', 'perfect'].entries()) {
+        await expect(cards.nth(index).locator('img')).toHaveAttribute('src', reviewed(`review/previews/${level}-${kind}-monster.webp`));
       }
-      if (level === 15) {
-        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/15-v4.png');
-        await page.locator('#next').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/15-v10.png');
-        await page.locator('#close').click();
+      await cards.first().locator(':scope > button').click();
+      for (const [index, kind] of ['restored', 'ninety', 'perfect'].entries()) {
+        if (index) await page.locator('#next').click();
+        await expect(page.locator('#full')).toHaveAttribute('src', reviewed(`monster/${level}/${kind}.webp`));
+        await expect(page.locator('#download')).toHaveAttribute('href', new URL(reviewed(`monster/${level}/${kind}.webp`), page.url()).href);
       }
-      if (level === 16) {
-        await page.locator('#levels section:visible figure').nth(0).locator(':scope > button').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-completion-drafts/16-v5.png');
-        await page.locator('#next').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/16-v3.png');
-        await page.locator('#next').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/16-v5.png');
-        await page.locator('#close').click();
-      }
-      if (level === 18) {
-        await page.locator('#levels section:visible figure').nth(1).locator(':scope > button').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-ninety-drafts/18-v3.png');
-        await page.locator('#next').click();
-        await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-perfect-drafts/18-v4.png');
-        await page.locator('#close').click();
-      }
+      await page.locator('#close').click();
+      await cards.first().locator('.mask-button').click();
+      await expect(page.locator('#mask-base')).toHaveAttribute('src', reviewed(`monster/${level}/restored.webp`));
+      await expect(page.locator('#mask-raw')).toHaveAttribute('src', reviewed(`monster/${level}/mask.png`));
+      await page.locator('#mask-close').click();
     }
-    await page.locator('#level-filter').selectOption('17');
-    await page.getByLabel('查看第 11～20 关魔物草稿').uncheck();
-    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
-    await expect(card.locator('figcaption > span').first()).not.toContainText('草稿');
-    await expect(ninetyCard.locator('img')).toHaveAttribute('src', '../review/previews/17-ninety-monster.webp');
-    await expect(perfectCard.locator('img')).toHaveAttribute('src', '../review/previews/17-perfect-monster.webp');
-    await page.reload();
-    await expect(page.getByLabel('查看第 11～20 关魔物草稿')).not.toBeChecked();
-    await page.locator('#level-filter').selectOption('17');
-    await expect(card.locator('img')).toHaveAttribute('src', '../review/previews/17-restored-monster.webp');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   });
 }
@@ -161,7 +75,7 @@ function reviewed(file: string) {
   const path = file.replace(/^\.\.\//, '');
   const bust = /^levels\/(?:11|13|14|15|16|17|18|19|20)\/v2\//.test(path)
     || /^review\/previews\/(?:11|13|14|15|16|17|18|19|20)-[^-]+-human\.webp$/.test(path);
-  const revision = path === 'levels/13/perfect-v1/perfect.webp' || path === 'review/previews/13-perfect-human.webp'
+  const revision = /^monster\/(?:1[1-9]|20)\//.test(path) || /^review\/previews\/(?:8|10|1[1-9]|20)-[^-]+-monster\.webp$/.test(path) ? '?v=phase2-final' : path === 'levels/13/perfect-v1/perfect.webp' || path === 'review/previews/13-perfect-human.webp'
     ? '?v=2' : /^review\/previews\/(?:1[1-9]|20)-(?:restored|ninety|perfect)-human\.webp$/.test(path) ? '?v=phase2-v26' : bust ? '?v=r9' : '';
   return `../${path}${revision}`;
 }
@@ -183,12 +97,11 @@ for (const width of [1280, 390]) {
         await expect(dialog).toBeVisible();
         await expect(page.locator('#mask-note')).toContainText('红色区域');
         const mask = monster ? `monster/${id}/mask.png` : LEVELS[id - 1].mask;
-        const art = monster ? ([8, 10].includes(id) ? `monster/${id}/restored.webp` : `review/monster-forms/${id}.png`) : LEVELS[id - 1].restored;
+        const art = monster ? `monster/${id}/restored.webp` : LEVELS[id - 1].restored;
         await expect(page.locator('#mask-base')).toHaveAttribute('src', reviewed(art));
         await expect(page.locator('#mask-raw')).toHaveAttribute('src', reviewed(mask));
         await expect(page.locator('#mask-download')).toHaveAttribute('href', reviewed(mask));
         await expect(page.locator('#mask-caption')).toContainText(monster ? '魔物形态' : '人形');
-        if (monster && [8, 10].includes(id)) await expect(page.locator('#mask-note')).toContainText('游戏中使用的魔物成图');
         const overlay = await page.locator('#mask-overlay').evaluate((canvas: HTMLCanvasElement) => {
           const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
           let colored = 0, clear = 0;
@@ -346,8 +259,8 @@ for (const width of [1280, 390]) {
     await expect(page.locator('#levels section:visible')).toHaveCount(1);
     await page.locator('#levels section:visible figure > button').nth(1).click();
     await expect(page.locator('#position')).toHaveText('2 / 3');
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/4-ninety.png');
-    await expect(page.locator('#download')).toHaveAttribute('download', 'level-4-4-ninety.png');
+    await expect(page.locator('#full')).toHaveAttribute('src', '../monster/4/ninety.webp');
+    await expect(page.locator('#download')).toHaveAttribute('download', 'level-4-ninety.webp');
     await page.locator('#viewer-form-toggle').click();
     await expect(page.locator('#full')).toHaveAttribute('src', `../${LEVELS[3].rewardNinety}`);
     await expect(page.locator('#caption')).toContainText('人形');
@@ -355,8 +268,8 @@ for (const width of [1280, 390]) {
     await assertImages(humanPaths);
     await page.locator('#viewer-form-toggle').click();
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/4-perfect.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../review/monster-forms/4-perfect.png', page.url()).href);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../monster/4/perfect.webp');
+    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../monster/4/perfect.webp', page.url()).href);
     await page.keyboard.press('Escape');
     await expect(page.locator('#level-filter')).toHaveValue('4');
     await page.reload();
@@ -378,7 +291,7 @@ test('nearby previews preload and wait for decoding without stale switches', asy
   let requested = false;
   const originalRequests: string[] = [];
   page.on('request', request => {
-    if (request.url().includes('/review/monster-forms/') || request.url().includes('/levels/1/v10/restored.webp')) originalRequests.push(request.url());
+    if (request.url().includes('/monster/') || request.url().includes('/levels/1/v10/restored.webp')) originalRequests.push(request.url());
   });
   await page.route('**/review/previews/1-restored-monster.webp', async route => {
     requested = true;
@@ -405,8 +318,8 @@ test('nearby previews preload and wait for decoding without stale switches', asy
     await expect(img).toHaveAttribute('src', '../review/previews/1-restored-monster.webp');
     await expect(card.locator('figcaption')).toContainText('魔物形态');
     await card.locator(':scope > button').click();
-    await expect(page.locator('#full')).toHaveAttribute('src', '../review/monster-forms/1.png');
-    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../review/monster-forms/1.png', page.url()).href);
+    await expect(page.locator('#full')).toHaveAttribute('src', '../monster/1/restored.webp');
+    await expect(page.locator('#download')).toHaveAttribute('href', new URL('../monster/1/restored.webp', page.url()).href);
   } finally { release(); }
 });
 
@@ -451,11 +364,11 @@ test('loads visible previews first, then retains all forms for later comparisons
     await page.locator('#levels section').last().scrollIntoViewIfNeeded();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
+      .toHaveAttribute('src', reviewed(`review/previews/${LEVELS.length}-perfect-monster.webp`));
     await page.locator('#form-toggle').click();
     await page.locator('#form-toggle').click();
     await expect(page.locator('#levels section').last().locator('img').last())
-      .toHaveAttribute('src', `../review/previews/${LEVELS.length}-perfect-monster.webp`);
+      .toHaveAttribute('src', reviewed(`review/previews/${LEVELS.length}-perfect-monster.webp`));
     const last = page.locator('#levels section').last().locator('img').last();
     await expect.poll(() => last.evaluate((img: HTMLImageElement) =>
       img.complete && img.naturalWidth === 768 && img.naturalHeight === 512)).toBe(true);
@@ -497,7 +410,7 @@ test.describe('touch review navigation', () => {
 for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
   test(`gallery cards and enlarged rewards keep the same canvas at ${viewport.width}px`, async ({ page }) => {
     const reviewRequests: string[] = [];
-    page.on('request', request => { if (request.url().includes('/review/monster-forms/')) reviewRequests.push(request.url()); });
+    page.on('request', request => { if (request.url().includes('/monster/')) reviewRequests.push(request.url()); });
     await page.setViewportSize(viewport);
     await page.addInitScript(() => {
       const ids = Array.from({ length: 20 }, (_, i) => i + 1);

@@ -1,0 +1,16 @@
+{
+  "source": "levels/12/scene-v1/restored.webp",
+  "source_sha256": "8fc7bec5b8716ab0bcd18334596c6036cb32c63cf4b2ca79af51305b315d98aa",
+  "matte": "art/phase-two-masks/12.png",
+  "matte_sha256": "571c14a84ff68a95a132a185f18149244dce032388dd876134191bf727969e53",
+  "canvas": [
+    1536,
+    1024
+  ],
+  "files": {
+    "mask.png": "4b87a3f5aa3a2705876e7b28c90473791770b0bb03c432c27da093987bbc6eb8",
+    "sealed.webp": "8b6c4a0e2781a5f53e68db74180d80efd1e66eece5f4c268b29498ebb055fbdc",
+    "portrait-sealed.webp": "9ddf5a7d924ca00faf2101adf9e2e757b3bac8398711b804d3017ee1a6a9d1c8",
+    "portrait.webp": "2c36a8be9f365817619fb9c67647b3bfdd3c2f7517ffca3b8a338a513c00c7a3"
+  }
+}

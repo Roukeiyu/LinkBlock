@@ -18,6 +18,15 @@ for (const level of LEVELS) {
     errors.push(`Level ${level.id}: monster source changed; review its independent mask`);
   if (contour.version !== 2 || digest(contour.matte) !== contour.matte_sha256)
     errors.push(`Level ${level.id}: monster extracted matte does not match its reviewed source`);
+  if (level.id >= 11) {
+    const human = JSON.parse(readFileSync(resolve(root, 'art/phase-two-masks', `${level.id}.json`), 'utf8'));
+    if (human.source !== level.restored || digest(`public/${human.source}`) !== human.source_sha256 || digest(human.matte) !== human.matte_sha256)
+      errors.push(`Level ${level.id}: human artwork or reviewed matte changed`);
+    for (const [file, hash] of Object.entries(human.files)) {
+      if (digest(`public/levels/${level.id}/alpha-v1/${file}`) !== hash)
+        errors.push(`Level ${level.id}: ${file} does not match its reviewed human matte`);
+    }
+  }
   for (const [file, hash] of [['mask.png', contour.mask_sha256], ['sealed.webp', contour.sealed_sha256], ['portrait-sealed.webp', contour.portrait_sealed_sha256]]) {
     if (digest(`public/monster/${level.id}/${file}`) !== hash)
       errors.push(`Level ${level.id}: ${file} does not match its reviewed matte; rebuild monster masks and seals together`);
