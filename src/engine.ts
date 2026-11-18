@@ -170,10 +170,13 @@ export class Game {
     if (this.options.powerUps && this.phase === 'playing') this.spawnPowerUp();
     return true;
   }
+  private findPowerUpPosition() {
+    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
+    return powerUpPosition(this.width, this.height, this.territories, this.boundarySegments, this.player, bodies, this.trail, this.random);
+  }
   private spawnPowerUp() {
     if (!this.options.powerUps || this.powerUp) return;
-    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
-    const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
+    const point = this.findPowerUpPosition();
     if (!point) { this.powerUpWait = 0.5; return; }
     this.powerUp = { ...point, kind: pickPowerUp(this.random) };
   }
@@ -199,8 +202,7 @@ export class Game {
       const point = { x: item.x + dx * gap, y: item.y + dy * gap };
       if (this.territories.some(region => inside(point, region))) { Object.assign(item, point); return; }
     }
-    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
-    const point = powerUpPosition(this.width, this.height, this.territories, this.player, bodies, this.trail, this.random);
+    const point = this.findPowerUpPosition();
     if (point) Object.assign(item, point);
   }
   claimedRings(): Polygon[] {
@@ -305,7 +307,7 @@ export class Game {
         if (turn.stepping) this.shoreStep = { direction, point: { ...this.player } };
         return false;
       }
-      if (!drawing || this.protection > 0) return false;
+      if (!drawing) return false;
       this.cutRegion = region;
       this.anchor = { ...p };
       this.trail = [{ ...p }];
@@ -315,10 +317,10 @@ export class Game {
     // Reverse input erases the current segment at normal walking speed. At a
     // bend, update carries the remaining distance into the held direction.
     if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) {
-      if (this.collidesWithTrail() || this.hazardsHit(p, p)) { this.hit(); return false; }
+      if (this.checkHit(p, p, this.collidesWithTrail())) return false;
       const segmentLength = Math.hypot(p.x - previous.x, p.y - previous.y);
       const travel = Math.min(amount, segmentLength), returned = this.retract(travel);
-      if (this.collidesWithTrail() || this.hazardsHit(p, this.player)) { this.hit(); return false; }
+      if (this.checkHit(p, this.player, this.collidesWithTrail())) return false;
       this.backtrackEnded = returned || travel >= segmentLength - EPS;
       return false;
     }
@@ -350,7 +352,7 @@ export class Game {
       }
       this.trail = simplify([...this.trail, next]);
       this.player = next; this.playerPath.push({ ...next }); moved = true;
-      if (this.collidesWithTrail() || this.hazardsHit(p, next)) { this.hit(); return false; }
+      if (this.checkHit(p, next, this.collidesWithTrail())) return false;
       p = next;
     }
     if (moved && route.closes) { this.capture(); return true; }
@@ -540,13 +542,15 @@ export class Game {
     const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
     return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= enemyHitRadius(body) + 0.12));
   }
-  private hit() {
-    // The live stroke starts at trail[0]. Anchor can still be an older shore
-    // point until that stroke is created, so a death uses the stroke itself.
-    const home = this.trail.length ? { ...this.trail[0] } : { ...this.anchor };
-    this.shoreStep = undefined;
-    this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false;
-    this.player = home; this.anchor = { ...home }; this.lives--; this.hitsTaken++; this.protection = 1.5;
+  private hit(keepPosition = false) {
+    this.lives--; this.hitsTaken++; this.protection = 1.5;
+    if (!keepPosition && this.trail.length) this.player = { ...this.trail[0] };
+    // A surviving projectile hit in open water keeps the connected stroke usable.
+    // At the shore the player can start another cut directly from the contact point.
+    if (!keepPosition || !this.lives || !this.trail.length || this.isBoundary(this.player.x, this.player.y)) {
+      this.anchor = { ...this.player }; this.shoreStep = undefined;
+      this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false;
+    }
     this.events.push('hit');
     if (!this.lives) { this.phase = 'lost'; this.events.push('lost'); this.hazards = []; this.bossJump = undefined; }
   }
@@ -554,11 +558,13 @@ export class Game {
     if (this.hazards.length >= MAX_HAZARDS || hazard.expired) return false;
     this.hazards.push(hazard); return true;
   }
-  private hazardsHit(from: Point, to: Point) {
+  private checkHit(from: Point, to: Point, bodyHit = false) {
     if (this.protection > 0) return false;
     const hits = this.hazards.filter(hazard => hazard.hitsPlayer(from, to, PLAYER_RADIUS) || hazard.hitsTrail(this.trail, 0.12));
+    if (!bodyHit && !hits.length) return false;
     for (const hazard of hits) hazard.onHit();
-    return hits.length > 0;
+    this.hit(!bodyHit && hits.every(hazard => hazard.preservesTrailOnHit));
+    return true;
   }
   update(seconds: number, direction?: Direction, drawing = false) {
     if (this.phase === 'opening' && this.opening && Number.isFinite(seconds) && seconds > 0) {
@@ -613,8 +619,7 @@ export class Game {
       for (const hazard of this.hazards) hazard.update(active, this);
       this.boundaryRelocated = false;
       const lives = this.lives, playerBefore = { ...this.player };
-      const bodyHit = this.collidesWithTrail(true), attackHit = this.hazardsHit(playerBefore, playerBefore);
-      if (bodyHit || attackHit) this.hit();
+      this.checkHit(playerBefore, playerBefore, this.collidesWithTrail(true));
       if (lives !== this.lives) gestureEnded = true;
       if (!gestureEnded) {
         this.playerPath = [playerBefore];
@@ -643,7 +648,9 @@ export class Game {
           this.playerPath = route;
         }
         const path = this.boundaryRelocated ? [this.player, this.player] : this.playerPath.length > 1 ? this.playerPath : [playerBefore, this.player];
-        if (path.slice(1).some((p, i) => this.hazardsHit(path[i], p))) this.hit();
+        for (let i = 1; i < path.length; i++) {
+          if (this.checkHit(path[i - 1], path[i])) break;
+        }
         if (lives !== this.lives) gestureEnded = true;
         if (boundaryChanged || gestureEnded) {
           walls = this.territories.map(wallEdges);

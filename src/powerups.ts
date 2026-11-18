@@ -1,4 +1,4 @@
-import { distance, inside, wallEdges, type Point, type Polygon } from './geometry';
+import { distance, inside, rayDistance, wallEdges, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
 
 export type PowerUpKind = 'slow' | 'stop' | 'speed' | 'bomb' | 'shuffle';
@@ -51,47 +51,40 @@ export function lerpClaimedRect(from: BoardRect, to: BoardRect, t: number, claim
   return { x, y, w, h };
 }
 
-/** Find an exposed, reachable spot without placing an item under an actor. */
-export function powerUpPosition(width: number, height: number, regions: Polygon[], player: Point, enemies: Enemy[], trail: Polygon, random: () => number): Point | undefined {
-  const margin = POWER_UP_RADIUS;
-  const safe = (point: Point) => regions.some(region => inside(point, region))
-    && Math.hypot(point.x - player.x, point.y - player.y) >= 4
+/** Spawn in open water within a quarter of the board's short side of the playable shore. */
+export function powerUpPosition(width: number, height: number, regions: Polygon[], shore: [Point, Point][], player: Point, enemies: Enemy[], trail: Polygon, random: () => number): Point | undefined {
+  if (!shore.length || !regions.length) return undefined;
+  const reach = Math.min(width, height) / 4;
+  const water = regions.map(region => ({ region, walls: wallEdges(region) }));
+  const walls = water.flatMap(room => room.walls);
+  const inWater = (point: Point) => water.some(room => inside(point, room.region, room.walls));
+  const fits = (point: Point) => walls.every(([a, b]) => distance(point, a, b) >= POWER_UP_RADIUS);
+  const clear = (point: Point) => Math.hypot(point.x - player.x, point.y - player.y) >= 4
     && enemies.every(enemy => Math.hypot(point.x - enemy.x, point.y - enemy.y) >= enemy.visualRadius + POWER_UP_RADIUS + 0.5)
     && trail.slice(1).every((end, i) => distance(point, trail[i], end) >= POWER_UP_RADIUS + 0.5);
+  const vertices = shore.flat();
+  const xs = vertices.map(p => p.x), ys = vertices.map(p => p.y);
+  const left = Math.max(0, Math.min(...xs) - reach), right = Math.min(width, Math.max(...xs) + reach);
+  const top = Math.max(0, Math.min(...ys) - reach), bottom = Math.min(height, Math.max(...ys) + reach);
   for (let i = 0; i < 96; i++) {
-    const point = { x: margin + random() * (width - 2 * margin), y: margin + random() * (height - 2 * margin) };
-    if (safe(point)) return point;
+    const point = { x: left + random() * (right - left), y: top + random() * (bottom - top) };
+    if (shore.some(([a, b]) => distance(point, a, b) <= reach) && inWater(point) && fits(point) && clear(point)) return point;
   }
-  // A bounded fallback handles repeated random numbers and narrow regions.
-  for (const region of regions) {
-    const ys = [...new Set(region.flatMap(p => [p.y, p.y + margin, p.y - margin]))].sort((a, b) => a - b);
-    const candidates = [...ys, ...ys.slice(1).map((y, i) => (y + ys[i]) / 2)];
-    for (const y of candidates) {
-      if (y < margin || y > height - margin) continue;
-      const xs = wallEdges(region).filter(([a, b]) => (a.y > y) !== (b.y > y))
-        .map(([a, b]) => a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y)).sort((a, b) => a - b);
-      for (let i = 0; i + 1 < xs.length; i += 2) {
-        for (const x of [(xs[i] + xs[i + 1]) / 2, xs[i] + margin, xs[i + 1] - margin]) {
-          const point = { x, y };
-          if (x >= margin && x <= width - margin && safe(point)) return point;
-        }
-      }
-    }
-  }
-  // In a cramped or crowded region, use a water interior point even when
-  // ideal clearance is unavailable. A shoreline point cannot be enclosed.
+  // Probe from the shore itself when random samples miss a narrow water strip.
+  // Half the distance to the opposite wall also works in gaps smaller than an icon.
   const fallback: Point[] = [];
-  for (const region of regions) {
-    const ys = [...new Set((region.rings ?? [region]).flat().map(p => p.y))].sort((a, b) => a - b);
-    for (let row = 1; row < ys.length; row++) {
-      const y = (ys[row - 1] + ys[row]) / 2;
-      const xs = wallEdges(region).filter(([a, b]) => (a.y > y) !== (b.y > y))
-        .map(([a, b]) => a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y)).sort((a, b) => a - b);
-      for (let i = 0; i + 1 < xs.length; i += 2) {
-        const point = { x: (xs[i] + xs[i + 1]) / 2, y };
-        if (inside(point, region)) fallback.push(point);
+  for (const [a, b] of shore) {
+    for (const t of [0.5, 0.25, 0.75]) {
+      const bank = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+      for (const sign of [-1, 1]) {
+        const normal = a.x === b.x ? { x: sign, y: 0 } : { x: 0, y: sign };
+        const gap = walls.reduce((limit, [c, d]) => Math.min(limit, rayDistance(bank, normal, c, d) / 2), reach);
+        const point = { x: bank.x + normal.x * gap, y: bank.y + normal.y * gap };
+        if (!inWater(point)) continue;
+        if (fits(point) && clear(point)) return point;
+        fallback.push(point);
       }
     }
   }
-  return fallback.length ? fallback[Math.min(fallback.length - 1, Math.floor(random() * fallback.length))] : undefined;
+  return fallback.find(clear) ?? fallback[0];
 }

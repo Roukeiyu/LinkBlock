@@ -276,10 +276,11 @@ describe('expanding the only initial island', () => {
     expect(game.isBoundary(20, 0)).toBe(true); expect(game.isBoundary(40, 10)).toBe(true);
     expect(game.isBoundary(4, 0)).toBe(false); expect(game.isBoundary(40, 30)).toBe(false);
   });
-  it('keeps frame-touching and retracting lines vulnerable to bullets and restores the island anchor on hit', () => {
+  it('keeps the live frame tip in place on a bullet hit and retracts to its island anchor on release', () => {
     const game = ringGame(); place(game, 8, 8); game.move('up', true, 100);
     game.beginRetraction(); game.spawnHazard(new Projectile({ x: 8, y: 4 }, { x: 0, y: 0 })); game.update(0.01, undefined, true);
-    expect(game.lives).toBe(2); expect(game.player).toEqual({ x: 8, y: 8 }); expect(game.trail).toHaveLength(0);
+    expect(game.lives).toBe(2); expect(game.player).toEqual({ x: 8, y: 0 }); expect(game.trail).toHaveLength(2);
+    game.update(0.2); expect(game.player).toEqual({ x: 8, y: 8 }); expect(game.trail).toHaveLength(0);
     expect(game.claimed).toBe(56); expect(game.score).toBe(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
   });
   it('preserves other water regions and their enemies after the island reaches opposite frame sides', () => {

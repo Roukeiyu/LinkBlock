@@ -228,7 +228,8 @@ describe('enemy and lifecycle', () => {
     game.enemies[0] = createEnemy('straight', { x: 5.5, y: 3.5 }, { x: -10, y: 0 }); game.update(0.1, undefined, true);
     expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0);
     expect(game.player).toEqual(game.anchor);
-    game.move('down', true, 1); expect(game.trail).toHaveLength(0);
+    game.move('down', true, 1); expect(game.trail).toHaveLength(2);
+    expect(game.protection).toBeGreaterThan(0); expect(game.lives).toBe(2);
   });
   it('detects collision on the moving tip before capture and loses after three hits', () => {
     const game = fixture();

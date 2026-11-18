@@ -96,7 +96,8 @@ describe('interruptible retraction on the real island', () => {
     else game.enemies.push(createEnemy(kind, tip, { x: 0, y: 0 }));
     game.update(0.02, undefined, true);
     expect(game.lives).toBe(2); expect(game.events.filter(e => e === 'hit')).toHaveLength(1);
-    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
+    expect(game.player).toEqual(kind === 'projectile' ? tip : game.anchor);
+    expect(game.trail).toHaveLength(kind === 'projectile' ? 2 : 0); expect(game.retracting).toBe(false);
     game.update(0.02, undefined, true); expect(game.lives).toBe(2); expect(game.score).toBe(0); expect(game.claimed).toBe(64);
   });
 
@@ -242,7 +243,12 @@ describe('directional trail backtracking while drawing is held', () => {
     else game.enemies.push(createEnemy(kind, point, { x: 0, y: 0 }));
     game.update(0.05, 'down', true);
     expect(game.lives).toBe(2); expect(game.events.filter(e => e === 'hit')).toHaveLength(1);
-    expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0); expect(game.score).toBe(0); expect(game.claimed).toBe(64);
+    if (kind === 'projectile') {
+      expect(game.player).toEqual({ x: 16, y: 6 }); expect(game.trail.at(-1)).toEqual(game.player);
+    } else {
+      expect(game.player).toEqual(game.anchor); expect(game.trail).toHaveLength(0);
+    }
+    expect(game.score).toBe(0); expect(game.claimed).toBe(64);
   });
 
   it('does not collide with erased geometry, including a fast shot through an erased segment', () => {

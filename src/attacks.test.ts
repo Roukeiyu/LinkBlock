@@ -117,11 +117,23 @@ describe('projectiles and collision', () => {
     expect(shot.hitsTrail([{ x: 5, y: 2 }, { x: 5, y: 8 }], 0.12)).toBe(true);
     expect(shot.hitsTrail([{ x: 5, y: 7 }, { x: 5, y: 8 }], 0.12)).toBe(false);
   });
-  it.each([false, true])('severs a live trail while retracting=%s', retracting => {
+  it.each([false, true])('keeps the connected trail and current tip on a bullet hit while retracting=%s', retracting => {
     const game = fixture(); game.move('down', true, 5);
     if (retracting) game.beginRetraction();
     game.spawnHazard(new Projectile({ x: 11, y: 1 }, { x: -20, y: 0 })); game.update(0.05, undefined, !retracting);
-    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.retracting).toBe(false);
+    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(2); expect(game.retracting).toBe(retracting);
+    expect(game.player).toEqual(game.trail.at(-1)); expect(game.player.y).toBeGreaterThan(1);
+    if (!retracting) expect(game.player.y).toBe(5);
+    game.update(0.05, 'right', true);
+    expect(game.player.x).toBeGreaterThan(10); expect(game.lives).toBe(2);
+  });
+  it('stays at the current shore point and can start and finish a new cut while protected', () => {
+    const game = fixture(); game.move('left', false, 6);
+    const coast = { ...game.player }; expect(coast).not.toEqual(game.anchor);
+    game.spawnHazard(new Projectile(coast, { x: 0, y: 0 })); game.update(0.01);
+    expect(game.player).toEqual(coast); expect(game.anchor).toEqual(coast);
+    game.move('down', true, 2); game.move('right', true, 3); game.move('up', true, 2);
+    expect(game.claimed).toBeCloseTo(6); expect(game.lives).toBe(2); expect(game.protection).toBeGreaterThan(0);
   });
   it('applies one hit for simultaneous shots and protects the respawn', () => {
     const game = fixture();
@@ -144,7 +156,9 @@ describe('projectiles and collision', () => {
     const angle = direction * Math.PI / 8, dx = Math.cos(angle), dy = Math.sin(angle);
     game.spawnHazard(new Projectile({ x: 50 - dx * 5, y: 15 - dy * 5 }, { x: dx * 1000, y: dy * 1000 }));
     game.beginRetraction(); game.update(0.02);
-    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(0); expect(game.player).toEqual(game.anchor);
+    expect(game.lives).toBe(2); expect(game.trail).toHaveLength(4);
+    expect(game.player.x).toBe(30); expect(game.player.y).toBeGreaterThan(48);
+    expect(game.trail.at(-1)).toEqual(game.player);
   });
   it('clears hazards on victory and freezes the result', () => {
     const game = fixture(); game.move('right', false, 5);

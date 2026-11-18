@@ -3,7 +3,7 @@ import { Game, PLAYER_SPEED, RETRACT_SPEED } from './engine';
 import { Island } from './island';
 import { Projectile } from './attacks';
 import { createEnemy } from './enemies';
-import { inside } from './geometry';
+import { distance, inside, type Point } from './geometry';
 import { BOMB_RADIUS, POWER_UP_DURATION, powerUpPosition, rectangleOfArea, type PowerUpKind } from './powerups';
 
 function game(random = () => 0.5) {
@@ -39,8 +39,35 @@ describe('persistent power-ups', () => {
   });
   it('finds interior water even in a narrow strip against the arena frame', () => {
     const region = [{ x: 0, y: 0 }, { x: 0.4, y: 0 }, { x: 0.4, y: 6 }, { x: 0, y: 6 }];
-    const point = powerUpPosition(6, 6, [region], { x: 3, y: 0 }, [], [], () => 0.5);
+    const point = powerUpPosition(6, 6, [region], [[region[1], region[2]]], { x: 3, y: 0 }, [], [], () => 0.5);
     expect(point).toBeDefined(); expect(inside(point!, region)).toBe(true);
+  });
+  it('keeps random and crowded fallback spawns near the actual edges of a concave island', () => {
+    const frame = [{ x: 0, y: 0 }, { x: 72, y: 0 }, { x: 72, y: 48 }, { x: 0, y: 48 }];
+    const land = [{ x: 3, y: 3 }, { x: 65, y: 3 }, { x: 65, y: 7 }, { x: 7, y: 7 }, { x: 7, y: 43 }, { x: 3, y: 43 }];
+    const island = new Island(frame, land), player = land[0];
+    const enemy = createEnemy('straight', { x: 30, y: 30 }, { x: 0, y: 0 });
+    let seed = 41;
+    const random = () => ((seed = Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
+    for (let i = 0; i <= 80; i++) {
+      if (i === 80) enemy.visualRadius = 100;
+      const point = powerUpPosition(72, 48, island.regions, island.coast, player, [enemy], [], random)!;
+      expect(island.regions.some(room => inside(point, room))).toBe(true);
+      expect(Math.min(...island.coast.map(([a, b]) => distance(point, a, b)))).toBeLessThanOrEqual(12);
+    }
+  });
+  it.each(['slow', 'shuffle'] as const)('uses the live shore for opening and cooldown spawns after collecting %s', kind => {
+    const field = new Game(100, 100, { opening: true, enemies: [], boss: null, powerUps: true, random: () => 0.5 });
+    field.start();
+    field.opening!.region = [{ x: 4, y: 4 }, { x: 24, y: 4 }, { x: 24, y: 24 }, { x: 4, y: 24 }];
+    field.confirmOpening();
+    const checkSpawn = (point: Point) => {
+      expect(field.territories.some(room => inside(point, room))).toBe(true);
+      expect(Math.min(...field.boundarySegments.map(([a, b]) => distance(point, a, b)))).toBeLessThanOrEqual(25);
+    };
+    checkSpawn(field.powerUp!);
+    pickup(field, kind); field.update(15);
+    checkSpawn(field.powerUp!);
   });
   it.each([0, 0.4, 1 - Number.EPSILON])('spawns the next item after a random 10–20 second cooldown, random=%s', random => {
     const field = game(() => random); pickup(field, 'slow');

@@ -22,6 +22,8 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await page.locator('#board').focus(); await page.keyboard.press('Space'); await page.clock.runFor(160);
     const item = await page.evaluate(() => window.powerUpGame().powerUp);
     expect(item).toBeDefined(); expect(['slow', 'stop', 'speed', 'bomb', 'shuffle']).toContain(item!.kind);
+    const shoreGap = Math.hypot(Math.max(18 - item!.x, 0, item!.x - 30), Math.max(18 - item!.y, 0, item!.y - 30));
+    expect(shoreGap).toBeGreaterThan(0); expect(shoreGap).toBeLessThanOrEqual(12);
     await page.evaluate(() => {
       const game = window.powerUpGame(); game.enemies = []; game.boss = undefined; game.bossAttack = undefined;
       game.player = { x: 24, y: 18 }; game.anchor = { ...game.player };

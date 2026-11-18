@@ -65,14 +65,15 @@ describe('reported internal shore and frame departure regressions', () => {
     expect(game.claimed).toBe(73); expect(shore(20, 15)).toBe(false); expect(shore(24, 15)).toBe(true);
     expect(game.trail).toHaveLength(0); expect(game.lives).toBe(3);
   });
-  it.each([0, 1, 2, 3])('keeps a line launched along the frame vulnerable and restores the true shore once on hit, turns=%s', turns => {
+  it.each([0, 1, 2, 3])('keeps a line launched along the frame connected to its true shore on a bullet hit, turns=%s', turns => {
     const { game, place, move, rotate } = fixture(turns);
     place(14, 12); move('up', 12); move('right', 4); move('down', 12); place(18, 0);
     const score = game.score; move('right', 4);
     game.spawnHazard(new Projectile(rotate({ x: 20, y: 0 }), { x: 0, y: 0 }));
     game.spawnHazard(new Projectile(rotate({ x: 20, y: 0 }), { x: 0, y: 0 }));
     game.update(0.02, undefined, true);
-    expect(game.lives).toBe(2); expect(game.player).toEqual(rotate({ x: 18, y: 0 })); expect(game.trail).toHaveLength(0);
+    expect(game.lives).toBe(2); expect(game.player).toEqual(rotate({ x: 22, y: 0 }));
+    expect(game.trail).toEqual([rotate({ x: 18, y: 0 }), game.player]);
     expect(game.claimed).toBe(112); expect(game.score).toBe(score); expect(game.lastDefeats).toHaveLength(0);
   });
 });

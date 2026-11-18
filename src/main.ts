@@ -132,7 +132,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
-      <p>场上会出现一枚道具，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 10–20 秒出现下一枚。</p>
+      <p>道具会出现在已圈领地边缘附近，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 10–20 秒出现下一枚。</p>
       <p>沙漏减速：敌人移动速度降低 30%（10 秒，不影响子弹）。雪花止步：敌人和子弹冻结 3 秒。闪电加速：角色速度提高 50%（10 秒）。</p>
       <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒，时间到时圆外的敌人和首领各受到一次伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
     </div>
@@ -437,7 +437,7 @@ function beginLevel(id: number) {
   $('#toast').classList.remove('visible');
   openingFrameAt = performance.now();
   refreshCard = true;
-  sync(); canvas.focus({ preventScroll: true }); render(performance.now());
+  sync(); canvas.focus({ preventScroll: true }); render();
 }
 function restart() { beginLevel(current.id); }
 function closeLevels() { $('#level-select').hidden = true; placeShade(); }
@@ -464,7 +464,7 @@ function togglePause() {
 }
 function confirmOpening() {
   if (!game.confirmOpening()) return false;
-  clearInput(); sync(); canvas.focus({ preventScroll: true }); render(performance.now()); return true;
+  clearInput(); sync(); canvas.focus({ preventScroll: true }); render(); return true;
 }
 
 $('#primary').addEventListener('click', () => {
@@ -473,7 +473,7 @@ $('#primary').addEventListener('click', () => {
   else if (game.phase === 'won' && current.id === LEVELS.length && LEVELS.every(level => progress.cleared.includes(level.id))) beginLevel(1);
   else beginLevel(current.id);
   openingFrameAt = performance.now();
-  sync(); canvas.focus({ preventScroll: true }); render(performance.now());
+  sync(); canvas.focus({ preventScroll: true }); render();
 });
 pauseButton.addEventListener('click', togglePause);
 $('#restart').addEventListener('click', restart);
@@ -751,9 +751,9 @@ function handleEvent(event: GameEvent) {
   } else if (event === 'partition') {
     notify('通路已连接 · 继续围出闭合区域', '通路已连接，继续圈地'); lakeAudio.play('partition');
   } else if (event === 'hit') {
-    hitFlash = 0.5; notify(`受到攻击 · 剩余 ${game.lives} 条生命`, `受击 · 剩余${game.lives}命`);
+    hitFlash = 0.85; notify(`受击，生命 −1 · 剩余 ${game.lives} 条生命`, `生命 −1 · 剩余${game.lives}命`);
+    if (!reducedMotion.matches) pulseHud('#lives');
     lakeAudio.play('hurt');
-    if (game.lives > 0) lakeAudio.play('respawn');
   } else if (event === 'won') {
     const result = applyUnlocks(codex, game, current.id);
     codex = result.codex; writeCodex(codex);
@@ -898,7 +898,23 @@ function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: 
   context.restore();
 }
 
-function render(now: number) {
+function drawHitFeedback(x: number, y: number, scale: number) {
+  // Keep the health loss legible when the canvas is scaled down on a phone.
+  const unit = Math.max(1, 6.5 * canvas.width / (scale * Math.max(1, canvas.clientWidth)));
+  const radius = (1.45 + (reducedMotion.matches ? 0 : hitFlash)) * unit;
+  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = '#5a1023'; ctx.lineWidth = 0.38 * unit; ctx.stroke();
+  ctx.strokeStyle = hitFlash > 0 ? '#ffada3' : '#fff2ce'; ctx.lineWidth = 0.19 * unit; ctx.stroke();
+  if (hitFlash <= 0) return;
+  const labelX = Math.max(1.8 * unit, Math.min(game.width - 1.8 * unit, x));
+  const labelY = y < 4 * unit ? y + 3.2 * unit : y - 3.2 * unit;
+  ctx.globalAlpha = Math.min(1, hitFlash * 5);
+  ctx.font = `bold ${2.2 * unit}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 0.45 * unit; ctx.strokeStyle = '#551220'; ctx.fillStyle = '#fff2de';
+  ctx.strokeText('−1', labelX, labelY); ctx.fillText('−1', labelX, labelY);
+}
+
+function render() {
   const width = canvas.width, height = canvas.height;
   const scale = Math.min((width - 24) / game.width, (height - 24) / game.height);
   ctx.clearRect(0, 0, width, height);
@@ -964,17 +980,18 @@ function render(now: number) {
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
     if (game.boss) renderEnemy(ctx, game.boss, game.bossJump ? 0 : game.bossAttack?.warning ?? 0, reducedMotion.matches, game.bossJump, game.bossFlash, game.bossAttack?.directions, game.bossAttack?.angleOffset, game.bossAttack?.warningAngles);
     for (const hazard of game.hazards) hazard.render(ctx);
-    if (game.actorsReady && (!game.protection || Math.floor(now / 100) % 2)) {
+    if (game.actorsReady) {
       ctx.save();
       const { x, y } = game.player;
       const direction = [...held].at(-1);
       if (direction) playerFacing = { left: Math.PI, right: 0, up: -Math.PI / 2, down: Math.PI / 2 }[direction];
       renderPlayerSpirit(ctx, x, y, playerFacing, game.trail.length > 0, game.elapsed, reducedMotion.matches);
+      if (game.protection > 0) drawHitFeedback(x, y, scale);
       ctx.restore();
     }
   }
   ctx.restore();
-  if (hitFlash > 0) { ctx.fillStyle = `rgba(255,80,100,${hitFlash * 0.35})`; ctx.fillRect(0, 0, width, height); }
+  if (hitFlash > 0 && !reducedMotion.matches) { ctx.fillStyle = `rgba(255,80,100,${hitFlash * 0.2})`; ctx.fillRect(0, 0, width, height); }
 }
 
 let previous = performance.now();
@@ -1035,17 +1052,18 @@ function frame(now: number) {
   const wasOpening = game.phase === 'opening';
   const candidateBefore = game.opening?.candidates;
   sampleJoystick();
-  if (game.update(dt, [...held].at(-1), drawHeld || touchDraw)) held.clear();
+  const hitsBefore = game.hitsTaken;
+  if (game.update(dt, [...held].at(-1), drawHeld || touchDraw) && (game.hitsTaken === hitsBefore || game.phase !== 'playing')) held.clear();
   if (wasOpening && game.phase === 'playing') clearInput();
   for (const effect of effects) effect.update(game.phase === 'paused' ? 0 : dt);
   for (let i = effects.length - 1; i >= 0; i--) if (effects[i].finished) effects.splice(i, 1);
   for (const event of game.events.splice(0)) handleEvent(event);
   followAudio();
-  hitFlash = Math.max(0, hitFlash - dt);
+  if (game.phase !== 'paused') hitFlash = Math.max(0, hitFlash - dt);
   if (now > toastUntil) $('#toast').classList.remove('visible');
   uiClock += dt;
   if (uiClock >= 0.1 || lastPhase !== game.phase || (game.phase === 'opening' && candidateBefore !== game.opening?.candidates)) { sync(); uiClock = 0; }
-  render(now);
+  render();
   requestAnimationFrame(frame);
 }
 function openCombatGuide() {
@@ -1078,7 +1096,7 @@ $('#menu-start').addEventListener('click', () => {
     hideMenu();
     game.start();
     openingFrameAt = performance.now();
-    sync(); canvas.focus({ preventScroll: true }); render(performance.now());
+    sync(); canvas.focus({ preventScroll: true }); render();
     return;
   }
   beginLevel(id);
@@ -1136,7 +1154,7 @@ $('#confirm-clear-progress').addEventListener('click', () => {
   clearInput(); freshNote = ''; effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   loadLevelArt(current); applyAccent(current); syncScene(); paintSealRow(); renderLevels();
-  refreshCard = true; closeClearProgress(); sync(); render(performance.now());
+  refreshCard = true; closeClearProgress(); sync(); render();
 });
 window.addEventListener('keydown', event => {
   if ($('#clear-progress-dialog').hidden) return;

@@ -5,6 +5,7 @@ export interface Arena { width: number; height: number }
 // same lifetime, swept hit testing and drawing contract without changing Game.
 export interface AttackHazard {
   readonly expired: boolean;
+  readonly preservesTrailOnHit?: boolean;
   update(seconds: number, arena: Arena): void;
   hitsPlayer(from: Point, to: Point, radius: number): boolean;
   hitsTrail(trail: Polygon, radius: number): boolean;
@@ -31,6 +32,7 @@ export type BossAttackFactory = () => BossAttack;
 export const MAX_HAZARDS = 128;
 
 export class Projectile implements AttackHazard {
+  readonly preservesTrailOnHit = true;
   previous: Point;
   expired = false;
   constructor(public position: Point, readonly velocity: Point, readonly radius = 0.22) {
