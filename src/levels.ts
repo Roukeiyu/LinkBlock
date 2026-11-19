@@ -173,8 +173,8 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 10, theme: '炎魔', title: '第十关 · 熔冠终庭', difficulty: '终章',
-    tactic: '小怪高速冲锋；首领交替缺口火环与双向瞄准扇射。每轮先读预警，再选择逃生方向。', attackPattern: 'inferno',
-    enemyMotion: { straight: 'surge', period: 1.35, orbitRate: 1.8, zigzagInterval: 0.4, zigzagAngle: 1.5 },
+    tactic: '金色箭头指向小怪即将冲锋的方向。沿箭头侧面出线，留意首领的缺口火环和双向扇射。', attackPattern: 'inferno',
+    enemyMotion: { straight: 'windup', period: 2.8, orbitRate: 1.8, zigzagInterval: 0.4, zigzagAngle: 1.5 },
     restored: 'levels/10/v3/restored.webp', sealed: 'levels/10/v3/sealed.webp', mask: 'levels/10/v3/mask.png', music: 'ember-crown-suno-v1',
     portraitSealed: 'levels/10/v3/portrait-sealed.webp', portraitRescued: 'levels/10/v3/portrait.webp',
     rewardNinety: 'levels/10/v12/ninety.webp', rewardPerfect: 'levels/10/v18/perfect.webp',
@@ -192,19 +192,19 @@ function campaignAfterTen(): LevelDef[] {
     ['鹿人', '翠角神林', '翠芽', '苔羊', '角叶', '藤环', '飘籽', '翠角神麋', '#7dcea0', '小怪巡行后突然折返；首领四翼弹幕逐轮旋转。避免贪长线。', 'jade-forest'],
     ['牛头人', '金沙斗场', '沙蝎', '盔虫', '角砾', '沙轮', '刃蜥', '金沙牛魔', '#e0a15a', '小怪走直角路线；首领交替横竖排射。沿本轮开放方向移动。', 'golden-arena'],
     ['蛇妖', '紫藤画舫', '藤鳞', '莲蝰', '紫绶', '花环', '涟蛇', '紫藤蟒君', '#9b6bb5', '小怪定时折返；首领朝三个方向释放扇射。预警后侧移。', 'wisteria-boat'],
-    ['机心造物', '钟械秘阁', '钥蛾', '铜蝉', '齿鼠', '摆轮', '游丝', '自鸣机兽', '#d4a574', '小怪高速冲锋；首领交替缺口环射与双向扇射。先读预警。', 'clockwork-archive'],
+    ['机心造物', '钟械秘阁', '钥蛾', '铜蝉', '齿鼠', '摆轮', '游丝', '自鸣机兽', '#d4a574', '金色箭头预告小怪的冲锋方向。趁它冲过后画线，留意首领交替的缺口环射和双向扇射。', 'clockwork-archive'],
     ['龙裔', '琥珀龙窟', '蜜蜥', '珀虫', '脂蛹', '珀环', '翅蝎', '琥珀龙君', '#c4843a', '小怪沿弧线游走；首领快慢双潮错位。别急着穿过慢潮。', 'amber-cave'],
     ['歌剧魅影', '月蚀歌剧院', '谱灵', '烛泪', '金面具', '声环', '幕影', '月蚀魅兽', '#8b3a4a', '小怪定时折返；首领三向扇射。注意身后折返的小怪。', 'eclipse-opera'],
     ['雷兽', '雷纹天城', '雷蝌', '云鳞', '纹螺', '雷轮', '闪貂', '雷兽魁', '#7ec8e3', '小怪走直角路线；首领横竖排射交替。沿开放方向短线推进。', 'thunder-citadel'],
     ['堕星看守', '星陨神座', '陨屑', '星茧', '晶蛾', '轨环', '坠梭', '堕星兽卫', '#b9a0ff', '小怪巡行后折返；首领四翼弹幕旋转。观察翼间通道。', 'fallen-star'],
-    ['封门主宰', '万象封门', '门钉', '封条', '钥齿', '门环', '隙楔', '封门兽首', '#e6d39a', '小怪高速冲锋；首领缺口环射与双向扇射交替。每轮先读预警。', 'myriad-gate'],
+    ['封门主宰', '万象封门', '门钉', '封条', '钥齿', '门环', '隙楔', '封门兽首', '#e6d39a', '先避开金色箭头指向的冲锋路线，再从首领环射的缺口推进。下一轮留意双向扇射。', 'myriad-gate'],
   ] as const;
   const numbers = ['十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
   const tide = { straight: 'curve', period: 3, orbitRate: 0.7, zigzagInterval: 0.78, zigzagAngle: 1.1 } as const;
   const fox = { straight: 'reverse', period: 1.7, orbitRate: 1.4, zigzagInterval: 0.48, zigzagAngle: 1.4 } as const;
   const frost = { straight: 'corner', period: 0.9, orbitRate: 0.75, zigzagInterval: 0.8, zigzagAngle: 1.57 } as const;
   const gargoyle = { straight: 'reverse', period: 1.3, orbitRate: 1.8, zigzagInterval: 0.44, zigzagAngle: 1.4 } as const;
-  const inferno = { straight: 'surge', period: 1.25, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 } as const;
+  const inferno = { straight: 'windup', period: 2.8, orbitRate: 1.85, zigzagInterval: 0.38, zigzagAngle: 1.5 } as const;
   const combat = {
     '蜘蛛妖': { attack: 'tide', motion: tide },
     '鹿人': { attack: 'gargoyle', motion: gargoyle },

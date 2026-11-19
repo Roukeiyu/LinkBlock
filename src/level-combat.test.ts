@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from './engine';
-import { advanceEnemy, createEnemy } from './enemies';
+import { Game, PLAYER_SPEED } from './engine';
+import { advanceEnemy, CHARGE_END, createEnemy, WINDUP_CHARGE } from './enemies';
 import { LEVELS, bossConfigFor, gameOptionsFor } from './levels';
 import { inside, wallEdges } from './geometry';
 import { MAX_HAZARDS } from './attacks';
@@ -9,17 +9,51 @@ function seeded() { let seed = 37; return () => ((seed = Math.imul(seed, 1664525
 const room = [{ x: 0, y: 0 }, { x: 72, y: 0 }, { x: 72, y: 48 }, { x: 0, y: 48 }];
 
 describe('level-specific enemy movement', () => {
-  it('introduces the charge in the horseman level and retains it in the final level', () => {
-    for (const level of [LEVELS[4], LEVELS[9]]) {
-      const enemy = createEnemy('straight', { x: 30, y: 24 }, { x: 10, y: 0 });
-      const motion = level.enemyMotion!;
-      advanceEnemy(enemy, 0.1, [room], [wallEdges(room)], motion);
-      expect(enemy.x - 30).toBeCloseTo(0.45);
-      const before = enemy.x; enemy.motionClock = motion.period * 0.7;
-      advanceEnemy(enemy, 0.1, [room], [wallEdges(room)], motion);
-      expect(enemy.x - before).toBeCloseTo(1.7);
-      expect(enemy.vx).toBe(10);
+  it('introduces the original charge in the horseman level', () => {
+    const enemy = createEnemy('straight', { x: 30, y: 24 }, { x: 10, y: 0 });
+    const motion = LEVELS[4].enemyMotion!;
+    advanceEnemy(enemy, 0.1, [room], [wallEdges(room)], motion);
+    expect(enemy.x - 30).toBeCloseTo(0.45);
+    const before = enemy.x; enemy.motionClock = motion.period * 0.7;
+    advanceEnemy(enemy, 0.1, [room], [wallEdges(room)], motion);
+    expect(enemy.x - before).toBeCloseTo(1.7);
+    expect(enemy.vx).toBe(10);
+  });
+  it.each([LEVELS[9], LEVELS[14], LEVELS[19]])('$title telegraphs a gradual charge and caps both the opening squad and reinforcements', level => {
+    const game = new Game(72, 48, { ...gameOptionsFor(level), opening: false, powerUps: false, victory: { territory: false }, random: seeded() });
+    game.start();
+    const chargers = () => game.enemies.filter(enemy => enemy.windupCharge);
+    expect(chargers()).toHaveLength(2);
+    expect(chargers().every(e => e.kind === 'straight' && e.motionClock! >= CHARGE_END)).toBe(true);
+    const motion = level.enemyMotion!;
+    const charger = chargers()[0];
+    const patrol = game.enemies.find(enemy => enemy.kind === 'straight' && !enemy.windupCharge)!;
+    const base = Math.hypot(charger.vx, charger.vy);
+    let lastSpeed = base * WINDUP_CHARGE.cruise, topSpeed = 0;
+    charger.motionClock = patrol.motionClock = 0;
+    const walls = [wallEdges(room)];
+    for (let frame = 0; frame < 2 * motion.period * 60; frame++) {
+      for (const enemy of [charger, patrol]) {
+        Object.assign(enemy, { x: 30, y: 24, vx: base, vy: 0 });
+        advanceEnemy(enemy, 1 / 60, [room], walls, motion);
+        const speed = (enemy.x - 30) * 60;
+        if (enemy === patrol) {
+          expect(speed).toBeCloseTo(base * 0.75);
+        } else {
+          if (enemy.motionClock! <= 0.6) expect(speed).toBeCloseTo(base * 0.55);
+          expect(Math.abs(speed - lastSpeed)).toBeLessThan(base * 0.031);
+          topSpeed = Math.max(topSpeed, speed); lastSpeed = speed;
+        }
+      }
     }
+    expect(topSpeed).toBeCloseTo(base * 1.08);
+    expect(topSpeed).toBeLessThan(PLAYER_SPEED);
+    hitBoss(game); hitBoss(game);
+    const bossConfig = bossConfigFor(level);
+    game.update(game.bossJump!.duration + bossConfig.phases![1].reinforcements!.interval + 0.01);
+    expect(game.enemies).toHaveLength(game.reinforcementTarget!);
+    expect(chargers()).toHaveLength(2);
+    expect(chargers().every(e => e.motionClock! >= CHARGE_END || e.motionClock! < 0.02)).toBe(true);
   });
   it.each(LEVELS.slice(0, 4))('$title keeps speed constant throughout full motion cycles, including replenished enemies', level => {
     const open = [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }, { x: 0, y: 1000 }];

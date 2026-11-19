@@ -1,5 +1,5 @@
 import { jumpPose, type BossJump } from './boss';
-import { ENEMY_STYLES, type Enemy } from './enemies';
+import { ENEMY_STYLES, WINDUP_CHARGE, type Enemy } from './enemies';
 
 type Look = 'mist' | 'spore' | 'crow' | 'thorn' | 'ghost' | 'tree';
 
@@ -81,6 +81,15 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
   }
   ctx.globalAlpha = 1;
   ctx.translate(pose?.x ?? enemy.x, pose?.y ?? enemy.y);
+  if (enemy.windupCharge && enemy.motionClock !== undefined && enemy.motionClock < WINDUP_CHARGE.warning) {
+    ctx.save();
+    ctx.rotate(Math.atan2(enemy.vy, enemy.vx));
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(r * 1.05, -r * 0.38); ctx.lineTo(r * 1.48, 0); ctx.lineTo(r * 1.05, r * 0.38);
+    ctx.strokeStyle = '#412b19'; ctx.lineWidth = 0.48; ctx.stroke();
+    ctx.strokeStyle = '#ffe49a'; ctx.lineWidth = 0.24; ctx.stroke();
+    ctx.restore();
+  }
   if (pose) ctx.scale(pose.scale, pose.scale);
   if (sheet.turn?.includes(look)) ctx.rotate(Math.atan2(enemy.vy, enemy.vx) - Math.PI);
   if (hurt > 0) ctx.filter = 'brightness(1.85)';

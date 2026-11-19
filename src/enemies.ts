@@ -2,7 +2,7 @@ import { distance, EPS, inside, wallEdges, type Point, type Polygon } from './ge
 
 export type EnemyKind = 'straight' | 'orbit' | 'zigzag' | 'boss';
 export interface EnemyMotion {
-  straight: 'steady' | 'surge' | 'corner' | 'curve' | 'reverse';
+  straight: 'steady' | 'surge' | 'windup' | 'corner' | 'curve' | 'reverse';
   period: number;
   orbitRate: number;
   zigzagInterval: number;
@@ -24,7 +24,12 @@ export interface Enemy extends Point {
   traceClock: number;
   trace: Point[];
   motionClock?: number;
+  windupCharge?: boolean;
 }
+// A late-game charge starts with a direction cue, ramps up, briefly holds,
+// then ramps back down. The rest of the cycle is available for drawing.
+export const WINDUP_CHARGE = { limit: 2, warning: 0.6, ramp: 0.3, hold: 0.15, cruise: 0.55, peak: 1.08 } as const;
+export const CHARGE_END = WINDUP_CHARGE.warning + 2 * WINDUP_CHARGE.ramp + WINDUP_CHARGE.hold;
 export const ENEMY_STYLES = {
   straight: { name: '腐风', motion: '雾 / 孢 / 鸦', color: '#ff727d', speed: 14.3, radius: 0.55, visualRadius: 1.7 },
   orbit: { name: '荆蚀', motion: '环绕蔓延', color: '#bda4ff', speed: 5.2, radius: 0.55, visualRadius: 1.34 },
@@ -109,6 +114,15 @@ export function advanceEnemy(enemy: Enemy, seconds: number, regions: Polygon[], 
       // heading so boosts do not multiply forever or alter collision bounds.
       const phase = enemy.motionClock / motion.period;
       pace = phase < 0.6 ? 0.45 : 1.7;
+    } else if (motion.straight === 'windup') {
+      if (enemy.windupCharge) {
+        const { warning, ramp, cruise, peak } = WINDUP_CHARGE;
+        const clock = enemy.motionClock;
+        const boost = Math.max(0, Math.min(1, (clock - warning) / ramp, (CHARGE_END - clock) / ramp));
+        pace = cruise + (peak - cruise) * boost;
+      } else {
+        pace = 0.75;
+      }
     } else if (motion.straight === 'corner' || motion.straight === 'reverse') {
       for (let turns = Math.floor(after / motion.period); turns > 0; turns--) rotate(enemy, motion.straight === 'reverse' ? Math.PI : enemy.turnSign * Math.PI / 2);
     } else if (motion.straight === 'curve') {

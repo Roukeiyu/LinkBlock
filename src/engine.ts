@@ -4,7 +4,7 @@ import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTou
 import { Island } from './island';
 import { snapDrawing } from './snapping';
 import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RESPAWN_SECONDS, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
-import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
+import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, CHARGE_END, DEFEAT_POINTS, enemyHitRadius, WINDUP_CHARGE, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
 import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type BossConfig, type BossJump, type BossHitVisual, type ReinforcementRule, type VictoryConfig } from './boss';
@@ -116,13 +116,20 @@ export class Game {
     this.boss = options.boss === null ? undefined : options.boss ?? defaultBoss(this.width, this.height);
     this.enemies = options.enemies ?? defaultEnemies(this.width, this.height, this.boss, this.random, this.opening ? { regions: this.territories, player: this.player } : undefined, options.squad);
     if (options.speedScale && options.speedScale !== 1) for (const enemy of this.enemies) { enemy.vx *= options.speedScale; enemy.vy *= options.speedScale; }
-    if (options.enemyMotion) for (const enemy of this.enemies) {
-      enemy.motionClock = this.random() * options.enemyMotion.period;
-      enemy.turnClock %= options.enemyMotion.zigzagInterval;
-    }
+    for (const enemy of this.enemies) this.initializeEnemyMotion(enemy);
     if (options.bossSpeedScale && options.bossSpeedScale !== 1 && this.boss) { this.boss.vx *= options.bossSpeedScale; this.boss.vy *= options.bossSpeedScale; }
     this.bossAttack = this.boss ? (options.createBossAttack ?? (() => new EightWayAttack()))() : undefined;
     this.advanceBossPhase();
+  }
+  private initializeEnemyMotion(enemy: Enemy) {
+    const motion = this.options.enemyMotion;
+    if (!motion) return;
+    const offset = this.random();
+    enemy.windupCharge = motion.straight === 'windup' && enemy.kind === 'straight'
+      && this.enemies.filter(other => other !== enemy && other.windupCharge).length < WINDUP_CHARGE.limit;
+    // Spawn during recovery so every first charge gets its full warning.
+    enemy.motionClock = enemy.windupCharge ? CHARGE_END + offset * (motion.period - CHARGE_END) : offset * motion.period;
+    enemy.turnClock %= motion.zigzagInterval;
   }
   get claimed() { return this.width * this.height - this.territories.reduce((sum, polygon) => sum + area(polygon), 0); }
   get percent() { return this.completion?.percent ?? this.claimed / (this.width * this.height) * 100; }
@@ -506,7 +513,7 @@ export class Game {
       // A crowded/narrow room defers the remaining reinforcements; never force
       // a body onto an active line, the player, another body or claimed land.
       if (!to) break;
-      if (this.options.enemyMotion) enemy.motionClock = this.random() * this.options.enemyMotion.period;
+      this.initializeEnemyMotion(enemy);
       enemy.x = to.x; enemy.y = to.y; enemy.previous = { ...to }; enemy.trace = [{ ...to }];
       this.enemies.push(enemy); this.reinforcementSerial++; spawned = true;
     }
@@ -579,7 +586,8 @@ export class Game {
     if (drawing && !this.drawingHeld) this.resumeDrawing();
     if (!drawing) this.beginRetraction();
     let bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    const pace = this.options.enemyMotion?.straight === 'surge' ? 1.7 : 1;
+    const motion = this.options.enemyMotion?.straight;
+    const pace = motion === 'surge' ? 1.7 : motion === 'windup' ? WINDUP_CHARGE.peak : 1;
     const maxSpeed = Math.max(RETRACT_SPEED * (this.options.powerUps ? 1.5 : 1), ...bodies.map(body => Math.hypot(body.vx, body.vy) * pace), ...this.bossSettings.phases.map(phase => (phase.reinforcements?.speed ?? 0) * pace));
     const steps = Math.max(1, Math.ceil(seconds * maxSpeed / 0.12));
     const dt = seconds / steps;
