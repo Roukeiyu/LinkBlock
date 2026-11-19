@@ -3,7 +3,7 @@ import { SHORE_CONTACT_TOLERANCE, turnAtJunction, walkCoast } from './coast';
 import { OPENING_HZ, OPENING_SECONDS, openingRectangle, openingSpawn, openingTouchesFace, type Opening, type OpeningFace } from './opening';
 import { Island } from './island';
 import { snapDrawing } from './snapping';
-import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
+import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RESPAWN_SECONDS, pickPowerUp, powerUpPosition, rectangleOfArea, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, DEFEAT_POINTS, enemyHitRadius, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -186,9 +186,7 @@ export class Game {
     this.powerUp = undefined;
     this.powerUpEffects[kind] = POWER_UP_DURATION[kind];
     if (kind === 'shuffle') this.beginShuffle();
-    // Leave a small margin for the next physics/render frame so the visible
-    // spawn remains strictly under 20 seconds after pickup.
-    this.powerUpWait = 10 + Math.min(1 - Number.EPSILON, Math.max(0, this.random())) * 9.9;
+    this.powerUpWait = POWER_UP_RESPAWN_SECONDS;
     this.events.push({ type: 'powerup', kind });
   }
   private keepPowerUpInWater() {
@@ -248,12 +246,12 @@ export class Game {
       && this.territories.some(region => inside(point, region)));
   }
   private detonateBomb() {
-    const outside = (point: Point) => Math.hypot(point.x - this.player.x, point.y - this.player.y) > this.bombRadius;
-    const defeated = this.enemies.filter(outside);
-    this.enemies = this.enemies.filter(enemy => !outside(enemy));
+    const inBlast = (point: Point) => Math.hypot(point.x - this.player.x, point.y - this.player.y) <= this.bombRadius;
+    const defeated = this.enemies.filter(inBlast);
+    this.enemies = this.enemies.filter(enemy => !inBlast(enemy));
     this.lastDefeats = defeated.map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));
     this.score += this.lastDefeats.reduce((sum, enemy) => sum + enemy.points, 0);
-    if (this.boss && outside(this.boss)) {
+    if (this.boss && inBlast(this.boss)) {
       const from = this.bossJump ? jumpPose(this.bossJump) : { ...this.boss };
       if (!this.bossJump) {
         this.bossHealth--; this.score += BOSS_HIT_POINTS; this.bossFlash = 0.3;
@@ -659,7 +657,7 @@ export class Game {
       }
       if (this.options.powerUps && !itemAtStart && !this.powerUp) {
         this.powerUpWait -= dt;
-        if (this.powerUpWait <= 0) this.spawnPowerUp();
+        if (this.powerUpWait <= EPS) this.spawnPowerUp();
       }
       this.hazards = this.hazards.filter(hazard => !hazard.expired);
     }

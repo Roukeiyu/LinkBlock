@@ -10,7 +10,7 @@ import { LEVELS, artworkRevision, bossConfigFor, gameOptionsFor, levelById, note
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
-import { BOMB_RADIUS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, type PowerUp } from './powerups';
+import { BOMB_RADIUS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, POWER_UP_RESPAWN_SECONDS, type PowerUp } from './powerups';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -132,9 +132,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
-      <p>道具会出现在已圈领地边缘附近，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 10–20 秒出现下一枚。</p>
+      <p>道具会出现在已圈领地边缘附近，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 ${POWER_UP_RESPAWN_SECONDS} 秒出现下一枚。</p>
       <p>沙漏减速：敌人移动速度降低 30%（10 秒，不影响子弹）。雪花止步：敌人和子弹冻结 3 秒。闪电加速：角色速度提高 50%（10 秒）。</p>
-      <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒，时间到时圆外的敌人和首领各受到一次伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
+      <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒，引爆时击败圈内的小怪，并对圈内的首领造成 1 点伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -726,7 +726,7 @@ function handleEvent(event: GameEvent) {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
       notify(`${current.names.boss}受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `${current.names.boss} ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); lakeAudio.play('boss-hit');
     } else if (event.type === 'powerup') {
-      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒', bomb: '3 秒后圆外敌人受击', shuffle: '3 秒内重铺为等面积矩形' };
+      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒', bomb: '3 秒后圈内敌人受击', shuffle: '3 秒内重铺为等面积矩形' };
       notify(`获得${POWER_UP_LABELS[event.kind]} · ${descriptions[event.kind]}`, descriptions[event.kind]); lakeAudio.play('reward');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));

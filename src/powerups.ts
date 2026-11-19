@@ -9,7 +9,8 @@ export const POWER_UP_LABELS: Record<PowerUpKind, string> = { slow: '减速', st
 /** Higher weight means a more common drop. Bomb and shuffle stay rare. */
 export const POWER_UP_WEIGHTS: Record<PowerUpKind, number> = { slow: 3, stop: 2, speed: 3, bomb: 1, shuffle: 1 };
 export const POWER_UP_RADIUS = 1.2;
-/** Enemies farther than this from the player take the bomb's single hit. */
+export const POWER_UP_RESPAWN_SECONDS = 5;
+/** Enemies within this distance of the player take the bomb's single hit. */
 export const BOMB_RADIUS = 8;
 
 export function pickPowerUp(random: () => number): PowerUpKind {

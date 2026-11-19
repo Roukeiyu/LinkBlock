@@ -66,21 +66,22 @@ describe('persistent power-ups', () => {
       expect(Math.min(...field.boundarySegments.map(([a, b]) => distance(point, a, b)))).toBeLessThanOrEqual(25);
     };
     checkSpawn(field.powerUp!);
-    pickup(field, kind); field.update(15);
+    pickup(field, kind); field.update(5);
     checkSpawn(field.powerUp!);
   });
-  it.each([0, 0.4, 1 - Number.EPSILON])('spawns the next item after a random 10–20 second cooldown, random=%s', random => {
+  it.each([0, 0.4, 1 - Number.EPSILON])('spawns the next item after five seconds for any drop roll, random=%s', random => {
     const field = game(() => random); pickup(field, 'slow');
-    const wait = 10 + random * 9.9;
-    field.update(wait - 0.01); expect(field.powerUp).toBeUndefined();
-    field.update(0.02); expect(field.powerUp).toBeDefined();
+    field.update(4.99); expect(field.powerUp).toBeUndefined();
+    field.update(0.01); expect(field.powerUp).toBeDefined();
     const item = structuredClone(field.powerUp); field.update(1); expect(field.powerUp).toEqual(item);
   });
   it('only advances cooldown and active effects while the game is playing', () => {
     const field = game(); pickup(field, 'slow'); field.update(1);
     const left = field.powerUpEffects.slow; field.togglePause(); field.update(30);
     expect(field.powerUpEffects.slow).toBe(left); expect(field.powerUp).toBeUndefined();
-    field.togglePause(); field.update(9.01); expect(field.powerUpEffects.slow).toBe(0); expect(field.powerUp).toBeUndefined();
+    field.togglePause(); field.update(3.99); expect(field.powerUp).toBeUndefined();
+    field.update(0.01); expect(field.powerUp).toBeDefined(); expect(field.powerUpEffects.slow).toBeCloseTo(5);
+    field.update(5); expect(field.powerUpEffects.slow).toBe(0);
   });
   it('does not collect when the player or line passes over the item, including while retracting', () => {
     const swept = game(); swept.powerUp = { x: 50, y: 2.5, kind: 'speed' };
@@ -164,19 +165,19 @@ describe('persistent power-ups', () => {
     expect(enemy.x - from).toBeCloseTo(10 * (0.5 * 0.7 + 0.25), 6);
     expect(field.powerUpEffects.stop).toBe(0); expect(field.powerUpEffects.slow).toBe(0);
   });
-  it('damages everyone outside the bomb circle once the countdown ends', () => {
-    const near = createEnemy('straight', { x: 12, y: 10 }, { x: 0, y: 0 });
-    const far = createEnemy('orbit', { x: 70, y: 40 }, { x: 0, y: 0 });
-    const boss = createEnemy('boss', { x: 60, y: 30 }, { x: 0, y: 0 });
-    const field = new Game(72, 48, { enemies: [near, far], boss, powerUps: true, random: () => 0.5, victory: { territoryPercent: 100 },
+  it.each([[BOMB_RADIUS, 1], [BOMB_RADIUS + 0.01, 0]])('hits only enemies in the circle at detonation, Boss distance=%s', (bossDistance, damage) => {
+    const near = createEnemy('straight', { x: 69, y: 4 }, { x: 0, y: 0 });
+    const rim = createEnemy('straight', { x: 70, y: BOMB_RADIUS }, { x: 0, y: 0 });
+    const outside = createEnemy('straight', { x: 76, y: 6 }, { x: 0, y: 0 });
+    const boss = createEnemy('boss', { x: 70, y: bossDistance }, { x: 0, y: 0 });
+    const field = new Game(100, 100, { enemies: [near, rim, outside], boss, powerUps: true, random: () => 0.5, victory: { territoryPercent: 100 },
       createBossAttack: () => ({ name: 'idle', warning: 0, update() {} }) });
-    field.start(); field.player = { x: 10, y: 10 }; field.powerUpEffects.bomb = 3;
-    field.update(2.9); expect(field.enemies).toHaveLength(2); expect(field.bossHealth).toBe(field.bossMaxHealth);
-    field.update(0.2);
-    expect(field.enemies.map(enemy => enemy.kind)).toEqual(['straight']);
-    expect(Math.hypot(near.x - field.player.x, near.y - field.player.y)).toBeLessThanOrEqual(BOMB_RADIUS);
-    expect(field.bossHealth).toBe(field.bossMaxHealth - 1);
-    expect(field.events).toContainEqual(expect.objectContaining({ type: 'bossHit' }));
+    field.start(); pickup(field, 'bomb');
+    field.update(2.99); expect(field.enemies).toHaveLength(3); expect(field.bossHealth).toBe(field.bossMaxHealth);
+    field.move('right', false, 10); expect(field.player).toEqual({ x: 70, y: 0 });
+    field.update(0.01); expect(field.enemies).toEqual([outside]);
+    field.update(1); expect(field.bossHealth).toBe(field.bossMaxHealth - damage);
+    expect(field.events.filter(e => typeof e === 'object' && e.type === 'bossHit')).toHaveLength(damage);
   });
   it('relays the claimed land into an equal-area rectangle', () => {
     const field = new Game(72, 48, { opening: true, enemies: [], boss: null, powerUps: true, random: () => 0.2, victory: { territoryPercent: 100 } });

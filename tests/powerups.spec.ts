@@ -61,6 +61,9 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await page.locator('#primary').click(); await page.clock.runFor(3100);
     await expect(page.locator('#powerup-status')).toBeHidden();
     expect(await page.evaluate(() => window.powerUpGame().powerUpEffects.stop)).toBe(0);
+    expect(await page.evaluate(() => window.powerUpGame().powerUp)).toBeUndefined();
+    await page.clock.runFor(2000);
+    expect(await page.evaluate(() => window.powerUpGame().powerUp)).toBeDefined();
     expect(errors).toEqual([]);
   });
 }
