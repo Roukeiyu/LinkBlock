@@ -84,7 +84,7 @@ export function renderEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy, warning
   if (pose) ctx.scale(pose.scale, pose.scale);
   if (sheet.turn?.includes(look)) ctx.rotate(Math.atan2(enemy.vy, enemy.vx) - Math.PI);
   if (hurt > 0) ctx.filter = 'brightness(1.85)';
-  blit(ctx, sprite(look), r * (look === 'tree' ? 2.7 : 2.45));
+  blit(ctx, sprite(look), r * (enemy.kind === 'boss' ? 2.7 : 2.45 * 0.75));
   ctx.filter = 'none';
   if (enemy.kind === 'boss' && warning > 0) {
     ctx.globalAlpha = 0.3 + warning * 0.7;
