@@ -92,9 +92,10 @@ describe('continuous coast feel and invisible steps', () => {
 
   it.each([30, 60, 120])('finishes a wider correction across physics frames at %s Hz', hz => {
     const { game, place } = fixture(0, 0.3); place(20, 15.99);
-    for (let i = 0; i < hz / 6; i++) game.update(1 / hz, 'down', true);
+    const frames = hz / 10; // Cross the step, stopping before the next corner at y=20.
+    for (let i = 0; i < frames; i++) game.update(1 / hz, 'down', true);
     expect(game.player.x).toBeCloseTo(20.3, 8);
-    expect(game.player.y).toBeCloseTo(15.99 + PLAYER_SPEED / 6 - 0.3, 8);
+    expect(game.player.y).toBeCloseTo(15.99 + PLAYER_SPEED * frames / hz - 0.3, 8);
     expect(game.trail).toHaveLength(0); expect(game.isBoundary(game.player.x, game.player.y)).toBe(true);
   });
 

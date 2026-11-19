@@ -14,7 +14,7 @@ export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual } | { type: 'powerup'; kind: PowerUpKind };
 export interface GameOptions { opening?: boolean; openingFace?: OpeningFace; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion; powerUps?: boolean }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
-export const PLAYER_SPEED = 22.222222;
+export const PLAYER_SPEED = 80 / 3;
 export const RETRACT_SPEED = PLAYER_SPEED * 3;
 const PLAYER_RADIUS = 0.34;
 

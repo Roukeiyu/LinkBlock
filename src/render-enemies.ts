@@ -105,7 +105,7 @@ export function renderPlayerSpirit(ctx: CanvasRenderingContext2D, x: number, y: 
   // Four equal cells share the same bright-core anchor. Game time freezes on pause.
   const frame = reducedMotion ? 0 : Math.floor(elapsed * 6) % 4;
   const cell = spirit.naturalWidth / 4;
-  const size = 2.4;
+  const size = 4.8;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(facing - Math.PI);
