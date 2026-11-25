@@ -87,21 +87,23 @@ phase recording; the existing mood control only changes playback gain.
   紫藤画舫 wisteria-boat         Suno recording, looped like levels 5–10
   金沙斗场 golden-arena          Suno recording, looped like levels 5–10
   翠角神林 jade-forest           Suno recording, looped like levels 5–10
-  钟械秘阁 clockwork-archive     composed loop, until its Suno recording arrives
-  琥珀龙窟 amber-cave            composed loop, until its Suno recording arrives
-  月蚀歌剧院 eclipse-opera       composed loop, until its Suno recording arrives
-  雷纹天城 thunder-citadel       composed loop, until its Suno recording arrives
-  星陨神座 fallen-star           composed loop, until its Suno recording arrives
-  万象封门 myriad-gate           composed loop, until its Suno recording arrives
+  钟械秘阁 clockwork-archive     Suno recording, looped like levels 5–10
+  琥珀龙窟 amber-cave            Suno recording, looped like levels 5–10
+  月蚀歌剧院 eclipse-opera       Suno recording, looped like levels 5–10
+  雷纹天城 thunder-citadel       Suno recording, looped like levels 5–10
+  星陨神座 fallen-star           Suno recording, looped like levels 5–10
+  万象封门 myriad-gate           Suno recording, looped like levels 5–10
 
-silk-tower, jade-forest, golden-arena, and wisteria-boat are the owner's Suno
-recordings, matched to the theme name rather than the current level number.
+All ten stems for levels 11–20 are the owner's Suno recordings, matched to the
+theme name rather than the current level number. The six newest were picked
+and downloaded on 2026-11-25 from the private Suno playlist "LinkBlock BGM"
+(雷纹天城 is the second, storm-electronica generation; the earlier march-style
+takes were rejected). Source MP3 SHA-256 hashes are in public/audio/campaign-11-20.json.
 They use the levels 5–10 chain: terminal silence below -45 dB trimmed only at
 the end, a 3 second equal-power crossfade, a 10 ms endpoint de-click, -20 LUFS
 with a -2 dBTP ceiling, 48 kHz stereo Opus at 96 kbps and MP3 at 160 kbps, and
-no cover art or other metadata. The other six stems are still the composed
-loops from scripts/compose-campaign-music.py. That script does not overwrite
-the four Suno stems. Measurements and hashes: public/audio/campaign-11-20.json.
+no cover art or other metadata. scripts/compose-campaign-music.py no longer
+renders any stem and does not overwrite the Suno stems. Measurements and hashes: public/audio/campaign-11-20.json.
 Subjective listening of the processed joins has not been verified.
 
 Sound effects

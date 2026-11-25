@@ -8,7 +8,8 @@ the join away from the file edge, then two-pass loudness to -20 LUFS / -2 dBTP,
 48 kHz stereo Opus at 96 kbps and MP3 at 160 kbps, with a 10 ms endpoint
 de-click. This script renders the remaining composed theme pieces and applies that same
 delivery chain. silk-tower, wisteria-boat, golden-arena, and jade-forest are
-owner Suno recordings and are left in place. There is still one loop per level
+owner Suno recordings and are left in place (all ten stems are now Suno recordings; PIECES is kept only as the
+record of the earlier composed placeholders and is empty). There is still one loop per level
 and no boss-phase variant.
 """
 import hashlib
@@ -414,16 +415,10 @@ def finale():
     return score, 1.0
 
 
-# These four stems are owner Suno recordings. Do not overwrite their exports.
-SUNO_STEMS = {'silk-tower', 'wisteria-boat', 'golden-arena', 'jade-forest'}
-PIECES = [
-    ('clockwork-archive', '钟械秘阁', clockwork),
-    ('amber-cave', '琥珀龙窟', amber),
-    ('eclipse-opera', '月蚀歌剧院', opera),
-    ('thunder-citadel', '雷纹天城', thunder),
-    ('fallen-star', '星陨神座', stars),
-    ('myriad-gate', '万象封门', finale),
-]
+# All ten stems are owner Suno recordings. Do not overwrite their exports.
+SUNO_STEMS = {'silk-tower', 'wisteria-boat', 'golden-arena', 'jade-forest',
+              'clockwork-archive', 'amber-cave', 'eclipse-opera', 'thunder-citadel', 'fallen-star', 'myriad-gate'}
+PIECES = []  # composed placeholders retired; the six former pieces are now Suno recordings
 ORDER = ['silk-tower', 'wisteria-boat', 'golden-arena', 'jade-forest',
          'clockwork-archive', 'amber-cave', 'eclipse-opera', 'thunder-citadel', 'fallen-star', 'myriad-gate']
 
