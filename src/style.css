@@ -435,6 +435,32 @@ button.ink-tab kbd{margin:0;min-width:16px;height:16px;padding:0 3px;display:inl
  .top-controls{width:100%;margin-left:0;justify-content:center;flex-wrap:wrap}
 }
 
+/* Short portrait play: intro, the wrapped seal rail and the page frame were
+   eating the viewport, so the 3:2 board shrank to a sliver or to 0×0.
+   Desktop and landscape rules above are unchanged. Touch keeps its own
+   minimum so the wide pad and the three-button cross still fit. */
+@media(max-width:620px) and (orientation:portrait) and (max-height:780px){
+ .intro{display:none}
+ .site-header{padding:2px 6px;gap:2px}
+ .brand-logo{height:20px}
+ .seal-hud{padding:2px 6px 0;gap:6px}
+ .hud-side{width:auto;flex:none}
+ .portrait{width:36px;height:36px}
+ .charm{width:36px;font-size:9px}
+ .life-wax{width:16px;height:16px}
+ .purity-bar{width:min(100%,168px)}
+ .purity-caption{font-size:11px}
+ .level-title{font-size:10px}
+ .board-footer{height:22px;min-height:22px}
+ .mobile-game-status{min-height:22px;padding:0 8px}
+ .frame-fit{--side:clamp(8px,3cqmin,28px);--top:clamp(6px,4cqh,28px);--bot:clamp(6px,3.2cqh,22px)}
+}
+@media(max-width:360px) and (orientation:portrait) and (max-height:780px){
+ .site-header{padding:1px 4px;gap:1px}
+ .top-controls{gap:2px}
+ .audio-slider input[type="range"]{width:32px}
+ button.ink-tab{height:24px;padding:0 4px;font-size:11px}
+}
 .menu-settings .form-setting{grid-column:1/-1;width:100%}
 .gallery-head .form-preview{margin-left:auto;margin-right:8px}
 .form-preview{touch-action:none;user-select:none;-webkit-user-select:none}
