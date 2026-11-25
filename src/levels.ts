@@ -172,7 +172,7 @@ export const LEVELS: LevelDef[] = [
     enemySpeed: 1.36, bossSpeed: 1.29, squad: { straight: 6, orbit: 5, zigzag: 5 }, reinforceInterval: 0.61, reinforceSpeed: 1.28, accent: '#b8a4eb',
   },
   {
-    id: 10, theme: '炎魔', title: '第十关 · 熔冠终庭', difficulty: '终章',
+    id: 10, theme: '炎魔', title: '第十关 · 熔冠终庭', difficulty: '卷一终章',
     tactic: '金色箭头指向小怪即将冲锋的方向。沿箭头侧面出线，留意首领的缺口火环和双向扇射。', attackPattern: 'inferno',
     enemyMotion: { straight: 'windup', period: 2.8, orbitRate: 1.8, zigzagInterval: 0.4, zigzagAngle: 1.5 },
     restored: 'levels/10/v3/restored.webp', sealed: 'levels/10/v3/sealed.webp', mask: 'levels/10/v3/mask.png', music: 'ember-crown-suno-v1',
@@ -245,6 +245,9 @@ function campaignAfterTen(): LevelDef[] {
     } satisfies LevelDef;
   });
 }
+
+/** Menu subtitle for the level list. Kept beside the catalog so the count stays obvious. */
+export const CAMPAIGN_MENU_NOTE = '二十处秘境';
 
 export const levelById = (id: number) => LEVELS.find(level => level.id === id) ?? LEVELS[0];
 

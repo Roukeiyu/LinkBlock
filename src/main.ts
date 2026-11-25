@@ -6,7 +6,7 @@ import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
 import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
 import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
-import { LEVELS, artworkRevision, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
+import { CAMPAIGN_MENU_NOTE, LEVELS, artworkRevision, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
@@ -41,7 +41,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <p class="menu-invitation">翻开新的一页</p>
       <button id="menu-start" class="menu-btn menu-primary is-selected" type="button" aria-current="true"><img src="${ui('wax_seal_red.png')}" alt="" /><span>开始游戏</span>${icon('arrow')}</button>
       <nav class="menu-links" aria-label="探索选项">
-        <button id="menu-levels" class="menu-btn" type="button">${icon('levels')}<span>选择关卡<small aria-hidden="true">十处秘境</small></span></button>
+        <button id="menu-levels" class="menu-btn" type="button">${icon('levels')}<span>选择关卡<small aria-hidden="true">${CAMPAIGN_MENU_NOTE}</small></span></button>
         <button id="menu-gallery" class="menu-btn" type="button">${icon('gallery')}<span>图鉴<small aria-hidden="true">珍藏画像</small></span></button>
         <button id="menu-guide" class="menu-btn" type="button">${icon('guide')}<span>关卡攻略<small aria-hidden="true">探索指引</small></span></button>
         <button id="menu-settings" class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-settings-panel">${icon('settings')}<span>设置<small aria-hidden="true">音乐、音效与形态</small></span></button>

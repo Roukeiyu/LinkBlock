@@ -24,6 +24,17 @@ function musicSrc(stem: string) {
   return `${base}audio/${stem}.${opus ? 'ogg' : 'mp3'}`;
 }
 
+/** Same file after resolving against the page. An <audio> element reports an
+ *  absolute URL, while the selected source stays relative (`./audio/…`). */
+export function sameMusicSource(current: string, next: string, base: string) {
+  const bare = (value: string) => value.split('#')[0].split('?')[0];
+  try {
+    return new URL(bare(current), base).href === new URL(bare(next), base).href;
+  } catch {
+    return bare(current) === bare(next);
+  }
+}
+
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
 }
@@ -65,6 +76,7 @@ export class LakeAudio {
   private unlocked = false;
 
   constructor() {
+    if (typeof document === 'undefined') return;
     document.addEventListener('visibilitychange', () => {
       this.hidden = document.hidden;
       if (!this.ctx) return;
@@ -304,7 +316,7 @@ export class LakeAudio {
       const source = ctx.createMediaElementSource(track);
       source.connect(bus);
       this.track = track;
-    } else if (!this.track.src.endsWith(src)) {
+    } else if (!sameMusicSource(this.track.currentSrc || this.track.src, src, document.baseURI)) {
       this.track.pause();
       this.track.src = src;
     }

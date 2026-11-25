@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { lakeBossConfig } from './boss';
 import { ENEMY_STYLES } from './enemies';
 import { Game } from './engine';
-import { LEVELS, bossConfigFor, gameOptionsFor, noteClear, readLevelProgress, writeLevelProgress } from './levels';
+import { CAMPAIGN_MENU_NOTE, LEVELS, bossConfigFor, gameOptionsFor, noteClear, readLevelProgress, writeLevelProgress } from './levels';
 
 describe('level catalog', () => {
   it('keeps level 1 speeds and boss attacks while reducing its population', () => {
@@ -49,6 +49,10 @@ describe('level catalog', () => {
     expect(LEVELS[2].names.boss).toBe('狂电塔');
     expect(LEVELS[3].names.boss).toBe('血月石像');
     expect(LEVELS[4].names.boss).toBe('秋猎魔骑');
+    expect(LEVELS[9].difficulty).toBe('卷一终章');
+    expect(LEVELS[19].difficulty).toBe('终章');
+    expect(LEVELS.filter(level => level.difficulty === '终章').map(level => level.id)).toEqual([20]);
+    expect(CAMPAIGN_MENU_NOTE).toBe('二十处秘境');
     expect(LEVELS.slice(0, 5).map(level => level.accent)).toEqual(['#c5d4e6', '#e0c27a', '#2ed3c6', '#e25b78', '#f08a3c']);
     for (const level of LEVELS.slice(0, 5)) {
       const version = level.id === 1 ? 'v20' : level.id === 3 ? 'v14' : [4, 5].includes(level.id) ? 'v18' : 'v15';
