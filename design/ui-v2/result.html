@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>金线提案 · 结算</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="components.css" />
+</head>
+<body class="screen result-screen">
+  <div class="play-screen" aria-hidden="true" style="--accent:#8b3a4a">
+    <header class="play-top"><div class="brand-lockup"><img src="../../public/ui/wax_seal_red.png" alt="" /><span>解封</span></div><div></div></header>
+    <section class="hud">
+      <div class="medallion">十七</div>
+      <div>
+        <h1>第十七关 · 月蚀歌剧院</h1>
+        <p class="hud-sub">歌剧魅影 · 深域</p>
+        <div class="meter"><div class="meter-track"><div id="back-fill" class="meter-fill" style="width:81.4%"></div></div><strong id="back-pct" class="num">81.4%</strong></div>
+      </div>
+      <div class="hud-side"><strong id="back-score" class="score num">012480</strong></div>
+    </section>
+    <div class="stage-board"><div class="board"></div></div>
+  </div>
+  <div class="veil"></div>
+  <article class="dialog" data-for="win">
+    <p class="kicker" style="text-align:center">封印已解</p>
+    <img class="seal" src="../../public/ui/wax_seal_broken.png" alt="" />
+    <h2>封印解开了。</h2>
+    <p class="lead">这一关的封印碎开。</p>
+    <div class="stats">
+      <div><span>净化</span><b class="num">81.4%</b></div>
+      <div><span>得分</span><b class="num">12,480</b></div>
+      <div><span>用时</span><b class="num">03:42</b></div>
+    </div>
+    <p class="reward-note">满血纪念已收入图鉴</p>
+    <button class="btn-primary" type="button">前往第十八关 · 雷纹天城</button>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button">再玩本关</button>
+      <button class="text-btn" type="button">选关</button>
+      <button class="text-btn" type="button">图鉴</button>
+    </div>
+  </article>
+  <article class="dialog" data-for="lose" hidden>
+    <p class="kicker" style="text-align:center">还可以再远一点</p>
+    <img class="seal" src="../../public/ui/wax_seal_red.png" alt="" />
+    <h2>下一次，再远一点。</h2>
+    <p class="lead">线断了，封印还在。</p>
+    <div class="stats">
+      <div><span>净化</span><b class="num">46.2%</b></div>
+      <div><span>得分</span><b class="num">3,210</b></div>
+      <div><span>用时</span><b class="num">01:18</b></div>
+    </div>
+    <button class="btn-primary" type="button">重新挑战</button>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button">选关</button>
+      <button class="text-btn" type="button">返回主界面</button>
+    </div>
+  </article>
+  <article class="dialog" data-for="pause" hidden>
+    <p class="kicker" style="text-align:center">稍作停歇</p>
+    <img class="seal" src="../../public/ui/wax_seal_red.png" alt="" />
+    <h2>风景会等你。</h2>
+    <p class="lead">休息一下，准备好后继续探索。</p>
+    <button class="btn-primary" type="button">继续探索</button>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button">重来</button>
+      <button class="text-btn" type="button">返回主界面</button>
+    </div>
+  </article>
+  <script>
+    const scenes = {
+      win: ['81.4%', '81.4%', '012480'],
+      lose: ['46.2%', '46.2%', '003210'],
+      pause: ['62.8%', '62.8%', '008640'],
+    };
+    const apply = () => {
+      const name = (location.hash || '#win').slice(1);
+      for (const dialog of document.querySelectorAll('.dialog')) dialog.hidden = dialog.dataset.for !== name;
+      const scene = scenes[name] || scenes.win;
+      const fill = document.querySelector('#back-fill');
+      const pct = document.querySelector('#back-pct');
+      const score = document.querySelector('#back-score');
+      if (fill) fill.style.width = scene[0];
+      if (pct) pct.textContent = scene[1];
+      if (score) score.textContent = scene[2];
+    };
+    apply();
+    addEventListener('hashchange', apply);
+  </script>
+</body>
+</html>

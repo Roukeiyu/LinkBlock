@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>金线提案 · 审阅页</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="components.css" />
+</head>
+<body class="screen review-screen">
+  <main class="sheet">
+    <header class="review-head">
+      <div>
+        <p class="kicker">封林 / 美术审阅</p>
+        <h1>全关卡奖励图片</h1>
+        <p>20 个关卡 · 每关完整成图、满血通关、击败 Boss · 1536 × 1024。版式提案不替换任何角色图。</p>
+      </div>
+    </header>
+    <nav class="review-nav" aria-label="审阅导航">
+      <button class="chip-btn" type="button" aria-pressed="true">奖励图片</button>
+      <button class="chip-btn" type="button">Boss / 小怪 / 玩家</button>
+      <label>关卡
+        <select aria-label="关卡">
+          <option>全部 20 关</option>
+          <option>第十五关 · 钟械秘阁</option>
+          <option>第十六关 · 琥珀龙窟</option>
+          <option>第十七关 · 月蚀歌剧院</option>
+        </select>
+      </label>
+      <button class="chip-btn" type="button">图片类型：全部</button>
+    </nav>
+    <section>
+      <h2 class="serif" style="font-size:18px;letter-spacing:0.08em;margin-bottom:10px">第一关 · 月下封林 <small class="muted">狼人</small></h2>
+      <div class="review-grid">
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>完整成图 · 通关解封<small>levels/1/…/restored.webp</small></figcaption></figure>
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>满血通关<small>levels/1/…/ninety.webp</small></figcaption></figure>
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>击败 Boss<small>levels/1/…/perfect.webp</small></figcaption></figure>
+      </div>
+    </section>
+    <section style="margin-top:22px">
+      <h2 class="serif" style="font-size:18px;letter-spacing:0.08em;margin-bottom:10px">第十五关 · 钟械秘阁 <small class="muted">机心造物</small></h2>
+      <div class="review-grid">
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>完整成图 · 通关解封<small>查看 Alpha 仍对照正式遮罩</small></figcaption></figure>
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>满血通关<small>放大、切图、下载原图保持不变</small></figcaption></figure>
+        <figure class="review-card"><div class="ph">原图位</div><figcaption>击败 Boss<small>自鸣机兽</small></figcaption></figure>
+      </div>
+    </section>
+    <p class="note">斜线框只说明卡片尺寸与说明文字的位置。正式审阅页继续读取游戏同一套人形、魔物、精灵与关卡顺序。</p>
+  </main>
+  <div class="dock" role="group" aria-label="形态">
+    <button type="button" aria-pressed="true">人形</button>
+    <button type="button" aria-pressed="false">魔物</button>
+  </div>
+</body>
+</html>

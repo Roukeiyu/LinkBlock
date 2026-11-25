@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>金线提案 · 选关</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="components.css" />
+</head>
+<body class="screen">
+  <main class="sheet">
+    <header class="sheet-head">
+      <div>
+        <p class="kicker">封卷</p>
+        <h1>选关</h1>
+        <p>二十处秘境 · 已解开 16</p>
+      </div>
+      <button class="text-btn" type="button">返回</button>
+    </header>
+    <div class="chapters">
+      <section>
+        <div class="chapter-label"><b>卷一</b><span>封林十境</span></div>
+        <div id="ch1"></div>
+      </section>
+      <section id="ch2">
+        <div class="chapter-label"><b>卷二</b><span>异闻十境</span></div>
+        <div id="ch2-list"></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const rows = [
+      ['01','月下封林','狼人 · 蚀根','入门','已解开','#c5d4e6','done'],
+      ['02','沙漠神殿','木乃伊 · 沙傀王','进阶','已解开','#e0c27a','done'],
+      ['03','雷雨实验室','弗兰肯斯坦 · 狂电塔','挑战','已解开','#2ed3c6','done'],
+      ['04','玫瑰古堡','吸血鬼 · 血月石像','高难','已解开','#e25b78','done'],
+      ['05','秋夜南瓜谷','无头骑士 · 秋猎魔骑','高阶','已解开','#f08a3c','done'],
+      ['06','沉潮王庭','海妖 · 渊潮巨螺','深海','已解开','#55d9df','done'],
+      ['07','狐火神社','狐妖 · 九灯妖镜','幻术','已解开','#f3b87b','done'],
+      ['08','极光冰座','冰霜巨人 · 永冻方碑','严寒','已解开','#89cdff','done'],
+      ['09','暮钟圣城','石像鬼 · 暮钟石卫','险境','已解开','#b8a4eb','done'],
+      ['10','熔冠终庭','炎魔 · 熔冠魔像','终章','已解开','#ff805a','done'],
+      ['11','蛛丝绣楼','蜘蛛妖 · 绣楼蛛君','入章','已解开','#c45b6a','done'],
+      ['12','翠角神林','鹿人 · 翠角神麋','入章','已解开','#7dcea0','done'],
+      ['13','金沙斗场','牛头人 · 金沙牛魔','高难','已解开','#e0a15a','done'],
+      ['14','紫藤画舫','蛇妖 · 紫藤蟒君','高难','已解开','#9b6bb5','done'],
+      ['15','钟械秘阁','机心造物 · 自鸣机兽','高难','已解开','#d4a574','done'],
+      ['16','琥珀龙窟','龙裔 · 琥珀龙君','深域','已解开','#c4843a','done'],
+      ['17','月蚀歌剧院','歌剧魅影 · 月蚀魅兽','深域','进行中','#8b3a4a','now'],
+      ['18','雷纹天城','雷兽 · 雷兽魁','险境','未解锁','#7ec8e3','locked'],
+      ['19','星陨神座','堕星看守 · 堕星兽卫','险境','未解锁','#b9a0ff','locked'],
+      ['20','万象封门','封门主宰 · 封门兽首','终章','未解锁','#e6d39a','locked'],
+    ];
+    const buttons = rows.map(([idx, name, boss, diff, state, accent, kind]) => {
+      const disabled = kind === 'locked' ? 'disabled' : '';
+      const cls = kind === 'now' ? 'is-now' : kind === 'locked' ? 'is-locked' : 'is-done';
+      return `<button class="level ${cls}" type="button" style="--accent:${accent}" ${disabled}><span class="idx num">${idx}</span><i class="bar"></i><span><b>${name}</b><small>${boss}</small></span><span class="diff">${diff}</span><span class="state">${state}</span></button>`;
+    });
+    document.getElementById('ch1').innerHTML = buttons.slice(0, 10).join('');
+    document.getElementById('ch2-list').innerHTML = buttons.slice(10).join('');
+  </script>
+</body>
+</html>
