@@ -3,35 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页 · LinkBlock 界面提案</title>
+  <title>密卷 · 界面提案</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
 <body class="folio">
-  <div class="volume">
-    <aside class="spine" aria-hidden="true"><b>书页</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet doc-sheet">
-      <header class="running"><span>提案 · 未接入游戏</span><span>待确认</span></header>
-      <h1 style="margin-top:18px">书页</h1>
-      <p style="margin-top:12px;max-width:62ch">整本界面都是同一册古籍：书脊、纸页、切口、墨字和火漆。菜单、选关、图鉴、局内、结算和审阅外框用同一套材料。角色原画、音乐和游戏逻辑都没有改。</p>
-      <nav class="catalog">
-        <a href="menu.html">主菜单<small>摊开的目录页</small></a>
-        <a href="menu.html#settings">设置<small>写在同一页上</small></a>
-        <a href="levels.html">选关<small>卷一、卷二</small></a>
-        <a href="play.html">局内<small>页边是状态，中间是示意</small></a>
-        <a href="result.html#win">胜利<small>另夹进的一叶</small></a>
-        <a href="result.html#lose">失败<small>下一次，再远一点</small></a>
-        <a href="result.html#pause">暂停<small>风景会等你</small></a>
-        <a href="gallery.html">图鉴<small>贴入书中的图版</small></a>
-        <a href="review.html">审阅页<small>只换外框</small></a>
-        <a href="compare.html">并排对照<small>现况与这一稿</small></a>
-      </nav>
-      <p class="note">说明在 <code>SPEC.md</code>。线上界面的记录仍在 <code>INVENTORY.md</code>，没有删。</p>
-      <footer class="foot"><span>数值出现在各页时，都标为示例</span><span>目录</span></footer>
+  <div class="tome">
+    <div class="cover">
+      <div class="sheet doc">
+        <p class="kicker">提案 · 未接入游戏</p>
+        <h1>密卷</h1>
+        <p style="margin-top:10px;max-width:64ch">第三稿。书还在，但不再是留白很多的干净目录。控件改成夹页、票券、封条、符文环和花边框。文案仍是原来那些短句。角色图、音乐和玩法都没改。</p>
+        <nav class="catalog">
+          <a href="menu.html">主菜单<small>符文与叠页</small></a>
+          <a href="menu.html#settings">设置<small>别住的一张条子</small></a>
+          <a href="levels.html">选关<small>两卷名册</small></a>
+          <a href="play.html">局内<small>花边框，页边记分</small></a>
+          <a href="result.html#win">胜利<small>夹进去的一叶</small></a>
+          <a href="result.html#lose">失败</a>
+          <a href="result.html#pause">暂停</a>
+          <a href="gallery.html">图鉴<small>贴页与封条</small></a>
+          <a href="review.html">审阅外框</a>
+          <a href="compare.html">对照<small>干净稿与这一稿</small></a>
+        </nav>
+        <p class="note">说明在 SPEC.md。线上界面记录仍在 INVENTORY.md。</p>
+      </div>
     </div>
-    <div class="edge" aria-hidden="true"></div>
   </div>
 </body>
 </html>

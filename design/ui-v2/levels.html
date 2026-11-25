@@ -3,69 +3,69 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页提案 · 选关</title>
+  <title>密卷提案 · 选关</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
 <body class="folio">
-  <div class="volume">
-    <aside class="spine" aria-hidden="true"><b>选关</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet">
-      <div class="ribbon">示例</div>
-      <header class="running">
-        <div>
+  <div class="tome">
+    <img class="bookmark" src="../../public/ui/ribbon_bookmark.png" alt="" />
+    <p class="sample-flag">示例</p>
+    <div class="cover">
+      <div class="sheet">
+        <i class="gutter" aria-hidden="true"></i>
+        <p class="margin-note left">名册 · 已解开者钤印 · 未解锁仍可辨认</p>
+        <header class="running">
+          <div><p class="kicker">封卷</p><h1 class="folio-title">选关</h1></div>
           <button class="text-ink" type="button">返回</button>
-          <p class="kicker">封卷</p>
-          <h1 class="folio-title">选关</h1>
+        </header>
+        <p class="note">二十处秘境 · 已解开 16。状态为示例。</p>
+        <div class="spread" style="align-items:start">
+          <section>
+            <div class="chapter"><b>卷一</b><span>封林十境</span><img src="../../public/ui/ink_divider.png" alt="" /></div>
+            <div class="tickets" id="ch1"></div>
+          </section>
+          <section id="ch2">
+            <div class="chapter"><b>卷二</b><span>异闻十境</span><img src="../../public/ui/ink_divider.png" alt="" /></div>
+            <div class="tickets" id="ch2-list"></div>
+          </section>
         </div>
-      </header>
-      <p style="margin:10px 0 4px;color:var(--ink-soft)">二十处秘境 · 已解开 16。状态为示例。</p>
-      <div class="spread" style="align-items:start">
-        <section class="leaf" style="padding-top:8px">
-          <div class="chapter-label"><b>卷一</b><span>封林十境</span></div>
-          <div id="ch1"></div>
-        </section>
-        <section class="leaf" id="ch2" style="padding-top:8px">
-          <div class="chapter-label"><b>卷二</b><span>异闻十境</span></div>
-          <div id="ch2-list"></div>
-        </section>
+        <footer class="foot"><span>示例：解锁进度不是真实存档</span><span>其二</span></footer>
       </div>
-      <footer class="foot"><span>示例：解锁进度不是真实存档</span><span>其二</span></footer>
     </div>
-    <div class="edge" aria-hidden="true"></div>
   </div>
   <script>
     const rows = [
-      ['01','月下封林','狼人 · 蚀根','已解开','#c5d4e6','done'],
-      ['02','沙漠神殿','木乃伊 · 沙傀王','已解开','#e0c27a','done'],
-      ['03','雷雨实验室','弗兰肯斯坦 · 狂电塔','已解开','#2ed3c6','done'],
-      ['04','玫瑰古堡','吸血鬼 · 血月石像','已解开','#e25b78','done'],
-      ['05','秋夜南瓜谷','无头骑士 · 秋猎魔骑','已解开','#f08a3c','done'],
-      ['06','沉潮王庭','海妖 · 渊潮巨螺','已解开','#55d9df','done'],
-      ['07','狐火神社','狐妖 · 九灯妖镜','已解开','#f3b87b','done'],
-      ['08','极光冰座','冰霜巨人 · 永冻方碑','已解开','#89cdff','done'],
-      ['09','暮钟圣城','石像鬼 · 暮钟石卫','已解开','#b8a4eb','done'],
-      ['10','熔冠终庭','炎魔 · 熔冠魔像','已解开','#ff805a','done'],
-      ['11','蛛丝绣楼','蜘蛛妖 · 绣楼蛛君','已解开','#c45b6a','done'],
-      ['12','翠角神林','鹿人 · 翠角神麋','已解开','#7dcea0','done'],
-      ['13','金沙斗场','牛头人 · 金沙牛魔','已解开','#e0a15a','done'],
-      ['14','紫藤画舫','蛇妖 · 紫藤蟒君','已解开','#9b6bb5','done'],
-      ['15','钟械秘阁','机心造物 · 自鸣机兽','已解开','#d4a574','done'],
-      ['16','琥珀龙窟','龙裔 · 琥珀龙君','已解开','#c4843a','done'],
+      ['01','月下封林','狼人 · 蚀根','已解开','#5d6e86','done'],
+      ['02','沙漠神殿','木乃伊 · 沙傀王','已解开','#8a6a30','done'],
+      ['03','雷雨实验室','弗兰肯斯坦 · 狂电塔','已解开','#1f7c74','done'],
+      ['04','玫瑰古堡','吸血鬼 · 血月石像','已解开','#8e3450','done'],
+      ['05','秋夜南瓜谷','无头骑士 · 秋猎魔骑','已解开','#a85a22','done'],
+      ['06','沉潮王庭','海妖 · 渊潮巨螺','已解开','#1e7c86','done'],
+      ['07','狐火神社','狐妖 · 九灯妖镜','已解开','#a86b32','done'],
+      ['08','极光冰座','冰霜巨人 · 永冻方碑','已解开','#3a6e9a','done'],
+      ['09','暮钟圣城','石像鬼 · 暮钟石卫','已解开','#5c4e86','done'],
+      ['10','熔冠终庭','炎魔 · 熔冠魔像','已解开','#a84832','done'],
+      ['11','蛛丝绣楼','蜘蛛妖 · 绣楼蛛君','已解开','#8a3044','done'],
+      ['12','翠角神林','鹿人 · 翠角神麋','已解开','#2f7a52','done'],
+      ['13','金沙斗场','牛头人 · 金沙牛魔','已解开','#8a6230','done'],
+      ['14','紫藤画舫','蛇妖 · 紫藤蟒君','已解开','#6a3e86','done'],
+      ['15','钟械秘阁','机心造物 · 自鸣机兽','已解开','#8a6840','done'],
+      ['16','琥珀龙窟','龙裔 · 琥珀龙君','已解开','#8a5424','done'],
       ['17','月蚀歌剧院','歌剧魅影 · 月蚀魅兽','进行中','#8b3a4a','now'],
-      ['18','雷纹天城','雷兽 · 雷兽魁','未解锁','#7ec8e3','locked'],
-      ['19','星陨神座','堕星看守 · 堕星兽卫','未解锁','#b9a0ff','locked'],
-      ['20','万象封门','封门主宰 · 封门兽首','未解锁','#e6d39a','locked'],
+      ['18','雷纹天城','雷兽 · 雷兽魁','未解锁','#3a7490','locked'],
+      ['19','星陨神座','堕星看守 · 堕星兽卫','未解锁','#5c4e96','locked'],
+      ['20','万象封门','封门主宰 · 封门兽首','未解锁','#8a7444','locked'],
     ];
-    const buttons = rows.map(([idx, name, boss, state, accent, kind]) => {
+    const html = rows.map(([idx, name, boss, state, accent, kind]) => {
       const disabled = kind === 'locked' ? 'disabled' : '';
       const cls = kind === 'now' ? 'is-now' : '';
-      return `<button class="level ${cls}" type="button" style="--accent:${accent}" ${disabled}><span class="idx num">${idx}</span><span><b>${name}</b><small>${boss}</small></span><i class="mark"></i><span class="state">${state}</span></button>`;
+      return `<button class="ticket ${cls}" type="button" style="--accent:${accent}" ${disabled}><span class="num-seal num">${idx}</span><span><b>${name}</b><small>${boss}</small></span><i class="thread"></i><span class="stamp">${state}</span></button>`;
     });
-    document.getElementById('ch1').innerHTML = buttons.slice(0, 10).join('');
-    document.getElementById('ch2-list').innerHTML = buttons.slice(10).join('');
+    document.getElementById('ch1').innerHTML = html.slice(0, 10).join('');
+    document.getElementById('ch2-list').innerHTML = html.slice(10).join('');
   </script>
 </body>
 </html>

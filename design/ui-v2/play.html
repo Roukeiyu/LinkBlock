@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页提案 · 局内</title>
+  <title>密卷提案 · 局内</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
@@ -11,71 +11,72 @@
   <style>body { --accent: #8b3a4a; }</style>
 </head>
 <body class="folio">
-  <div class="volume">
-    <aside class="spine" aria-hidden="true"><b>第十七叶</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet play-sheet">
-      <div class="ribbon">示例</div>
-      <header class="running">
-        <span>解封</span>
-        <div class="margin-tools">
-          <button class="text-ink" type="button">攻略</button>
-          <button class="text-ink" type="button" aria-label="暂停"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span><kbd>P</kbd></button>
-          <button class="text-ink" type="button" aria-label="重来"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg><span>重来</span><kbd>R</kbd></button>
-        </div>
-      </header>
-      <div class="play-head">
-        <div>
-          <h1>第十七关 · 月蚀歌剧院</h1>
-          <p class="play-meta">歌剧魅影 · 深域</p>
-          <div class="meter">
-            <div class="meter-track" role="progressbar" aria-valuenow="63" aria-valuemin="0" aria-valuemax="100" aria-label="净化进度">
-              <div class="meter-fill" style="width:62.8%"></div>
-              <i class="meter-goal" style="left:75%"></i>
+  <div class="tome">
+    <img class="bookmark" src="../../public/ui/ribbon_bookmark.png" alt="" />
+    <div class="cover">
+      <div class="sheet play-sheet">
+        <i class="gutter" aria-hidden="true"></i>
+        <header class="running">
+          <span>第十七叶</span>
+          <div class="tools">
+            <button class="text-ink" type="button">攻略</button>
+            <button class="text-ink" type="button" aria-label="暂停"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span><kbd>P</kbd></button>
+            <button class="text-ink" type="button" aria-label="重来"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg><span>重来</span><kbd>R</kbd></button>
+          </div>
+        </header>
+        <div class="cartouche">
+          <div>
+            <h1>第十七关 · 月蚀歌剧院</h1>
+            <p class="meta">歌剧魅影 · 深域</p>
+            <div class="meter">
+              <div class="meter-track" role="progressbar" aria-valuenow="63" aria-valuemin="0" aria-valuemax="100" aria-label="净化进度">
+                <div class="meter-fill" style="width:62.8%"></div>
+                <i class="meter-goal" style="left:75%"></i>
+              </div>
+              <strong class="num">62.8%</strong>
             </div>
-            <strong class="num">62.8%</strong>
+            <p class="meta">净化 · 目标 75% · 示例</p>
           </div>
-          <p class="play-meta">净化 · 目标 75%</p>
-        </div>
-        <div class="side-notes">
-          <div class="lives" aria-label="剩余 2 条生命">
-            <img src="../../public/ui/wax_seal_red.png" alt="" />
-            <img src="../../public/ui/wax_seal_red.png" alt="" />
-            <img class="spent" src="../../public/ui/wax_seal_red.png" alt="" />
+          <div>
+            <div class="lives" aria-label="剩余 2 条生命">
+              <img src="../../public/ui/wax_seal_red.png" alt="" />
+              <img src="../../public/ui/wax_seal_red.png" alt="" />
+              <img class="spent" src="../../public/ui/wax_seal_red.png" alt="" />
+            </div>
+            <strong class="score num">008640</strong>
           </div>
-          <strong class="score num">008640</strong>
-          <div class="charms"><span>通关</span><span>满血</span><span>击破</span></div>
         </div>
-      </div>
-      <div class="plate-wrap">
-        <div class="plate">
-          <svg viewBox="0 0 900 600" role="img" aria-label="圈地示意。墨线画在纸上，不是正式关卡画面。">
-            <g fill="none" stroke="#1c140e" stroke-width="1.4">
-              <path d="M36 36h28M36 36v28M864 36h-28M864 36v28M36 564h28M36 564v-28M864 564h-28M864 564v-28"/>
-            </g>
-            <path d="M48 48 H280 V190 H420 V330 H270 V500 H150 V552 H48 Z" fill="rgba(142,52,44,.12)" stroke="#1c140e" stroke-width="1.6"/>
-            <path d="M270 500 H500 V300 H640" fill="none" stroke="#1c140e" stroke-width="1.6" stroke-dasharray="2 7" stroke-linecap="round"/>
-            <circle cx="640" cy="300" r="6" fill="#8e342c"/>
-            <g fill="none" stroke="#1c140e" stroke-width="1.3">
-              <path d="M700 150 l8 14 h-16 z"/>
-              <rect x="760" y="360" width="12" height="12" transform="rotate(45 766 366)"/>
-              <circle cx="820" cy="240" r="12"/>
-              <circle cx="820" cy="240" r="3" fill="#1c140e" stroke="none"/>
-            </g>
-            <circle cx="560" cy="160" r="5" fill="none" stroke="#1c140e"/>
-          </svg>
+        <div class="stage">
+          <div>
+            <div class="plate">
+              <svg viewBox="0 0 900 600" role="img" aria-label="圈地示意，画在纸上，不是正式关卡画面。">
+                <path d="M40 40 H300 V200 H440 V340 H280 V520 H150 V560 H40 Z" fill="rgba(142,52,44,.14)" stroke="#1a120c" stroke-width="1.6"/>
+                <path d="M280 520 H520 V310 H660" fill="none" stroke="#1a120c" stroke-width="1.6" stroke-dasharray="2 7"/>
+                <circle cx="660" cy="310" r="6" fill="#8e342c"/>
+                <g fill="none" stroke="#1a120c" stroke-width="1.3">
+                  <path d="M720 150 l9 16 h-18 z"/>
+                  <rect x="760" y="390" width="12" height="12" transform="rotate(45 766 396)"/>
+                  <circle cx="820" cy="230" r="14"/>
+                  <circle cx="820" cy="230" r="3" fill="#1a120c"/>
+                </g>
+              </svg>
+            </div>
+            <p class="plate-caption">场地示意，不是正式关卡画面</p>
+          </div>
+          <aside class="dossier" aria-label="页边记录">
+            <h2>页边</h2>
+            <div><span class="meta">得分 · 示例</span><div class="score num">008640</div></div>
+            <div class="charms"><span>通关 <b>未</b></span><span>满血 <b>未</b></span><span>击破 <b>未</b></span></div>
+            <div class="boss-box">月蚀魅兽<br><b class="num">3 / 5</b><br>探索中 · 03:12</div>
+          </aside>
         </div>
-        <p class="plate-caption">场地示意，不是正式关卡画面 · 沙漏减速为界面示例</p>
+        <div class="compass">
+          <div class="compass-wrap" aria-hidden="true"><div class="compass-ring"></div><i class="compass-knob"></i></div>
+          <p>按住画线，松开收线</p>
+        </div>
+        <footer class="foot"><span>示例数值</span><span>边饰不是按钮</span></footer>
       </div>
-      <div class="compass">
-        <div class="compass-ring" aria-hidden="true"><i class="compass-knob"></i></div>
-        <p>按住画线，松开收线</p>
-      </div>
-      <footer class="foot">
-        <span>探索中 · <span class="num">03:12</span> · 月蚀魅兽 3 / 5</span>
-        <span>示例数值</span>
-      </footer>
     </div>
-    <div class="edge" aria-hidden="true"></div>
   </div>
 </body>
 </html>

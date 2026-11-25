@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页提案 · 结算</title>
+  <title>密卷提案 · 结算</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
@@ -11,23 +11,23 @@
   <style>body { --accent: #8b3a4a; }</style>
 </head>
 <body class="folio">
-  <div class="volume" aria-hidden="true">
-    <aside class="spine"><b>第十七叶</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet play-sheet">
-      <header class="running"><span>解封</span><span>月蚀歌剧院</span></header>
-      <div class="play-head">
-        <div>
-          <h1>第十七关 · 月蚀歌剧院</h1>
-          <div class="meter"><div class="meter-track"><div id="back-fill" class="meter-fill" style="width:81%"></div></div><strong id="back-pct" class="num">81.4%</strong></div>
+  <div class="tome" aria-hidden="true">
+    <div class="cover">
+      <div class="sheet">
+        <header class="running"><span>第十七叶</span><span>月蚀歌剧院</span></header>
+        <div class="cartouche">
+          <div>
+            <h1>第十七关 · 月蚀歌剧院</h1>
+            <div class="meter"><div class="meter-track"><div id="back-fill" class="meter-fill" style="width:81%"></div></div><strong id="back-pct" class="num">81.4%</strong></div>
+          </div>
+          <strong id="back-score" class="score num">012480</strong>
         </div>
-        <strong id="back-score" class="score num">012480</strong>
+        <div class="stage"><div class="plate" style="grid-column:1/-1"></div></div>
       </div>
-      <div class="plate-wrap"><div class="plate"></div></div>
     </div>
-    <div class="edge"></div>
   </div>
   <div class="veil">
-    <article class="dialog" data-for="win">
+    <article class="inserted" data-for="win">
       <p class="kicker" style="text-align:center">封印已解</p>
       <img class="seal" src="../../public/ui/wax_seal_broken.png" alt="" />
       <h2>封印解开了。</h2>
@@ -38,15 +38,15 @@
         <div><span>用时</span><b class="num">03:42</b></div>
       </div>
       <p class="reward-note">满血纪念已收入图鉴</p>
-      <button class="wax-row press" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>前往雷纹天城</b></button>
+      <button class="slip main" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>前往雷纹天城</b></button>
       <div class="dialog-actions">
         <button class="text-ink" type="button">再玩本关</button>
         <button class="text-ink" type="button">选关</button>
         <button class="text-ink" type="button">图鉴</button>
       </div>
-      <p class="foot" style="border:0;justify-content:center">示例数值，不是本局成绩</p>
+      <p class="foot">示例数值，不是本局成绩</p>
     </article>
-    <article class="dialog" data-for="lose" hidden>
+    <article class="inserted" data-for="lose" hidden>
       <p class="kicker" style="text-align:center">还可以再远一点</p>
       <img class="seal" src="../../public/ui/wax_seal_red.png" alt="" />
       <h2>下一次，再远一点。</h2>
@@ -56,35 +56,31 @@
         <div><span>得分</span><b class="num">3,210</b></div>
         <div><span>用时</span><b class="num">01:18</b></div>
       </div>
-      <button class="wax-row press" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>重新挑战</b></button>
+      <button class="slip main" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>重新挑战</b></button>
       <div class="dialog-actions">
         <button class="text-ink" type="button">选关</button>
         <button class="text-ink" type="button">返回主界面</button>
       </div>
-      <p class="foot" style="border:0;justify-content:center">示例数值，不是本局成绩</p>
+      <p class="foot">示例数值，不是本局成绩</p>
     </article>
-    <article class="dialog" data-for="pause" hidden>
+    <article class="inserted" data-for="pause" hidden>
       <p class="kicker" style="text-align:center">稍作停歇</p>
       <img class="seal" src="../../public/ui/wax_seal_red.png" alt="" />
       <h2>风景会等你。</h2>
       <p class="lead">休息一下，准备好后继续探索。</p>
-      <button class="wax-row press" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>继续探索</b></button>
+      <button class="slip main" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><b>继续探索</b></button>
       <div class="dialog-actions">
         <button class="text-ink" type="button">重来</button>
         <button class="text-ink" type="button">返回主界面</button>
       </div>
-      <p class="foot" style="border:0;justify-content:center">示例</p>
+      <p class="foot">示例</p>
     </article>
   </div>
   <script>
-    const scenes = {
-      win: ['81.4%', '81.4%', '012480'],
-      lose: ['46.2%', '46.2%', '003210'],
-      pause: ['62.8%', '62.8%', '008640'],
-    };
+    const scenes = { win: ['81.4%', '81.4%', '012480'], lose: ['46.2%', '46.2%', '003210'], pause: ['62.8%', '62.8%', '008640'] };
     const apply = () => {
       const name = (location.hash || '#win').slice(1);
-      for (const dialog of document.querySelectorAll('.dialog')) dialog.hidden = dialog.dataset.for !== name;
+      for (const dialog of document.querySelectorAll('.inserted')) dialog.hidden = dialog.dataset.for !== name;
       const scene = scenes[name] || scenes.win;
       document.querySelector('#back-fill').style.width = scene[0];
       document.querySelector('#back-pct').textContent = scene[1];

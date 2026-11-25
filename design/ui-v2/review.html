@@ -3,46 +3,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页提案 · 审阅</title>
+  <title>密卷提案 · 审阅</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
 <body class="folio">
-  <div class="volume">
-    <aside class="spine" aria-hidden="true"><b>审阅</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet">
-      <div class="ribbon">示例</div>
-      <header class="running">
-        <div>
-          <p class="kicker">封林 / 美术审阅</p>
-          <h1 class="folio-title">全关卡奖励图片</h1>
+  <div class="tome">
+    <img class="bookmark" src="../../public/ui/ribbon_bookmark.png" alt="" />
+    <div class="cover">
+      <div class="sheet">
+        <i class="gutter" aria-hidden="true"></i>
+        <header class="running">
+          <div><p class="kicker">封林 / 美术审阅</p><h1 class="folio-title">全关卡奖励图片</h1></div>
+        </header>
+        <nav class="tabs" aria-label="审阅">
+          <button class="tab" type="button" aria-pressed="true">奖励图片</button>
+          <button class="tab" type="button">Boss / 小怪</button>
+          <button class="tab" type="button" aria-pressed="true">人形</button>
+          <button class="tab" type="button">魔物</button>
+        </nav>
+        <p class="note">外框换成这册书。原图、顺序、放大和遮罩都不换。</p>
+        <h2 class="section-title">第一关 · 月下封林</h2>
+        <div class="review-grid">
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>完整成图<small>仍读游戏资源</small></figcaption></figure>
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>满血通关<small>切图与下载照旧</small></figcaption></figure>
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>击败 Boss<small>蚀根</small></figcaption></figure>
         </div>
-      </header>
-      <p class="note">二十关，每关三张，1536×1024。外框换成书页，原图与关卡顺序都不换。</p>
-      <nav class="tabs" aria-label="审阅导航">
-        <button class="chip" type="button" aria-pressed="true">奖励图片</button>
-        <button class="chip" type="button">Boss / 小怪 / 玩家</button>
-        <button class="chip" type="button">图片类型：全部</button>
-        <button class="chip" type="button" aria-pressed="true">人形</button>
-        <button class="chip" type="button">魔物</button>
-      </nav>
-      <h2 class="section-title">第一关 · 月下封林</h2>
-      <div class="review-grid">
-        <figure class="mount"><div class="ph">原图位</div><figcaption>完整成图 · 通关解封<small>正式原图仍从游戏资源读取</small></figcaption></figure>
-        <figure class="mount"><div class="ph">原图位</div><figcaption>满血通关<small>放大、切图、下载保持原样</small></figcaption></figure>
-        <figure class="mount"><div class="ph">原图位</div><figcaption>击败 Boss<small>蚀根</small></figcaption></figure>
+        <h2 class="section-title">第十五关 · 钟械秘阁</h2>
+        <div class="review-grid">
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>完整成图<small>Alpha 仍对照正式遮罩</small></figcaption></figure>
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>满血通关<small>机心造物</small></figcaption></figure>
+          <figure class="mount"><div class="ph">原图位<span class="c"></span></div><figcaption>击败 Boss<small>自鸣机兽</small></figcaption></figure>
+        </div>
+        <footer class="foot"><span>斜线框是占位，不是新角色</span><span>审阅</span></footer>
       </div>
-      <h2 class="section-title">第十五关 · 钟械秘阁</h2>
-      <div class="review-grid">
-        <figure class="mount"><div class="ph">原图位</div><figcaption>完整成图<small>查看 Alpha 仍对照正式遮罩</small></figcaption></figure>
-        <figure class="mount"><div class="ph">原图位</div><figcaption>满血通关<small>机心造物</small></figcaption></figure>
-        <figure class="mount"><div class="ph">原图位</div><figcaption>击败 Boss<small>自鸣机兽</small></figcaption></figure>
-      </div>
-      <footer class="foot"><span>斜线框是版式占位，不是新画的角色</span><span>审阅</span></footer>
     </div>
-    <div class="edge" aria-hidden="true"></div>
   </div>
 </body>
 </html>

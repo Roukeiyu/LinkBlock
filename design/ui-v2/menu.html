@@ -3,60 +3,74 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>书页提案 · 主菜单</title>
+  <title>密卷提案 · 主菜单</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
 <body class="folio">
-  <div class="volume">
-    <aside class="spine" aria-hidden="true"><b>解封</b><span class="bands"><i></i><i></i><i></i></span></aside>
-    <div class="sheet">
-      <div class="ribbon">示例</div>
-      <header class="running"><span>封卷 · 目录</span></header>
-      <div class="spread">
-        <section class="leaf">
-          <div class="logo-frame"><img src="../../public/ui/logo.png" alt="LinkBlock 解封" /></div>
-          <p class="tagline">沿岸而行，以线解封。</p>
-          <div class="colophon">
-            <p class="kicker">正在解封</p>
-            <b>第十七关 · 月蚀歌剧院</b>
-          </div>
-        </section>
-        <section class="leaf" aria-label="主菜单">
-          <p class="kicker" style="margin-bottom:8px">翻开新的一页</p>
-          <button class="wax-row press" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><span><b>开始游戏</b><small>从这一页进入</small></span></button>
-          <button class="toc-line press" type="button"><b>选择关卡</b><span class="leader"></span><small>二十处秘境</small></button>
-          <button class="toc-line press" type="button"><b>图鉴</b><span class="leader"></span><small>珍藏画像</small></button>
-          <button class="toc-line press" type="button"><b>关卡攻略</b><span class="leader"></span><small>探索指引</small></button>
-          <button class="toc-line press" type="button"><b>设置</b><span class="leader"></span><small>音乐、音效与形态</small></button>
-          <div class="quire" id="settings" hidden>
-            <h2 style="font-size:18px;letter-spacing:.12em">设置</h2>
-            <div class="field"><span>音乐</span><span class="choice" role="group" aria-label="音乐"><i class="on">开</i><i>关</i></span></div>
-            <div class="field"><span>音效</span><span class="choice" role="group" aria-label="音效"><i class="on">开</i><i>关</i></span></div>
-            <label class="field">音乐音量 <input type="range" min="0" max="100" value="62" aria-label="音乐音量" /></label>
-            <label class="field">音效音量 <input type="range" min="0" max="100" value="78" aria-label="音效音量" /></label>
-            <div class="field"><span>形态</span><span class="choice"><i class="on">人形</i><i>魔物</i></span></div>
-            <button class="danger-ink" type="button">清空进度</button>
-          </div>
-          <div class="progress-line">
-            <p><span>封印进度</span><b class="num">16 / 20</b></p>
-            <div class="ticks" aria-hidden="true">
-              <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
-              <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
-              <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
-              <i class="done"></i><i class="now"></i><i></i><i></i><i></i>
+  <div class="tome">
+    <img class="bookmark" src="../../public/ui/ribbon_bookmark.png" alt="" />
+    <p class="sample-flag">示例</p>
+    <div class="cover">
+      <div class="sheet">
+        <i class="gutter" aria-hidden="true"></i>
+        <img class="corner-wax tl" src="../../public/ui/wax_seal_red.png" alt="" />
+        <p class="margin-note left">边注 · 十七叶未竟 · 进度不是存档</p>
+        <header class="running"><span class="kicker">封缄魔导书</span><span>目录</span></header>
+        <div class="spread">
+          <section class="leaf">
+            <div class="sigil">
+              <div class="rune" aria-hidden="true"></div>
+              <div class="logo-frame"><img src="../../public/ui/logo.png" alt="LinkBlock 解封" /></div>
             </div>
-          </div>
-        </section>
+            <img class="divider" src="../../public/ui/ink_divider.png" alt="" />
+            <p class="tagline">沿岸而行，以线解封。</p>
+            <div class="pasted">
+              <img src="../../public/ui/wax_seal_gold.png" alt="" />
+              <div><span class="kicker">正在解封</span><b>第十七关 · 月蚀歌剧院</b></div>
+            </div>
+          </section>
+          <section class="leaf" aria-label="主菜单">
+            <div class="slips">
+              <button class="slip main" type="button"><img src="../../public/ui/wax_seal_red.png" alt="" /><span><b>开始游戏</b><small>从这一页进入</small></span></button>
+              <button class="slip dog" type="button"><span class="num-seal">壹</span><span><b>选择关卡</b><small>二十处秘境</small></span></button>
+              <button class="slip tabbed" type="button"><span class="num-seal">贰</span><span><b>图鉴</b><small>珍藏画像</small></span></button>
+              <button class="slip shift" type="button"><span class="num-seal">叁</span><span><b>关卡攻略</b><small>探索指引</small></span></button>
+              <button class="slip" type="button"><i class="hole" aria-hidden="true"></i><span><b>设置</b><small>音乐、音效与形态</small></span></button>
+            </div>
+            <div class="register" aria-label="封印进度示例">
+              <header><span>封印进度</span><b class="num">16 / 20</b></header>
+              <div class="seal-grid" aria-hidden="true">
+                <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+                <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i>
+              </div>
+            </div>
+          </section>
+        </div>
+        <aside class="quire" id="settings">
+          <img src="../../public/ui/wax_seal_red.png" alt="" style="width:36px;height:36px;margin:-28px auto 6px" />
+          <h2>设置</h2>
+          <div class="field"><span>音乐</span><span class="choice"><i class="on">开</i><i>关</i></span></div>
+          <div class="field"><span>音效</span><span class="choice"><i class="on">开</i><i>关</i></span></div>
+          <label class="field">音乐音量 <input type="range" min="0" max="100" value="62" aria-label="音乐音量" /></label>
+          <label class="field">音效音量 <input type="range" min="0" max="100" value="78" aria-label="音效音量" /></label>
+          <div class="field"><span>形态</span><span class="choice"><i class="on">人形</i><i>魔物</i></span></div>
+          <button class="danger-ink" type="button">清空进度</button>
+        </aside>
+        <div class="crests" aria-hidden="true">
+          <div class="crest"><b>月下封林</b><span>卷一 · 蚀根</span></div>
+          <div class="crest"><b>钟械秘阁</b><span>自鸣机兽</span></div>
+          <div class="crest"><b>月蚀歌剧院</b><span>正在这一页</span></div>
+          <div class="crest"><b>万象封门</b><span>卷末 · 封门兽首</span></div>
+        </div>
+        <footer class="foot"><span>示例：进度不是真实存档</span><span>夹页与符文不是按钮</span></footer>
       </div>
-      <footer class="foot"><span>示例：进度不是真实存档</span><span>其一</span></footer>
     </div>
-    <div class="edge" aria-hidden="true"></div>
   </div>
   <script>
-    const sync = () => { document.querySelector('#settings').hidden = location.hash !== '#settings'; };
+    const sync = () => document.body.classList.toggle('is-settings', location.hash === '#settings');
     addEventListener('hashchange', sync);
     sync();
   </script>
