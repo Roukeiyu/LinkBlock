@@ -3,83 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>金线提案 · 局内</title>
+  <title>书页提案 · 局内</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
   <style>body { --accent: #8b3a4a; }</style>
 </head>
-<body class="play-screen">
-  <header class="play-top">
-    <div class="brand-lockup"><img src="../../public/ui/wax_seal_red.png" alt="" /><span>解封</span></div>
-    <div class="play-tools" role="toolbar" aria-label="游戏控制">
-      <button class="text-btn" type="button">攻略</button>
-      <button class="text-btn" type="button" aria-label="暂停"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span><kbd>P</kbd></button>
-      <button class="text-btn" type="button" aria-label="重来"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/></svg><span>重来</span><kbd>R</kbd></button>
-      <span class="tool-split" aria-hidden="true"></span>
-      <label class="slider-row compact"> <span>音乐</span><input type="range" min="0" max="100" value="62" aria-label="音乐音量" /></label>
-      <label class="slider-row compact"> <span>音效</span><input type="range" min="0" max="100" value="78" aria-label="音效音量" /></label>
-    </div>
-  </header>
-  <section class="hud" aria-label="局内状态">
-    <div class="medallion" aria-hidden="true">十七</div>
-    <div>
-      <h1>第十七关 · 月蚀歌剧院</h1>
-      <p class="hud-sub">歌剧魅影 · 深域</p>
-      <div class="meter">
-        <div class="meter-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="63" aria-label="净化进度">
-          <div class="meter-fill" style="width:62.8%"></div>
-          <i class="meter-goal" style="left:75%"></i>
+<body class="folio">
+  <div class="volume">
+    <aside class="spine" aria-hidden="true"><b>第十七叶</b><span class="bands"><i></i><i></i><i></i></span></aside>
+    <div class="sheet play-sheet">
+      <div class="ribbon">示例</div>
+      <header class="running">
+        <span>解封</span>
+        <div class="margin-tools">
+          <button class="text-ink" type="button">攻略</button>
+          <button class="text-ink" type="button" aria-label="暂停"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span><kbd>P</kbd></button>
+          <button class="text-ink" type="button" aria-label="重来"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg><span>重来</span><kbd>R</kbd></button>
         </div>
-        <strong class="num">62.8%</strong>
+      </header>
+      <div class="play-head">
+        <div>
+          <h1>第十七关 · 月蚀歌剧院</h1>
+          <p class="play-meta">歌剧魅影 · 深域</p>
+          <div class="meter">
+            <div class="meter-track" role="progressbar" aria-valuenow="63" aria-valuemin="0" aria-valuemax="100" aria-label="净化进度">
+              <div class="meter-fill" style="width:62.8%"></div>
+              <i class="meter-goal" style="left:75%"></i>
+            </div>
+            <strong class="num">62.8%</strong>
+          </div>
+          <p class="play-meta">净化 · 目标 75%</p>
+        </div>
+        <div class="side-notes">
+          <div class="lives" aria-label="剩余 2 条生命">
+            <img src="../../public/ui/wax_seal_red.png" alt="" />
+            <img src="../../public/ui/wax_seal_red.png" alt="" />
+            <img class="spent" src="../../public/ui/wax_seal_red.png" alt="" />
+          </div>
+          <strong class="score num">008640</strong>
+          <div class="charms"><span>通关</span><span>满血</span><span>击破</span></div>
+        </div>
       </div>
-      <p class="meter-caption">净化<span>目标 75%</span></p>
+      <div class="plate-wrap">
+        <div class="plate">
+          <svg viewBox="0 0 900 600" role="img" aria-label="圈地示意。墨线画在纸上，不是正式关卡画面。">
+            <g fill="none" stroke="#1c140e" stroke-width="1.4">
+              <path d="M36 36h28M36 36v28M864 36h-28M864 36v28M36 564h28M36 564v-28M864 564h-28M864 564v-28"/>
+            </g>
+            <path d="M48 48 H280 V190 H420 V330 H270 V500 H150 V552 H48 Z" fill="rgba(142,52,44,.12)" stroke="#1c140e" stroke-width="1.6"/>
+            <path d="M270 500 H500 V300 H640" fill="none" stroke="#1c140e" stroke-width="1.6" stroke-dasharray="2 7" stroke-linecap="round"/>
+            <circle cx="640" cy="300" r="6" fill="#8e342c"/>
+            <g fill="none" stroke="#1c140e" stroke-width="1.3">
+              <path d="M700 150 l8 14 h-16 z"/>
+              <rect x="760" y="360" width="12" height="12" transform="rotate(45 766 366)"/>
+              <circle cx="820" cy="240" r="12"/>
+              <circle cx="820" cy="240" r="3" fill="#1c140e" stroke="none"/>
+            </g>
+            <circle cx="560" cy="160" r="5" fill="none" stroke="#1c140e"/>
+          </svg>
+        </div>
+        <p class="plate-caption">场地示意，不是正式关卡画面 · 沙漏减速为界面示例</p>
+      </div>
+      <div class="compass">
+        <div class="compass-ring" aria-hidden="true"><i class="compass-knob"></i></div>
+        <p>按住画线，松开收线</p>
+      </div>
+      <footer class="foot">
+        <span>探索中 · <span class="num">03:12</span> · 月蚀魅兽 3 / 5</span>
+        <span>示例数值</span>
+      </footer>
     </div>
-    <div class="hud-side">
-      <div class="lives" aria-label="剩余 2 条生命"><i></i><i></i><i class="spent"></i></div>
-      <strong class="score num">008640</strong>
-      <div class="charms" aria-label="本关纪念"><span>通关</span><span>满血</span><span>击破</span></div>
-    </div>
-  </section>
-  <div class="stage-board">
-    <div class="board">
-      <svg class="field" viewBox="0 0 900 600" role="img" aria-label="圈地场地示意。这里不使用角色原画。">
-        <defs>
-          <radialGradient id="vig" cx="50%" cy="42%" r="70%">
-            <stop offset="0%" stop-color="#1a1412"/>
-            <stop offset="100%" stop-color="#090807"/>
-          </radialGradient>
-        </defs>
-        <rect width="900" height="600" fill="url(#vig)"/>
-        <g stroke="#e7d5b0" stroke-opacity="0.45" fill="none" stroke-width="1.4">
-          <path d="M28 28h36M28 28v36M872 28h-36M872 28v36M28 572h36M28 572v-36M872 572h-36M872 572v-36"/>
-        </g>
-        <path d="M18 18 H250 V168 H390 V310 H250 V470 H140 V582 H18 Z" fill="#8b3a4a" fill-opacity="0.28" stroke="#e7d5b0" stroke-opacity="0.55" stroke-width="1.6"/>
-        <path d="M250 470 H470 V286 H620" fill="none" stroke="#f4efe4" stroke-width="2" stroke-dasharray="1 8" stroke-linecap="round"/>
-        <circle cx="620" cy="286" r="5.5" fill="#f4efe4"/>
-        <g fill="none" stroke="#e7d5b0" stroke-opacity="0.75" stroke-width="1.4">
-          <rect x="688" y="150" width="12" height="12" transform="rotate(45 694 156)"/>
-          <circle cx="760" cy="390" r="7"/>
-          <path d="M540 132 l9 16 h-18 z"/>
-        </g>
-        <g>
-          <circle cx="790" cy="230" r="16" fill="none" stroke="#8b3a4a" stroke-width="1.6"/>
-          <circle cx="790" cy="230" r="4" fill="#8b3a4a"/>
-        </g>
-      </svg>
-      <div class="float-chip">沙漏 · 减速 7 秒</div>
-    </div>
-  </div>
-  <footer class="play-foot">
-    <span class="live"><i></i>探索中</span>
-    <span class="num">03:12</span>
-    <span class="toast">已圈入一块领地</span>
-    <span class="boss">月蚀魅兽 <b class="num">3 / 5</b></span>
-  </footer>
-  <div class="hand">
-    <div class="stick-well" aria-hidden="true"><i class="knob"></i></div>
-    <p>单手 · 区域内滑动画线，松开收线</p>
+    <div class="edge" aria-hidden="true"></div>
   </div>
 </body>
 </html>

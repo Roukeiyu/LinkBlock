@@ -3,59 +3,53 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>金线提案 · 图鉴</title>
+  <title>书页提案 · 图鉴</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
-<body class="screen">
-  <main class="sheet">
-    <header class="gallery-head">
-      <div>
-        <p class="kicker">珍藏</p>
-        <h1>图鉴</h1>
-        <p>一次看一关的三张画像。色块只占位置，正式原画仍用游戏资源。</p>
+<body class="folio">
+  <div class="volume">
+    <aside class="spine" aria-hidden="true"><b>图鉴</b><span class="bands"><i></i><i></i><i></i></span></aside>
+    <div class="sheet">
+      <div class="ribbon">示例</div>
+      <header class="running">
+        <div>
+          <button class="text-ink" type="button">返回</button>
+          <p class="kicker">珍藏</p>
+          <h1 class="folio-title">图鉴</h1>
+        </div>
+      </header>
+      <div class="gallery-layout">
+        <nav class="rail" aria-label="关卡">
+          <button class="rail-btn" type="button">月下封林<small>3</small></button>
+          <button class="rail-btn" type="button">玫瑰古堡<small>3</small></button>
+          <button class="rail-btn" type="button">钟械秘阁<small>3</small></button>
+          <button class="rail-btn" type="button" aria-current="true">琥珀龙窟<small>2</small></button>
+          <button class="rail-btn" type="button">月蚀歌剧院<small>0</small></button>
+          <button class="rail-btn" type="button">雷纹天城<small>—</small></button>
+          <button class="rail-btn" type="button">星陨神座<small>—</small></button>
+          <button class="rail-btn" type="button">万象封门<small>—</small></button>
+        </nav>
+        <section>
+          <div class="tabs" role="group" aria-label="形态">
+            <button class="chip" type="button" aria-pressed="true">人形</button>
+            <button class="chip" type="button" aria-pressed="false">按住查看魔物</button>
+          </div>
+          <p class="kicker">第十六关 · 龙裔</p>
+          <h2 class="section-title">琥珀龙窟</h2>
+          <div class="plates">
+            <button class="card is-open" type="button" style="--accent:#c4843a"><figure>通关</figure><b>通关解封</b><small>通关后收下的画像</small></button>
+            <button class="card is-open" type="button" style="--accent:#e0b56a"><figure>满血</figure><b>满血通关</b><small>通关时生命全满</small></button>
+            <button class="card is-locked" type="button" disabled><figure><img class="seal" src="../../public/ui/wax_seal_red.png" alt="" /></figure><b>击败 Boss</b><small>未解开 · 击败琥珀龙君</small></button>
+          </div>
+          <p class="note">色块与火漆只占画像的位置。正式原画仍用游戏里的资源。</p>
+        </section>
       </div>
-      <button class="text-btn" type="button">返回</button>
-    </header>
-    <div class="gallery-layout">
-      <nav class="rail" aria-label="关卡">
-        <button class="rail-btn" type="button">01 月下封林<small>3</small></button>
-        <button class="rail-btn" type="button">04 玫瑰古堡<small>3</small></button>
-        <button class="rail-btn" type="button">15 钟械秘阁<small>3</small></button>
-        <button class="rail-btn" type="button" aria-current="true">16 琥珀龙窟<small>2</small></button>
-        <button class="rail-btn" type="button">17 月蚀歌剧院<small>0</small></button>
-        <button class="rail-btn" type="button">18 雷纹天城<small>—</small></button>
-        <button class="rail-btn" type="button">19 星陨神座<small>—</small></button>
-        <button class="rail-btn" type="button">20 万象封门<small>—</small></button>
-      </nav>
-      <section>
-        <div class="filters" role="group" aria-label="形态">
-          <button class="chip-btn" type="button" aria-pressed="true">人形</button>
-          <button class="chip-btn" type="button" aria-pressed="false">按住查看魔物</button>
-        </div>
-        <p class="kicker">第十六关 · 龙裔 · 深域</p>
-        <h2 class="serif" style="font-size:28px;letter-spacing:0.12em;margin:6px 0 14px">琥珀龙窟</h2>
-        <div class="plates">
-          <button class="plate is-open" type="button" style="--accent:#c4843a">
-            <figure>通关</figure>
-            <b>通关解封</b>
-            <small>通关后收下的解封画像</small>
-          </button>
-          <button class="plate is-open" type="button" style="--accent:#e0b56a">
-            <figure>满血</figure>
-            <b>满血通关</b>
-            <small>通关时生命全满</small>
-          </button>
-          <button class="plate is-locked" type="button" disabled>
-            <figure>未解</figure>
-            <b>击败 Boss</b>
-            <small>未解锁 · 击败琥珀龙君</small>
-          </button>
-        </div>
-      </section>
+      <footer class="foot"><span>示例：收录枚数不是真实图鉴</span><span>其十六</span></footer>
     </div>
-  </main>
+    <div class="edge" aria-hidden="true"></div>
+  </div>
 </body>
 </html>

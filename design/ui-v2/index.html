@@ -3,30 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>金线 · LinkBlock UI v2</title>
+  <title>书页 · LinkBlock 界面提案</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="components.css" />
 </head>
-<body class="screen">
-  <main class="doc">
-    <p class="kicker">提案 · 未接入游戏</p>
-    <h1>金线</h1>
-    <p style="margin-top:12px;max-width:62ch">LinkBlock 的下一套界面。插画继续负责气氛，界面改成夜色漆面、一根金线和一枚朱砂主按钮。角色原画、音频和线上游戏都没有改动。</p>
-    <nav class="toc">
-      <a href="menu.html">主菜单<small>menu.html</small></a>
-      <a href="menu.html#settings">设置<small>同一页，展开设置</small></a>
-      <a href="levels.html">选关<small>二十关一次看清</small></a>
-      <a href="play.html">局内<small>顶栏、进度、场地</small></a>
-      <a href="result.html#win">胜利<small>封印解开了</small></a>
-      <a href="result.html#lose">失败<small>下一次，再远一点</small></a>
-      <a href="result.html#pause">暂停<small>风景会等你</small></a>
-      <a href="gallery.html">图鉴<small>一次一关</small></a>
-      <a href="review.html">审阅页<small>只改外框</small></a>
-      <a href="compare.html">并排对照<small>现况与提案</small></a>
-    </nav>
-    <p class="note">说明见同目录 <code>SPEC.md</code>，现况记在 <code>INVENTORY.md</code>。</p>
-  </main>
+<body class="folio">
+  <div class="volume">
+    <aside class="spine" aria-hidden="true"><b>书页</b><span class="bands"><i></i><i></i><i></i></span></aside>
+    <div class="sheet doc-sheet">
+      <header class="running"><span>提案 · 未接入游戏</span><span>待确认</span></header>
+      <h1 style="margin-top:18px">书页</h1>
+      <p style="margin-top:12px;max-width:62ch">整本界面都是同一册古籍：书脊、纸页、切口、墨字和火漆。菜单、选关、图鉴、局内、结算和审阅外框用同一套材料。角色原画、音乐和游戏逻辑都没有改。</p>
+      <nav class="catalog">
+        <a href="menu.html">主菜单<small>摊开的目录页</small></a>
+        <a href="menu.html#settings">设置<small>写在同一页上</small></a>
+        <a href="levels.html">选关<small>卷一、卷二</small></a>
+        <a href="play.html">局内<small>页边是状态，中间是示意</small></a>
+        <a href="result.html#win">胜利<small>另夹进的一叶</small></a>
+        <a href="result.html#lose">失败<small>下一次，再远一点</small></a>
+        <a href="result.html#pause">暂停<small>风景会等你</small></a>
+        <a href="gallery.html">图鉴<small>贴入书中的图版</small></a>
+        <a href="review.html">审阅页<small>只换外框</small></a>
+        <a href="compare.html">并排对照<small>现况与这一稿</small></a>
+      </nav>
+      <p class="note">说明在 <code>SPEC.md</code>。线上界面的记录仍在 <code>INVENTORY.md</code>，没有删。</p>
+      <footer class="foot"><span>数值出现在各页时，都标为示例</span><span>目录</span></footer>
+    </div>
+    <div class="edge" aria-hidden="true"></div>
+  </div>
 </body>
 </html>
