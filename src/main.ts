@@ -1,6 +1,5 @@
 import './style.css';
 import { Game, type Direction, type GameEvent } from './engine';
-import { ENEMY_STYLES } from './enemies';
 import { renderEnemy, renderPlayerSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
@@ -11,7 +10,8 @@ import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
 import { POWER_UP_COLORS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, POWER_UP_RESPAWN_SECONDS, WARD_RADIUS, type PowerUp } from './powerups';
-import { STAT_CAP, STAT_COST, STAT_IDS, STAT_LABELS, STAT_NOTES, adjustAllocation, badgePoints, emptyAllocation, modifiersFor, readAllocation, slayReach, spent, writeAllocation, PROGRESS_STORAGE_KEYS, type StatAllocation, type StatId } from './stats';
+import { SLAY_INK, SLAY_INK_GLOW } from './slay-ink';
+import { STAT_CAP, STAT_COST, STAT_IDS, STAT_LABELS, STAT_NOTES, adjustAllocation, badgePoints, emptyAllocation, modifiersFor, readAllocation, spent, writeAllocation, PROGRESS_STORAGE_KEYS, type StatAllocation, type StatId } from './stats';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -140,7 +140,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <p>沙漏减速：敌人移动速度降低 30%（10 秒，不影响子弹）。雪花止步：敌人和子弹冻结 3 秒。闪电加速：角色速度提高 50%（10 秒）。</p>
       <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒。这一圈就是爆炸范围，半径为基础的 1.5 到 1.8 倍。引爆时击败圈内的小怪，并对圈内的首领造成 1 点伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
       <p>护盾：抵消下一次受到的伤害。避邪符：持续数秒，魔物会绕开角色周围的一圈；已经在圈里的会向外走开。</p>
-      <p>每枚已获得的徽章提供 1 点属性。道具持续时间、冷却缩短、移速和拾取范围各最多 10 点。镇杀也最多 10 级，但每级消耗 2 点：画出的墨线会斩杀碰到的小怪，等级越高斩得越宽，不能斩杀首领。</p>
+      <p>每枚已获得的徽章提供 1 点属性。道具持续时间、冷却缩短、移速和拾取范围各最多 10 点。镇杀也最多 10 级，但每级消耗 2 点：这一关能拉出的朱砂色镇杀线更长，可一次拉完或分成几笔，只有这段能斩杀碰到的小怪，不能斩杀首领。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -155,7 +155,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="gallery-head"><h2 id="stats-title">属性</h2><button id="stats-close" class="ink-tab" type="button">返回</button></div>
       <p id="stats-points"></p>
       <div id="stats-list" class="stats-list"></div>
-      <p class="stats-note">点数来自已获得的徽章，可以随时加减，不会永久锁定。镇杀每级消耗 2 点。</p>
+      <p class="stats-note">点数来自已获得的徽章，可以随时加减，不会永久锁定。镇杀每级消耗 2 点，等级越高能拉出的朱砂镇杀线越长。</p>
     </div>
   </div>
   <div id="clear-progress-dialog" class="gallery confirm-progress" hidden>
@@ -952,6 +952,18 @@ function drawHitFeedback(x: number, y: number, scale: number) {
   ctx.strokeText('−1', labelX, labelY); ctx.fillText('−1', labelX, labelY);
 }
 
+function strokeWorldLines(lines: { x: number; y: number }[][], color: string, width: number, glow: string) {
+  ctx.save();
+  ctx.shadowColor = glow; ctx.shadowBlur = 10;
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const line of lines) {
+    if (line.length < 2) continue;
+    ctx.beginPath();
+    line.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function render() {
   const width = canvas.width, height = canvas.height;
   const scale = Math.min((width - 24) / game.width, (height - 24) / game.height);
@@ -1003,19 +1015,13 @@ function render() {
   ctx.restore();
   if (game.characterComplete) drawSealMotes(ctx, frameDt);
   if (game.phase !== 'won') {
-    if (game.trail.length) {
-      if (game.modifiers.slay > 0) {
-        const reach = slayReach(game.modifiers.slay, ENEMY_STYLES.straight.radius * 0.85);
-        ctx.save(); ctx.strokeStyle = 'rgba(26, 14, 8, 0.22)'; ctx.lineWidth = reach * 2;
-        ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
-        game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-        ctx.stroke(); ctx.restore();
-      }
-      ctx.save(); ctx.shadowColor = theme.trail; ctx.shadowBlur = 10;
-      ctx.strokeStyle = theme.trail; ctx.lineWidth = 2.6 / scale; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.beginPath();
-      game.trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-      ctx.stroke(); ctx.restore();
+    const inkWidth = 2.6 / scale;
+    const shoreSlay = game.coastSlay();
+    if (shoreSlay.length) strokeWorldLines(shoreSlay, SLAY_INK, inkWidth, SLAY_INK_GLOW);
+    if (game.trail.length > 1) {
+      const ink = game.strokeInk();
+      if (ink.plain.length) strokeWorldLines(ink.plain, theme.trail, inkWidth, theme.trail);
+      if (ink.slay.length) strokeWorldLines(ink.slay, SLAY_INK, inkWidth, SLAY_INK_GLOW);
     }
     if (game.powerUpEffects.bomb > 0) {
       ctx.save(); ctx.strokeStyle = '#ff8a6a'; ctx.lineWidth = 0.18; ctx.setLineDash([0.45, 0.28]);

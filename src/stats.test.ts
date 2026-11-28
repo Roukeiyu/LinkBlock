@@ -3,8 +3,8 @@ import { EMPTY_CODEX, applyUnlocks } from './rewards';
 import { LEVELS } from './levels';
 import { POWER_UP_RADIUS, POWER_UP_SPAWN_GAP, PICKUP_BODY_RADIUS, contactReach } from './powerups';
 import {
-  COOLDOWN_MIN, COOLDOWN_PER_POINT, DURATION_PER_POINT, LINE_HIT_PADDING, RANGE_PER_POINT, SLAY_WIDTH_PER_RANK, SPEED_PER_POINT, STAT_CAP, STAT_COST, STAT_IDS, STATS_KEY,
-  adjustAllocation, badgePoints, emptyAllocation, modifiersFor, normalizeAllocation, readAllocation, slayReach, spent, writeAllocation,
+  COOLDOWN_MIN, COOLDOWN_PER_POINT, DURATION_PER_POINT, LINE_HIT_PADDING, RANGE_PER_POINT, SLAY_LENGTH_PER_RANK, SPEED_PER_POINT, STAT_CAP, STAT_COST, STAT_IDS, STATS_KEY,
+  adjustAllocation, badgePoints, emptyAllocation, modifiersFor, normalizeAllocation, readAllocation, slayLength, slayReach, spent, writeAllocation,
 } from './stats';
 import { ENEMY_STYLES, enemyHitRadius, createEnemy } from './enemies';
 
@@ -76,9 +76,16 @@ describe('badge stat allocation', () => {
     expect(contactReach(full.range)).toBeLessThan(POWER_UP_SPAWN_GAP);
     const core = enemyHitRadius(createEnemy('straight', { x: 0, y: 0 }));
     expect(core).toBeCloseTo(ENEMY_STYLES.straight.radius * 0.85, 8);
+    expect(slayReach(0, core)).toBe(0);
     expect(slayReach(1, core)).toBeCloseTo(core + LINE_HIT_PADDING, 8);
-    expect(slayReach(STAT_CAP, core)).toBeCloseTo(core + LINE_HIT_PADDING + (STAT_CAP - 1) * SLAY_WIDTH_PER_RANK, 8);
-    expect(slayReach(STAT_CAP, core)).toBeGreaterThan(slayReach(1, core));
+    expect(slayReach(4, core)).toBeCloseTo(slayReach(1, core), 8);
+    expect(slayReach(STAT_CAP, core)).toBeCloseTo(slayReach(1, core), 8);
+    expect(slayLength(0)).toBe(0);
+    expect(slayLength(1)).toBe(SLAY_LENGTH_PER_RANK);
+    expect(slayLength(4)).toBe(4 * SLAY_LENGTH_PER_RANK);
+    expect(slayLength(STAT_CAP)).toBe(STAT_CAP * SLAY_LENGTH_PER_RANK);
+    expect(slayLength(4)).toBeGreaterThan(slayLength(1) * 3);
+    expect(slayLength(STAT_CAP)).toBeGreaterThan(slayLength(4) * 2);
     expect(modifiersFor({ ...emptyAllocation(), duration: 40, speed: -2 }).duration).toBeCloseTo(full.duration, 8);
   });
   it('persists an allocation and rereads it against the badges still owned', () => {

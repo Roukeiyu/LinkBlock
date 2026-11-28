@@ -5,7 +5,8 @@ import { Island } from './island';
 import { snapDrawing } from './snapping';
 import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RESPAWN_SECONDS, contactReach, pickPowerUp, powerUpPosition, rectangleOfArea, rollBombRadius, WARD_RADIUS, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
 import { avoidWard } from './ward';
-import { LINE_HIT_PADDING, slayReach, type RunModifiers } from './stats';
+import { coastVisible, splitTrail, trailLength, type SlaySpan } from './slay-ink';
+import { LINE_HIT_PADDING, slayLength, slayReach, type RunModifiers } from './stats';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, CHARGE_END, DEFEAT_POINTS, enemyHitRadius, WINDUP_CHARGE, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -58,6 +59,12 @@ export class Game {
   bossAttack: BossAttack | undefined;
   hazards: AttackHazard[] = [];
   trail: Polygon = [];
+  /** World-unit length of slay ink already pulled this attempt. Retract, a new stroke and a lost life do not refund it. */
+  private slaySpent = 0;
+  /** Arc-length intervals along the active trail that spent slay budget. */
+  private slaySpans: SlaySpan[] = [];
+  /** Slay ink baked into the shore when a stroke closed. */
+  private settledSlay: Polygon[] = [];
   retracting = false;
   // A self-touch rewind keeps running after the line is gone until a new draw
   // press. The press that was already held does not count.
@@ -236,6 +243,7 @@ export class Game {
     if (exact <= EPS) { this.powerUpEffects.shuffle = 0; return; }
     // Commit the equal-area rectangle once. Later frames only count down the timer.
     this.shuffleCommitted = true;
+    this.endStrokeInk(false); this.settledSlay = [];
     this.trail = []; this.cutRegion = -1; this.retracting = false;
     this.applyClaimRect(rectangleOfArea(this.width, this.height, exact, { x: this.width / 2, y: this.height / 2 }));
   }
@@ -336,6 +344,7 @@ export class Game {
       this.cutRegion = region;
       this.anchor = { ...p };
       this.trail = [{ ...p }];
+      this.slaySpans = [];
     }
     const last = this.trail.at(-1)!;
     const previous = same(last, p) && this.trail.length > 1 ? this.trail.at(-2)! : last;
@@ -375,7 +384,9 @@ export class Game {
           return false;
         }
       }
+      const beforeLength = trailLength(this.trail);
       this.trail = simplify([...this.trail, next]);
+      this.noteSlayGrowth(beforeLength);
       this.player = next; this.playerPath.push({ ...next }); moved = true;
       if (this.takePowerUpIfTouched(p, next)) return false;
       if (this.checkHit(p, next, this.resolveTrail())) return false;
@@ -413,10 +424,11 @@ export class Game {
         this.trail[this.trail.length - 1] = { ...this.player };
         amount = 0;
       }
-      if (this.takePowerUpIfTouched(tip, this.player)) return false;
+      if (this.takePowerUpIfTouched(tip, this.player)) { this.clipSlayToTrail(); return false; }
       this.playerPath.push({ ...this.player });
     }
-    if (this.trail.length > 1) return false;
+    if (this.trail.length > 1) { this.clipSlayToTrail(); return false; }
+    this.endStrokeInk(false);
     this.trail = []; this.cutRegion = -1; this.retracting = false; this.player = { ...this.anchor };
     return true;
   }
@@ -439,6 +451,7 @@ export class Game {
       if (parts.length === 1) {
         this.territories.splice(this.cutRegion, 1, parts[0]);
         this.score += Math.round(this.trail.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - this.trail[i].x, p.y - this.trail[i].y), 0) * 5);
+        this.endStrokeInk(false);
         this.cutRegion = -1; this.trail = []; this.anchor = { ...this.player };
         this.lastCapture = []; this.lastDefeats = []; this.lastCaptureBonus = 0; this.lastCaptureHeal = false; this.events.push('partition'); return;
       }
@@ -462,6 +475,7 @@ export class Game {
     this.cutRegion = -1;
     this.captured.push(...this.lastCapture, ...this.island?.sealedGaps ?? []);
     this.keepPowerUpInWater();
+    this.endStrokeInk(true);
     this.trail = [];
     if (!this.isBoundary(this.player.x, this.player.y)) {
       // Finishing an entire disconnected room can erase the closure point too.
@@ -562,22 +576,73 @@ export class Game {
       } else { jump.to = null; jump.elapsed = jump.duration; jump.retryIn = 0.25; }
     }
   }
+  /** Slay length still available this attempt. Raising the rank mid-attempt adds the difference; lowering it cannot refund what was already pulled. */
+  get slayRemaining() {
+    return Math.max(0, slayLength(this.modifiers.slay) - this.slaySpent);
+  }
+  /** In-progress stroke split into the portion that spent budget and the ordinary suffix. Rank 0 draws the whole stroke as ordinary ink. */
+  strokeInk() {
+    if (!(this.modifiers.slay > 0)) return { slay: [], plain: this.trail.length > 1 ? [this.trail] : [] };
+    return splitTrail(this.trail, this.slaySpans);
+  }
+  /** Slay ink from closed strokes that is still a visible shore. Hidden while 镇杀 is off. */
+  coastSlay() {
+    if (!(this.modifiers.slay > 0)) return [];
+    return coastVisible(this.settledSlay, this.boundarySegments);
+  }
+  private noteSlayGrowth(before: number) {
+    const added = trailLength(this.trail) - before;
+    if (added <= EPS) return;
+    const allowance = slayLength(this.modifiers.slay);
+    const use = Math.min(added, Math.max(0, allowance - this.slaySpent));
+    if (use <= EPS) return;
+    const end = before + use;
+    const last = this.slaySpans.at(-1);
+    if (last && Math.abs(last.end - before) <= 1e-4) last.end = end;
+    else this.slaySpans.push({ start: before, end });
+    this.slaySpent += use;
+    if (allowance - this.slaySpent <= 1e-6) this.slaySpent = allowance;
+  }
+  private clipSlayToTrail() {
+    const length = trailLength(this.trail);
+    this.slaySpans = this.slaySpans
+      .map(span => ({ start: span.start, end: Math.min(span.end, length) }))
+      .filter(span => span.end - span.start > EPS);
+  }
+  /** Drop the active stroke's slay marks. Commit keeps them on the shore; the spent length stays spent either way. */
+  private endStrokeInk(commit: boolean) {
+    if (commit && this.slaySpans.length && this.trail.length > 1) {
+      const ink = splitTrail(this.trail, this.slaySpans).slay;
+      if (ink.length) this.settledSlay.push(...ink);
+    }
+    this.slaySpans = [];
+  }
   private nearTrail(body: Enemy, swept: boolean, reach: number) {
     return this.trail.length > 1 && this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= reach);
   }
-  /** Cut regular enemies the ink crosses, then report whether the line still hurts the player. */
+  private nearSegments(body: Enemy, swept: boolean, reach: number, segments: [Point, Point][]) {
+    return segments.some(([a, b]) => (swept ? segmentDistance(body.previous, body, a, b) : distance(body, a, b)) <= reach);
+  }
+  private inkSegments(slay: boolean): [Point, Point][] {
+    const lines = slay ? this.strokeInk().slay : this.strokeInk().plain;
+    const segments: [Point, Point][] = [];
+    for (const line of lines) for (let i = 1; i < line.length; i++) segments.push([line[i - 1], line[i]]);
+    return segments;
+  }
+  /** Cut regular enemies the slay ink crosses, then report whether ordinary ink or a boss still costs a life. */
   private resolveTrail(swept = false) {
     const rank = this.modifiers.slay;
-    if (rank > 0 && this.trail.length > 1) {
-      const slain = this.enemies.filter(body => body.kind !== 'boss' && this.nearTrail(body, swept, slayReach(rank, enemyHitRadius(body))));
+    if (rank > 0 && this.slaySpans.length) {
+      const slain = this.enemies.filter(body => body.kind !== 'boss' && this.nearSegments(body, swept, slayReach(rank, enemyHitRadius(body)), this.inkSegments(true)));
       if (slain.length) this.defeatAlongLine(slain);
     }
     if (this.protection > 0) return false;
     const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
     return bodies.some(body => {
-      // Rank 1 already covers the old punishing contact, so a living minion is outside it.
-      if (body.kind !== 'boss' && rank > 0) return false;
-      return this.nearTrail(body, swept, enemyHitRadius(body) + LINE_HIT_PADDING);
+      const reach = enemyHitRadius(body) + LINE_HIT_PADDING;
+      // Ordinary ink still punishes. Anything the slay portion touched was already removed.
+      if (body.kind !== 'boss' && rank > 0) return this.nearSegments(body, swept, reach, this.inkSegments(false));
+      return this.nearTrail(body, swept, reach);
     });
   }
   private defeatAlongLine(bodies: Enemy[]) {
@@ -596,6 +661,7 @@ export class Game {
     // A surviving projectile hit in open water keeps the connected stroke usable.
     // At the shore the player can start another cut directly from the contact point.
     if (!keepPosition || !this.lives || !this.trail.length || this.isBoundary(this.player.x, this.player.y)) {
+      this.endStrokeInk(false);
       this.anchor = { ...this.player }; this.shoreStep = undefined;
       this.trail = []; this.cutRegion = -1; this.retracting = false; this.trailRewind = false;
     }
