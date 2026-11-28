@@ -13,6 +13,8 @@ export const POWER_UP_COLORS: Record<PowerUpKind, string> = {
 /** Higher weight means a more common drop. Bomb and shuffle stay rare. */
 export const POWER_UP_WEIGHTS: Record<PowerUpKind, number> = { slow: 3, stop: 2, speed: 3, bomb: 1, shuffle: 1, shield: 2, ward: 2 };
 export const POWER_UP_RADIUS = 1.2;
+/** An item never appears closer than this to the player. Pickup reach must stay strictly inside it. */
+export const POWER_UP_SPAWN_GAP = 4;
 export const POWER_UP_RESPAWN_SECONDS = 5;
 /** Visible spirit body used for contact pickup. The projectile core stays smaller. */
 export const PICKUP_BODY_RADIUS = 1.5;
@@ -82,7 +84,7 @@ export function powerUpPosition(width: number, height: number, regions: Polygon[
   const walls = water.flatMap(room => room.walls);
   const inWater = (point: Point) => water.some(room => inside(point, room.region, room.walls));
   const fits = (point: Point) => walls.every(([a, b]) => distance(point, a, b) >= POWER_UP_RADIUS);
-  const clear = (point: Point) => Math.hypot(point.x - player.x, point.y - player.y) >= 4
+  const clear = (point: Point) => Math.hypot(point.x - player.x, point.y - player.y) >= POWER_UP_SPAWN_GAP
     && enemies.every(enemy => Math.hypot(point.x - enemy.x, point.y - enemy.y) >= enemy.visualRadius + POWER_UP_RADIUS + 0.5)
     && trail.slice(1).every((end, i) => distance(point, trail[i], end) >= POWER_UP_RADIUS + 0.5);
   const vertices = shore.flat();
