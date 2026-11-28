@@ -24,6 +24,7 @@ const icon = (name: string) => {
     gallery: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/>',
     guide: '<path d="M12 5v16M3 3c4-1 6 0 9 2 3-2 5-3 9-2v16c-4-1-6 0-9 2-3-2-5-3-9-2V3Z"/>',
     settings: '<path d="M4 7h5m4 0h7M4 17h9m4 0h3"/><circle cx="11" cy="7" r="2"/><circle cx="15" cy="17" r="2"/>',
+    stats: '<path d="m12 3 7 4v6c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5V7l7-4Z"/><path d="M9.5 12h5M12 9.5v5"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 };
@@ -56,6 +57,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <button id="menu-stats" class="ink-tab" type="button">属性分配</button>
         <button id="clear-progress" class="ink-tab clear-progress-button" type="button">清空进度</button>
       </div>
+      <button id="cover-stats" class="menu-btn cover-stats" type="button">${icon('stats')}<span>属性分配<small id="cover-stats-note">暂无点数</small></span></button>
       <div class="menu-progress"><div class="menu-progress-heading"><span>封印进度</span><p id="seal-count" class="seal-count"></p></div><div id="seal-row" class="seal-row"></div></div>
     </div>
     </div>
@@ -361,6 +363,7 @@ function paintSealRow() {
   $('#seal-count').textContent = `已解封 ${cleared}/${LEVELS.length}`;
   $('#seal-row').setAttribute('aria-label', `已解封 ${cleared}/${LEVELS.length}`);
   $('#seal-row').innerHTML = LEVELS.map(level => `<img class="menu-seal" alt="" src="${asset(progress.cleared.includes(level.id) ? 'ui/wax_seal_broken.png' : 'ui/wax_seal_red.png')}" />`).join('');
+  paintCoverStats();
 }
 function placeShade() {
   const shade = $('#modal-shade');
@@ -1105,23 +1108,40 @@ function frame(now: number) {
   render();
   requestAnimationFrame(frame);
 }
+function paintCoverStats() {
+  const points = badgePoints(codex);
+  const left = points - spent(allocation);
+  const note = $('#cover-stats-note');
+  note.textContent = points === 0 ? '暂无点数' : `还可分配 ${left} 点`;
+}
 function paintStats() {
   const points = badgePoints(codex);
   const left = points - spent(allocation);
+  paintCoverStats();
   $('#stats-points').textContent = `已获得 ${points} 点 · 还可分配 ${left} 点`;
   $('#stats-list').innerHTML = STAT_IDS.map(id => {
     const value = allocation[id];
     return `<div class="stat-row"><span>${STAT_LABELS[id]}</span><button class="ink-tab" type="button" data-stat="${id}" data-delta="-1" aria-label="减少${STAT_LABELS[id]}" ${value <= 0 ? 'disabled' : ''}>−</button><b>${value}</b><button class="ink-tab" type="button" data-stat="${id}" data-delta="1" aria-label="增加${STAT_LABELS[id]}" ${value >= STAT_CAP || left <= 0 ? 'disabled' : ''}>+</button><small>${STAT_NOTES[id]}</small></div>`;
   }).join('');
 }
-function openStats() {
+let statsOpener: HTMLElement | null = null;
+function openStats(event?: Event) {
+  if (event?.currentTarget instanceof HTMLElement) statsOpener = event.currentTarget;
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
   clearInput(); paintStats(); $('#stats-dialog').hidden = false; placeShade();
   $('#stats-close').focus();
 }
 function closeStats() {
   $('#stats-dialog').hidden = true; placeShade();
-  ($('#title-screen').hidden ? $('#open-stats') : $('#menu-stats')).focus();
+  const onCover = !$('#title-screen').hidden;
+  const opener = statsOpener;
+  const openerVisible = Boolean(opener?.isConnected && opener.getClientRects().length);
+  const target = openerVisible && opener ? opener : (onCover ? $('#cover-stats') : $('#open-stats'));
+  if (onCover) {
+    const index = menuItems().indexOf(target as HTMLButtonElement);
+    if (index >= 0) paintMenu(index);
+  }
+  target.focus();
 }
 function openCombatGuide() {
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
@@ -1132,6 +1152,7 @@ $('#menu-guide').addEventListener('click', openCombatGuide);
 $('#combat-help').addEventListener('click', openCombatGuide);
 $('#open-stats').addEventListener('click', openStats);
 $('#menu-stats').addEventListener('click', openStats);
+$('#cover-stats').addEventListener('click', openStats);
 $('#stats-close').addEventListener('click', closeStats);
 $('#stats-list').addEventListener('click', event => {
   const button = (event.target as Element).closest<HTMLButtonElement>('button[data-stat]');
@@ -1259,7 +1280,8 @@ window.addEventListener('keydown', event => {
   const buttons = menuItems();
   const focused = buttons.indexOf(event.target as HTMLButtonElement);
   const index = focused >= 0 ? focused : Math.max(0, buttons.findIndex(button => button.classList.contains('is-selected')));
-  const moves: Record<string, number[]> = { ArrowUp: [3, 0, 0, 1, 2], ArrowDown: [1, 3, 4, 0, 0], ArrowLeft: [0, 2, 1, 4, 3], ArrowRight: [0, 2, 1, 4, 3] };
+  // 0 start; 1 levels, 2 gallery; 3 guide, 4 settings; 5 full-width stat entry.
+  const moves: Record<string, number[]> = { ArrowUp: [5, 0, 0, 1, 2, 3], ArrowDown: [1, 3, 4, 5, 5, 0], ArrowLeft: [0, 2, 1, 4, 3, 5], ArrowRight: [0, 2, 1, 4, 3, 5] };
   const key = ({ KeyW: 'ArrowUp', KeyS: 'ArrowDown', KeyA: 'ArrowLeft', KeyD: 'ArrowRight' } as Record<string, string>)[event.code] ?? event.code;
   if (moves[key]) {
     event.preventDefault();
