@@ -1,17 +1,39 @@
 import { distance, inside, rayDistance, wallEdges, type Point, type Polygon } from './geometry';
 import type { Enemy } from './enemies';
 
-export type PowerUpKind = 'slow' | 'stop' | 'speed' | 'bomb' | 'shuffle';
+export type PowerUpKind = 'slow' | 'stop' | 'speed' | 'bomb' | 'shuffle' | 'shield' | 'ward';
 export interface PowerUp extends Point { kind: PowerUpKind }
-export const POWER_UP_KINDS: PowerUpKind[] = ['slow', 'stop', 'speed', 'bomb', 'shuffle'];
-export const POWER_UP_DURATION: Record<PowerUpKind, number> = { slow: 10, stop: 3, speed: 10, bomb: 3, shuffle: 3 };
-export const POWER_UP_LABELS: Record<PowerUpKind, string> = { slow: '减速', stop: '止步', speed: '加速', bomb: '炸弹', shuffle: '洗牌' };
+export const POWER_UP_KINDS: PowerUpKind[] = ['slow', 'stop', 'speed', 'bomb', 'shuffle', 'shield', 'ward'];
+/** Shield is a one-hit charge, so its timer stays at 0. Ward and the older effects count down. */
+export const POWER_UP_DURATION: Record<PowerUpKind, number> = { slow: 10, stop: 3, speed: 10, bomb: 3, shuffle: 3, shield: 0, ward: 8 };
+export const POWER_UP_LABELS: Record<PowerUpKind, string> = { slow: '减速', stop: '止步', speed: '加速', bomb: '炸弹', shuffle: '洗牌', shield: '护盾', ward: '避邪符' };
+export const POWER_UP_COLORS: Record<PowerUpKind, string> = {
+  slow: '#9ee8bb', stop: '#a8d9ff', speed: '#ffd783', bomb: '#ff8a6a', shuffle: '#d7b4ff', shield: '#b7d7c4', ward: '#f0d7a2',
+};
 /** Higher weight means a more common drop. Bomb and shuffle stay rare. */
-export const POWER_UP_WEIGHTS: Record<PowerUpKind, number> = { slow: 3, stop: 2, speed: 3, bomb: 1, shuffle: 1 };
+export const POWER_UP_WEIGHTS: Record<PowerUpKind, number> = { slow: 3, stop: 2, speed: 3, bomb: 1, shuffle: 1, shield: 2, ward: 2 };
 export const POWER_UP_RADIUS = 1.2;
 export const POWER_UP_RESPAWN_SECONDS = 5;
-/** Enemies within this distance of the player take the bomb's single hit. */
+/** Visible spirit body used for contact pickup. The projectile core stays smaller. */
+export const PICKUP_BODY_RADIUS = 1.5;
+/** Enemies within this distance of the player take the bomb's single hit, before the blast roll. */
 export const BOMB_RADIUS = 8;
+/** Each armed bomb multiplies BOMB_RADIUS by a uniform draw from this inclusive range. */
+export const BOMB_RADIUS_FACTOR = { min: 1.5, max: 1.8 } as const;
+/** Monsters route around this radius while 避邪符 is active. */
+export const WARD_RADIUS = 7;
+
+/** Distance from the player center at which a pickup is taken. `rangeBonus` comes from 拾取范围. */
+export function contactReach(rangeBonus = 0) {
+  return POWER_UP_RADIUS + PICKUP_BODY_RADIUS + Math.max(0, rangeBonus);
+}
+
+/** Inclusive uniform factor in [1.5, 1.8], then applied to the base blast radius. */
+export function rollBombRadius(base: number, random: () => number) {
+  const t = Math.min(1, Math.max(0, random()));
+  const factor = BOMB_RADIUS_FACTOR.min + (BOMB_RADIUS_FACTOR.max - BOMB_RADIUS_FACTOR.min) * t;
+  return base * factor;
+}
 
 export function pickPowerUp(random: () => number): PowerUpKind {
   const total = POWER_UP_KINDS.reduce((sum, kind) => sum + POWER_UP_WEIGHTS[kind], 0);
