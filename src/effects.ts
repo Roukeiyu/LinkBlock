@@ -192,6 +192,34 @@ export function enemyCelebration(enemy: DefeatedEnemy, reducedMotion: boolean, r
   };
 }
 
+/** Short ink ring where the drawn line cuts a regular enemy. No new sprites. */
+export function inkSlayFlash(x: number, y: number, reducedMotion: boolean): CaptureEffect {
+  let age = 0;
+  const duration = reducedMotion ? 0.2 : 0.36;
+  return {
+    get finished() { return age >= duration; },
+    update(seconds) { age += seconds; },
+    render(ctx) {
+      if (age >= duration) return;
+      const t = age / duration;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = 1 - t;
+      ctx.strokeStyle = '#1a0e08';
+      ctx.fillStyle = '#e7c27a';
+      ctx.lineWidth = 0.16;
+      ctx.beginPath();
+      ctx.arc(0, 0, reducedMotion ? 0.7 : 0.32 + t * 1.55, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = (1 - t) * 0.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  };
+}
+
 /** Short ink-and-paper burst at a contact pickup. Same shape for every item; the color is the item's. */
 export function pickupBurst(x: number, y: number, color: string, reducedMotion: boolean): CaptureEffect {
   let age = 0;

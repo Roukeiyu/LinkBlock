@@ -367,7 +367,7 @@ body{color:var(--ink);background-color:#120c08;background-image:radial-gradient(
 .stat-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center}
 .stat-row small{grid-column:1 / -1;margin-top:-4px;color:#5c3b22;font-size:12px}
 .stat-row b{min-width:1.2em;text-align:center}
-.stat-row button.ink-tab{width:32px;height:28px;padding:0}
+.stat-row button.ink-tab{min-width:32px;width:auto;height:28px;padding:0 6px;letter-spacing:0}
 .stats-note{margin:12px 0 0;font-size:13px}
 .candle-glow{position:absolute;right:4%;top:4%;width:22vw;height:36vh;background:radial-gradient(circle,#ffd7a655,transparent 68%);mix-blend-mode:screen;pointer-events:none;animation:flicker 2.6s ease-in-out infinite}
 /* Clip entering particles here so animation restarts cannot grow the scrollable menu. */

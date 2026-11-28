@@ -5,7 +5,7 @@ import { Island } from './island';
 import { snapDrawing } from './snapping';
 import { BOMB_RADIUS, POWER_UP_DURATION, POWER_UP_KINDS, POWER_UP_RESPAWN_SECONDS, contactReach, pickPowerUp, powerUpPosition, rectangleOfArea, rollBombRadius, WARD_RADIUS, type BoardRect, type PowerUp, type PowerUpKind } from './powerups';
 import { avoidWard } from './ward';
-import type { RunModifiers } from './stats';
+import { LINE_HIT_PADDING, slayReach, type RunModifiers } from './stats';
 import { advanceEnemy, createEnemy, defaultBoss, defaultEnemies, CHARGE_END, DEFEAT_POINTS, enemyHitRadius, WINDUP_CHARGE, type DefeatedEnemy, type Enemy, type EnemyMotion } from './enemies';
 import { LINE_SPEED_BOOST, measureCompletion, type CompletionMask, type CompletionReading } from './completion';
 import { EightWayAttack, MAX_HAZARDS, type AttackHazard, type BossAttack, type BossAttackFactory } from './attacks';
@@ -13,7 +13,7 @@ import { BOSS_HIT_POINTS, MAX_ENEMIES, findLanding, jumpPose, safeLanding, type 
 export type { Point } from './geometry';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 export type Phase = 'ready' | 'opening' | 'playing' | 'paused' | 'won' | 'lost';
-export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual } | { type: 'powerup'; kind: PowerUpKind };
+export type GameEvent = 'start' | 'capture' | 'hit' | 'won' | 'lost' | 'partition' | 'bossAttack' | 'characterComplete' | { type: 'defeat'; enemies: DefeatedEnemy[] } | { type: 'slay'; enemies: DefeatedEnemy[] } | { type: 'bossHit'; hit: BossHitVisual } | { type: 'powerup'; kind: PowerUpKind };
 export interface GameOptions { opening?: boolean; openingFace?: OpeningFace; enemies?: Enemy[]; boss?: Enemy | null; createBossAttack?: BossAttackFactory; bossConfig?: BossConfig; victory?: VictoryConfig; random?: () => number; squad?: Partial<Record<'straight' | 'orbit' | 'zigzag', number>>; speedScale?: number; bossSpeedScale?: number; enemyMotion?: EnemyMotion; powerUps?: boolean }
 const vectors: Record<Direction, Point> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 export const PLAYER_SPEED = 80 / 3;
@@ -82,8 +82,8 @@ export class Game {
   /** One absorbed hit. Not a timer, so 道具持续时间 does not extend it. */
   shielded = false;
   bombRadius = BOMB_RADIUS;
-  /** Badge bonuses. Duration and cooldown apply when an item is taken; speed and range apply immediately. */
-  modifiers: RunModifiers = { duration: 1, cooldown: 1, speed: 1, range: 0 };
+  /** Badge bonuses. Duration and cooldown apply when an item is taken; speed, range and 镇杀 apply immediately. */
+  modifiers: RunModifiers = { duration: 1, cooldown: 1, speed: 1, range: 0, slay: 0 };
   /** True after this pickup's rectangle has been committed. The timer may still be running. */
   private shuffleCommitted = false;
   private powerUpWait = 0;
@@ -342,10 +342,10 @@ export class Game {
     // Reverse input erases the current segment at normal walking speed. At a
     // bend, update carries the remaining distance into the held direction.
     if ((p.x - previous.x) * v.x + (p.y - previous.y) * v.y < -EPS) {
-      if (this.checkHit(p, p, this.collidesWithTrail())) return false;
+      if (this.checkHit(p, p, this.resolveTrail())) return false;
       const segmentLength = Math.hypot(p.x - previous.x, p.y - previous.y);
       const travel = Math.min(amount, segmentLength), returned = this.retract(travel);
-      if (this.checkHit(p, this.player, this.collidesWithTrail())) return false;
+      if (this.checkHit(p, this.player, this.resolveTrail())) return false;
       this.backtrackEnded = returned || travel >= segmentLength - EPS;
       return false;
     }
@@ -378,7 +378,7 @@ export class Game {
       this.trail = simplify([...this.trail, next]);
       this.player = next; this.playerPath.push({ ...next }); moved = true;
       if (this.takePowerUpIfTouched(p, next)) return false;
-      if (this.checkHit(p, next, this.collidesWithTrail())) return false;
+      if (this.checkHit(p, next, this.resolveTrail())) return false;
       p = next;
     }
     if (moved && route.closes) { this.capture(); return true; }
@@ -562,9 +562,31 @@ export class Game {
       } else { jump.to = null; jump.elapsed = jump.duration; jump.retryIn = 0.25; }
     }
   }
-  private collidesWithTrail(swept = false) {
-    const bodies = this.boss ? [...this.enemies, this.boss] : this.enemies;
-    return !this.protection && bodies.filter(body => body !== this.boss || !this.bossJump).some(body => this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= enemyHitRadius(body) + 0.12));
+  private nearTrail(body: Enemy, swept: boolean, reach: number) {
+    return this.trail.length > 1 && this.trail.slice(1).some((p, i) => (swept ? segmentDistance(body.previous, body, this.trail[i], p) : distance(body, this.trail[i], p)) <= reach);
+  }
+  /** Cut regular enemies the ink crosses, then report whether the line still hurts the player. */
+  private resolveTrail(swept = false) {
+    const rank = this.modifiers.slay;
+    if (rank > 0 && this.trail.length > 1) {
+      const slain = this.enemies.filter(body => body.kind !== 'boss' && this.nearTrail(body, swept, slayReach(rank, enemyHitRadius(body))));
+      if (slain.length) this.defeatAlongLine(slain);
+    }
+    if (this.protection > 0) return false;
+    const bodies = this.boss && !this.bossJump ? [...this.enemies, this.boss] : this.enemies;
+    return bodies.some(body => {
+      // Rank 1 already covers the old punishing contact, so a living minion is outside it.
+      if (body.kind !== 'boss' && rank > 0) return false;
+      return this.nearTrail(body, swept, enemyHitRadius(body) + LINE_HIT_PADDING);
+    });
+  }
+  private defeatAlongLine(bodies: Enemy[]) {
+    const doomed = new Set(bodies);
+    this.enemies = this.enemies.filter(enemy => !doomed.has(enemy));
+    const defeats = bodies.map(body => ({ kind: body.kind, x: body.x, y: body.y, points: DEFEAT_POINTS[body.kind] }));
+    this.lastDefeats = defeats;
+    this.score += defeats.reduce((sum, enemy) => sum + enemy.points, 0);
+    this.events.push({ type: 'slay', enemies: defeats });
   }
   private hit(keepPosition = false) {
     if (this.shielded) this.shielded = false;
@@ -663,7 +685,7 @@ export class Game {
       for (const hazard of this.hazards) hazard.update(active, this);
       this.boundaryRelocated = false;
       const lives = this.lives, playerBefore = { ...this.player };
-      this.checkHit(playerBefore, playerBefore, this.collidesWithTrail(true));
+      this.checkHit(playerBefore, playerBefore, this.resolveTrail(true));
       if (lives !== this.lives) gestureEnded = true;
       if (!gestureEnded) {
         this.playerPath = [playerBefore];
