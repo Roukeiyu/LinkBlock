@@ -15,7 +15,7 @@ export const STAT_NOTES: Record<StatId, string> = {
   cooldown: '每点缩短下一枚道具的等待 6%',
   speed: '每点 +4% 移动与收线',
   range: '每点 +0.12 拾取距离',
-  slay: '每级消耗 2 点。墨线斩杀小怪，等级越高斩得越宽',
+  slay: '每级消耗 2 点。等级越高，能拉出的朱砂镇杀线越长',
 };
 /** Badge points spent for one displayed rank. 镇杀 is the only double-cost stat. */
 export const STAT_COST: Record<StatId, number> = {
@@ -32,10 +32,14 @@ export const COOLDOWN_PER_POINT = 0.06;
 export const COOLDOWN_MIN = 0.4;
 export const SPEED_PER_POINT = 0.04;
 export const RANGE_PER_POINT = 0.12;
-/** Padding already used when an enemy core touches the drawn line. Rank 1 of 镇杀 matches this contact. */
+/** Padding already used when an enemy core touches the drawn line. 镇杀 kills at this same tight distance at every rank. */
 export const LINE_HIT_PADDING = 0.12;
-/** Extra kill width, in world units, for each 镇杀 rank after the first. */
-export const SLAY_WIDTH_PER_RANK = 0.13;
+/**
+ * Slay-capable line, in world units, granted by one 镇杀 rank.
+ * The playfield is 72×48. 18 is a quarter of the long side: one short jab, not a tour of the level.
+ * Four ranks reach 72, one full long side. Ten ranks reach 180, two and a half long sides.
+ */
+export const SLAY_LENGTH_PER_RANK = 18;
 export const STATS_KEY = 'linkblock.fenglin.stats';
 export const PROGRESS_STORAGE_KEYS = ['linkblock.fenglin.levels', 'linkblock.fenglin.codex', STATS_KEY] as const;
 /** Most badge points a full allocation can spend. Saves are not trimmed below this on write. */
@@ -57,11 +61,15 @@ export function spent(allocation: StatAllocation) {
   return STAT_IDS.reduce((sum, id) => sum + allocation[id] * STAT_COST[id], 0);
 }
 
-/** Distance from the ink line that slays a regular enemy. Zero ranks do not kill. */
+/** Total slay-line length for a rank. Zero ranks grant none. The pool is linear in rank. */
+export function slayLength(rank: number) {
+  return clampedPoints(rank) * SLAY_LENGTH_PER_RANK;
+}
+
+/** Distance from the slay portion of the ink that kills a regular enemy. Rank does not widen it. */
 export function slayReach(rank: number, hitRadius: number) {
-  const ranks = clampedPoints(rank);
-  if (ranks <= 0) return 0;
-  return Math.max(0, hitRadius) + LINE_HIT_PADDING + (ranks - 1) * SLAY_WIDTH_PER_RANK;
+  if (clampedPoints(rank) <= 0) return 0;
+  return Math.max(0, hitRadius) + LINE_HIT_PADDING;
 }
 
 function clampedPoints(value: unknown) {

@@ -1,4 +1,5 @@
 import { AlternatingCrossAttack, type BossAttackFactory } from './attacks';
+import { SLAY_INK } from './slay-ink';
 import { lakeBossConfig, type BossConfig, type BossHitVisual } from './boss';
 import { ENEMY_STYLES, type DefeatedEnemy } from './enemies';
 import { area, inside, type Polygon } from './geometry';
@@ -205,8 +206,8 @@ export function inkSlayFlash(x: number, y: number, reducedMotion: boolean): Capt
       ctx.save();
       ctx.translate(x, y);
       ctx.globalAlpha = 1 - t;
-      ctx.strokeStyle = '#1a0e08';
-      ctx.fillStyle = '#e7c27a';
+      ctx.strokeStyle = SLAY_INK;
+      ctx.fillStyle = '#ffd7cf';
       ctx.lineWidth = 0.16;
       ctx.beginPath();
       ctx.arc(0, 0, reducedMotion ? 0.7 : 0.32 + t * 1.55, 0, Math.PI * 2);
