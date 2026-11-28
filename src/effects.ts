@@ -192,6 +192,55 @@ export function enemyCelebration(enemy: DefeatedEnemy, reducedMotion: boolean, r
   };
 }
 
+/** Short ink-and-paper burst at a contact pickup. Same shape for every item; the color is the item's. */
+export function pickupBurst(x: number, y: number, color: string, reducedMotion: boolean): CaptureEffect {
+  let age = 0;
+  const duration = reducedMotion ? 0.2 : 0.42;
+  const motes = reducedMotion ? [] : Array.from({ length: 8 }, (_, i) => {
+    const angle = -Math.PI / 2 + i * Math.PI / 4;
+    return { angle, speed: 2.6 + (i % 3) * 0.55, size: i % 2 ? 0.16 : 0.1 };
+  });
+  return {
+    get finished() { return age >= duration; },
+    update(seconds) { age += seconds; },
+    render(ctx) {
+      if (age >= duration) return;
+      const t = Math.min(1, age / duration);
+      const punch = reducedMotion ? 1 : 1 + 0.42 * Math.sin(Math.min(1, t * 2.4) * Math.PI);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = (1 - t) * 0.85;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = '#f6e6c4';
+      ctx.lineWidth = 0.16;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = reducedMotion ? 0 : 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, (0.55 + t * 2.1) * (reducedMotion ? 1 : 0.92 + punch * 0.08), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = (1 - t) * 0.55;
+      ctx.beginPath();
+      ctx.arc(0, 0, 0.72 * punch, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      for (const mote of motes) {
+        const d = mote.speed * t;
+        ctx.globalAlpha = 1 - t;
+        ctx.fillStyle = iColor(color, mote.size);
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(mote.angle) * d, Math.sin(mote.angle) * d, mote.size * punch, mote.size * 0.62, mote.angle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    },
+  };
+}
+
+function iColor(color: string, size: number) {
+  return size > 0.12 ? '#f6e6c4' : color;
+}
+
 export function bossHitPulse(hit: BossHitVisual, reducedMotion: boolean): CaptureEffect {
   let age = 0;
   return {

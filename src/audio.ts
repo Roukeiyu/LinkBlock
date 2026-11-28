@@ -198,7 +198,7 @@ export class LakeAudio {
     else if (name === 'gameover') { note(311, 0.25, 0.05, now, 'triangle', 196); note(146, 0.4, 0.04, now + 0.16, 'sine'); }
     else if (name === 'milestone') { note(659, 0.14, 0.045, now, 'sine'); note(880, 0.18, 0.04, now + 0.12, 'sine'); note(1175, 0.28, 0.035, now + 0.24, 'triangle'); }
     else if (name === 'perfect') { note(988, 0.12, 0.04, now, 'sine'); note(1319, 0.2, 0.035, now + 0.1, 'triangle'); }
-    else if (name === 'reward') note(1046, 0.2, 0.045, now, 'sine', 1568, 0.02);
+    else if (name === 'reward') note(1046, 0.16, 0.05, now, 'sine', 1568, 0.004);
     else if (name === 'seal') this.seal(ctx, bus, now);
   }
 

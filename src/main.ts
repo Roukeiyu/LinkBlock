@@ -4,13 +4,14 @@ import { ENEMY_STYLES } from './enemies';
 import { renderEnemy, renderPlayerSpirit } from './render-enemies';
 import { OPENING_SECONDS, openingPercent } from './opening';
 import { DragJoystick } from './joystick';
-import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, sealBreak, type CaptureEffect } from './effects';
+import { bindLandscapes, clipPolygons, drawLandscape, lakeDissolve, lakeTheme, polygonPath, enemyCelebration, bossHitPulse, pickupBurst, sealBreak, type CaptureEffect } from './effects';
 import { codexForProgress, applyUnlocks, readCodex, rewardsFor, writeCodex, type Codex, type RewardId } from './rewards';
 import { CAMPAIGN_MENU_NOTE, LEVELS, artworkRevision, bossConfigFor, gameOptionsFor, levelById, noteClear, readLevelProgress, writeLevelProgress, type LevelDef, type LevelProgress } from './levels';
 import { maskFromPixels } from './completion';
 import { useSpriteSheet } from './render-enemies';
 import { lakeAudio, MENU_MUSIC } from './audio';
-import { BOMB_RADIUS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, POWER_UP_RESPAWN_SECONDS, type PowerUp } from './powerups';
+import { POWER_UP_COLORS, POWER_UP_KINDS, POWER_UP_LABELS, POWER_UP_RADIUS, POWER_UP_RESPAWN_SECONDS, WARD_RADIUS, type PowerUp } from './powerups';
+import { STAT_CAP, STAT_IDS, STAT_LABELS, STAT_NOTES, adjustAllocation, badgePoints, emptyAllocation, modifiersFor, readAllocation, spent, writeAllocation, PROGRESS_STORAGE_KEYS, type StatAllocation, type StatId } from './stats';
 
 const ui = (name: string) => `${import.meta.env.BASE_URL}ui/${name}`;
 const icon = (name: string) => {
@@ -52,6 +53,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <label class="audio-slider">音乐音量 <input id="menu-music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label>
         <label class="audio-slider">音效音量 <input id="menu-sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label>
         <button id="menu-form" class="ink-tab form-setting" type="button" aria-pressed="false">角色形态：人形</button>
+        <button id="menu-stats" class="ink-tab" type="button">属性分配</button>
         <button id="clear-progress" class="ink-tab clear-progress-button" type="button">清空进度</button>
       </div>
       <div class="menu-progress"><div class="menu-progress-heading"><span>封印进度</span><p id="seal-count" class="seal-count"></p></div><div id="seal-row" class="seal-row"></div></div>
@@ -60,7 +62,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
   <header class="site-header">
     <button id="home" class="brand" type="button" aria-label="返回主界面"><img class="brand-logo" src="${ui('logo.png')}" alt="LinkBlock 解封" /></button>
-    <div class="top-controls" role="toolbar" aria-label="游戏控制"><button id="combat-help" class="ink-tab" type="button">攻略</button><button id="pause" class="ink-tab" type="button" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart" class="ink-tab" type="button">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音乐"><span>音乐</span><span class="toggle" aria-hidden="true"></span></button><button id="sound" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音效">${icon('sound')}<span>音效</span><span class="toggle" aria-hidden="true"></span></button><label class="audio-slider"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider"><span>音效音量</span><input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
+    <div class="top-controls" role="toolbar" aria-label="游戏控制"><button id="open-stats" class="ink-tab" type="button">属性</button><button id="combat-help" class="ink-tab" type="button">攻略</button><button id="pause" class="ink-tab" type="button" disabled>${icon('pause')}<span>暂停</span><kbd>P</kbd></button><button id="restart" class="ink-tab" type="button">${icon('reset')}<span>重新开始</span><kbd>R</kbd></button><button id="music" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音乐"><span>音乐</span><span class="toggle" aria-hidden="true"></span></button><button id="sound" class="ink-tab audio-toggle" type="button" aria-pressed="true" aria-label="音效">${icon('sound')}<span>音效</span><span class="toggle" aria-hidden="true"></span></button><label class="audio-slider"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="62" aria-label="音乐音量"></label><label class="audio-slider"><span>音效音量</span><input id="sfx-volume" type="range" min="0" max="100" value="78" aria-label="音效音量"></label></div>
   </header>
   <main>
     <section class="intro"><div><p class="eyebrow">解封</p><h1>连接，划出你的领地<span>。</span></h1><p class="intro-copy">画线净化被封住的区域，揭开这一关的封印。</p></div><div class="chapter"><span></span><p>解封</p></div></section>
@@ -132,9 +134,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         return `<section><h3>${level.title} · ${level.difficulty}</h3><p>${level.tactic}</p>${population}</section>`;
       }).join('')}
       <p>所有弹幕都能击中角色和未闭合的线。首领 3 血、1 血时强化攻击并补怪；预警方向就是本轮射击方向。</p>
-      <p>道具会出现在已圈领地边缘附近，圈入新领地即可获得。减速与加速较常见，止步次之，炸弹和洗牌更少。获得后 ${POWER_UP_RESPAWN_SECONDS} 秒出现下一枚。</p>
+      <p>道具会出现在已圈领地边缘附近，角色碰到即可获得。减速与加速较常见，止步、护盾和避邪符次之，炸弹和洗牌更少。获得后 ${POWER_UP_RESPAWN_SECONDS} 秒出现下一枚。</p>
       <p>沙漏减速：敌人移动速度降低 30%（10 秒，不影响子弹）。雪花止步：敌人和子弹冻结 3 秒。闪电加速：角色速度提高 50%（10 秒）。</p>
-      <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒，引爆时击败圈内的小怪，并对圈内的首领造成 1 点伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
+      <p>炸弹：拾取后角色周围出现圆圈并倒计时 3 秒。这一圈就是爆炸范围，半径为基础的 1.5 到 1.8 倍。引爆时击败圈内的小怪，并对圈内的首领造成 1 点伤害。洗牌：用约 3 秒把已经圈出的区域重铺成面积完全相同的矩形。</p>
+      <p>护盾：抵消下一次受到的伤害。避邪符：持续数秒，魔物会绕开角色周围的一圈；已经在圈里的会向外走开。</p>
+      <p>每枚已获得的徽章提供 1 点属性，可随时分配到道具持续时间、冷却缩短、移速和拾取范围。</p>
     </div>
   </div>
   <div id="viewer" class="viewer" hidden><img id="viewer-img" alt="" /><button id="viewer-form" class="ink-tab form-preview" type="button">按住查看魔物</button><button id="viewer-close" class="ink-tab" type="button">关闭</button></div>
@@ -144,10 +148,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div id="level-list" class="level-list"></div>
     </div>
   </div>
+  <div id="stats-dialog" class="gallery" hidden>
+    <div class="gallery-card stats-card" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+      <div class="gallery-head"><h2 id="stats-title">属性</h2><button id="stats-close" class="ink-tab" type="button">返回</button></div>
+      <p id="stats-points"></p>
+      <div id="stats-list" class="stats-list"></div>
+      <p class="stats-note">点数来自已获得的徽章，可以随时加减，不会永久锁定。</p>
+    </div>
+  </div>
   <div id="clear-progress-dialog" class="gallery confirm-progress" hidden>
     <div class="gallery-card" role="alertdialog" aria-modal="true" aria-labelledby="clear-progress-title" aria-describedby="clear-progress-copy">
       <h2 id="clear-progress-title">清空所有进度？</h2>
-      <p id="clear-progress-copy">关卡进度和图鉴奖励将被清空，无法恢复。音乐、音效和角色形态设置会保留。</p>
+      <p id="clear-progress-copy">关卡进度和图鉴奖励将被清空，属性分配也会一起重置，无法恢复。音乐、音效和角色形态设置会保留。</p>
       <p id="clear-progress-error" role="alert" hidden></p>
       <div class="confirm-actions"><button id="cancel-clear-progress" class="ink-tab" type="button">取消</button><button id="confirm-clear-progress" class="ink-tab" type="button">确认清空</button></div>
     </div>
@@ -235,6 +247,9 @@ function paintGalleryForm() {
 function resetGalleryPreview() { previewOtherForm = false; paintGalleryForm(); }
 
 let codex: Codex = codexForProgress(readCodex(), progress.cleared);
+let allocation: StatAllocation = readAllocation(badgePoints(codex));
+function bindModifiers(target: Game = game) { target.modifiers = modifiersFor(allocation); }
+bindModifiers();
 let freshNote = '';
 const rewardNames: Record<RewardId, string> = { clear: '通关', ninety: '满血', perfect: '击破' };
 interface GalleryCard { level: number; id: RewardId; title: string; src: string; blurb: string; locked: string }
@@ -349,7 +364,7 @@ function paintSealRow() {
 }
 function placeShade() {
   const shade = $('#modal-shade');
-  const open = ['#overlay', '#level-select', '#gallery', '#viewer', '#combat-guide', '#clear-progress-dialog'].map(selector => $(selector)).filter(el => !el.hidden);
+  const open = ['#overlay', '#level-select', '#gallery', '#viewer', '#combat-guide', '#stats-dialog', '#clear-progress-dialog'].map(selector => $(selector)).filter(el => !el.hidden);
   if (!open.length) { shade.hidden = true; return; }
   open.forEach((el, index) => { el.style.zIndex = String(40 + index * 2); });
   shade.style.zIndex = String(40 + (open.length - 1) * 2 - 1);
@@ -431,7 +446,9 @@ function beginLevel(id: number) {
   closeGallery(); closeLevels(); clearInput(); freshNote = '';
   loadLevelArt(current);
   applyAccent(current);
+  $('#stats-dialog').hidden = true;
   game = new Game(72, 48, gameOptionsFor(current, monsterForm));
+  bindModifiers();
   syncScene(); game.start(); effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   $('#toast').classList.remove('visible');
@@ -536,11 +553,11 @@ const keyDirections: Record<string, Direction> = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
 };
 function menuOpen() {
-  return $('#clear-progress-dialog').hidden && $('#combat-guide').hidden && !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
+  return $('#clear-progress-dialog').hidden && $('#combat-guide').hidden && $('#stats-dialog').hidden && !$('#title-screen').hidden && $('#gallery').hidden && $('#level-select').hidden && $('#viewer').hidden;
 }
 window.addEventListener('keydown', e => {
   if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (!$('#combat-guide').hidden || !$('#title-screen').hidden || !$('#gallery').hidden || !$('#level-select').hidden || !$('#viewer').hidden) return;
+  if (!$('#combat-guide').hidden || !$('#stats-dialog').hidden || !$('#title-screen').hidden || !$('#gallery').hidden || !$('#level-select').hidden || !$('#viewer').hidden) return;
   if (e.code === 'Space' && game.phase === 'opening') {
     if (e.target instanceof HTMLButtonElement && !e.target.matches('#touch-draw, #joystick')) return;
     e.preventDefault(); if (!e.repeat) confirmOpening(); return;
@@ -726,8 +743,15 @@ function handleEvent(event: GameEvent) {
       effects.push((theme.createBossHitEffect ?? bossHitPulse)(event.hit, reducedMotion.matches));
       notify(`${current.names.boss}受击 · ${event.hit.health}/${event.hit.maxHealth} HP · +${event.hit.points}`, `${current.names.boss} ${event.hit.health}/${event.hit.maxHealth} · +${event.hit.points}`); lakeAudio.play('boss-hit');
     } else if (event.type === 'powerup') {
-      const descriptions = { slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒', bomb: '3 秒后圈内敌人受击', shuffle: '3 秒内重铺为等面积矩形' };
-      notify(`获得${POWER_UP_LABELS[event.kind]} · ${descriptions[event.kind]}`, descriptions[event.kind]); lakeAudio.play('reward');
+      const descriptions = {
+        slow: '敌人减速 10 秒', stop: '敌人和子弹止步 3 秒', speed: '角色加速 10 秒', bomb: '3 秒后圈内敌人受击', shuffle: '3 秒内重铺为等面积矩形',
+        shield: '抵消下一次伤害', ward: '魔物绕开角色 8 秒',
+      };
+      notify(`获得${POWER_UP_LABELS[event.kind]} · ${descriptions[event.kind]}`, descriptions[event.kind]);
+      effects.push(pickupBurst(game.player.x, game.player.y, POWER_UP_COLORS[event.kind], reducedMotion.matches));
+      const status = $('#powerup-status');
+      status.classList.remove('is-pop'); void status.offsetWidth; status.classList.add('is-pop');
+      lakeAudio.play('reward');
     } else {
       for (const enemy of event.enemies) effects.push((theme.createDefeatEffect ?? enemyCelebration)(enemy, reducedMotion.matches));
       const names = event.enemies.map(enemy => enemy.kind === 'straight' ? current.names.straight[0] : enemy.kind === 'boss' ? current.names.boss : current.names[enemy.kind]).join('、');
@@ -774,8 +798,11 @@ function handleEvent(event: GameEvent) {
 function sync() {
   const selecting = game.phase === 'opening', waiting = !game.actorsReady;
   const status = $('#powerup-status');
-  const activeEffects = POWER_UP_KINDS.filter(kind => game.powerUpEffects[kind] > 0)
-    .map(kind => `${POWER_UP_LABELS[kind]} ${Math.ceil(game.powerUpEffects[kind])}s`).join(' · ');
+  const activeEffects = [
+    ...game.shielded ? [POWER_UP_LABELS.shield] : [],
+    ...POWER_UP_KINDS.filter(kind => kind !== 'shield' && game.powerUpEffects[kind] > 0)
+      .map(kind => `${POWER_UP_LABELS[kind]} ${Math.ceil(game.powerUpEffects[kind])}s`),
+  ].join(' · ');
   status.hidden = !activeEffects; if (status.textContent !== activeEffects) status.textContent = activeEffects;
   $('#opening-hint').hidden = !selecting;
   if (selecting && game.opening) $('#opening-hint').textContent = `${openingPercent(game.opening, game.width, game.height).toFixed(1)}% · 空格 / 动作键确认 · ${Math.max(0, OPENING_SECONDS - game.opening.elapsed).toFixed(1)}s`;
@@ -856,13 +883,7 @@ function sync() {
 }
 
 function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: number) {
-  const appearance = {
-    slow: '#9ee8bb',
-    stop: '#a8d9ff',
-    speed: '#ffd783',
-    bomb: '#ff8a6a',
-    shuffle: '#d7b4ff',
-  }[item.kind];
+  const appearance = POWER_UP_COLORS[item.kind];
   context.save(); context.translate(item.x, item.y);
   const pulse = reducedMotion.matches ? 1 : 1 + 0.06 * Math.sin(elapsed * 4);
   context.scale(pulse, pulse); context.shadowColor = appearance; context.shadowBlur = 5;
@@ -889,6 +910,15 @@ function drawPowerUp(context: CanvasRenderingContext2D, item: PowerUp, elapsed: 
   } else if (item.kind === 'shuffle') {
     context.strokeRect(-0.46, -0.34, 0.92, 0.68);
     context.beginPath(); context.moveTo(-0.2, 0.5); context.lineTo(0.34, 0.5); context.lineTo(0.16, 0.28); context.moveTo(0.34, 0.5); context.lineTo(0.16, 0.72); context.stroke();
+  } else if (item.kind === 'shield') {
+    context.moveTo(0, -0.72); context.lineTo(0.56, -0.4); context.lineTo(0.46, 0.12);
+    context.quadraticCurveTo(0.18, 0.7, 0, 0.82); context.quadraticCurveTo(-0.18, 0.7, -0.46, 0.12);
+    context.lineTo(-0.56, -0.4); context.closePath(); context.stroke();
+  } else if (item.kind === 'ward') {
+    context.strokeRect(-0.4, -0.7, 0.8, 1.4);
+    context.beginPath(); context.moveTo(0, -0.42); context.lineTo(0, 0.46);
+    context.moveTo(-0.22, -0.08); context.lineTo(0.22, -0.08);
+    context.moveTo(-0.16, 0.24); context.lineTo(0.16, 0.24); context.stroke();
   } else {
     // Lightning bolt for the player speed boost.
     context.moveTo(0.16, -0.78); context.lineTo(-0.52, 0.08); context.lineTo(-0.08, 0.08);
@@ -974,7 +1004,12 @@ function render() {
     }
     if (game.powerUpEffects.bomb > 0) {
       ctx.save(); ctx.strokeStyle = '#ff8a6a'; ctx.lineWidth = 0.18; ctx.setLineDash([0.45, 0.28]);
-      ctx.beginPath(); ctx.arc(game.player.x, game.player.y, BOMB_RADIUS, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.arc(game.player.x, game.player.y, game.bombRadius, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+    if (game.powerUpEffects.ward > 0) {
+      ctx.save(); ctx.strokeStyle = 'rgba(226, 196, 122, 0.7)'; ctx.fillStyle = 'rgba(243, 215, 161, 0.06)';
+      ctx.lineWidth = 0.1; ctx.setLineDash([0.32, 0.24]);
+      ctx.beginPath(); ctx.arc(game.player.x, game.player.y, WARD_RADIUS, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
     }
     if (game.powerUp) drawPowerUp(ctx, game.powerUp, game.elapsed);
     for (const enemy of game.enemies) renderEnemy(ctx, enemy, 0, reducedMotion.matches);
@@ -986,6 +1021,10 @@ function render() {
       const direction = [...held].at(-1);
       if (direction) playerFacing = { left: Math.PI, right: 0, up: -Math.PI / 2, down: Math.PI / 2 }[direction];
       renderPlayerSpirit(ctx, x, y, playerFacing, game.trail.length > 0, game.elapsed, reducedMotion.matches);
+      if (game.shielded) {
+        ctx.save(); ctx.strokeStyle = '#d7ebc8'; ctx.lineWidth = 0.12; ctx.globalAlpha = 0.85;
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
       if (game.protection > 0) drawHitFeedback(x, y, scale);
       ctx.restore();
     }
@@ -1066,6 +1105,24 @@ function frame(now: number) {
   render();
   requestAnimationFrame(frame);
 }
+function paintStats() {
+  const points = badgePoints(codex);
+  const left = points - spent(allocation);
+  $('#stats-points').textContent = `已获得 ${points} 点 · 还可分配 ${left} 点`;
+  $('#stats-list').innerHTML = STAT_IDS.map(id => {
+    const value = allocation[id];
+    return `<div class="stat-row"><span>${STAT_LABELS[id]}</span><button class="ink-tab" type="button" data-stat="${id}" data-delta="-1" aria-label="减少${STAT_LABELS[id]}" ${value <= 0 ? 'disabled' : ''}>−</button><b>${value}</b><button class="ink-tab" type="button" data-stat="${id}" data-delta="1" aria-label="增加${STAT_LABELS[id]}" ${value >= STAT_CAP || left <= 0 ? 'disabled' : ''}>+</button><small>${STAT_NOTES[id]}</small></div>`;
+  }).join('');
+}
+function openStats() {
+  if (game.phase === 'playing' || game.phase === 'opening') togglePause();
+  clearInput(); paintStats(); $('#stats-dialog').hidden = false; placeShade();
+  $('#stats-close').focus();
+}
+function closeStats() {
+  $('#stats-dialog').hidden = true; placeShade();
+  ($('#title-screen').hidden ? $('#open-stats') : $('#menu-stats')).focus();
+}
 function openCombatGuide() {
   if (game.phase === 'playing' || game.phase === 'opening') togglePause();
   clearInput(); $('#combat-guide').hidden = false; placeShade();
@@ -1073,6 +1130,20 @@ function openCombatGuide() {
 }
 $('#menu-guide').addEventListener('click', openCombatGuide);
 $('#combat-help').addEventListener('click', openCombatGuide);
+$('#open-stats').addEventListener('click', openStats);
+$('#menu-stats').addEventListener('click', openStats);
+$('#stats-close').addEventListener('click', closeStats);
+$('#stats-list').addEventListener('click', event => {
+  const button = (event.target as Element).closest<HTMLButtonElement>('button[data-stat]');
+  if (!button || button.disabled) return;
+  const next = adjustAllocation(allocation, button.dataset.stat as StatId, Number(button.dataset.delta), badgePoints(codex));
+  if (next === allocation) return;
+  allocation = next; writeAllocation(allocation); bindModifiers(); paintStats();
+});
+window.addEventListener('keydown', event => {
+  if ($('#stats-dialog').hidden || event.code !== 'Escape') return;
+  event.preventDefault(); closeStats();
+});
 function closeCombatGuide() {
   $('#combat-guide').hidden = true; placeShade();
   ($('#title-screen').hidden ? $('#primary') : $('#menu-guide')).focus();
@@ -1139,7 +1210,7 @@ $('#clear-progress').addEventListener('click', () => {
 });
 $('#cancel-clear-progress').addEventListener('click', closeClearProgress);
 $('#confirm-clear-progress').addEventListener('click', () => {
-  const keys = ['linkblock.fenglin.levels', 'linkblock.fenglin.codex'];
+  const keys = [...PROGRESS_STORAGE_KEYS];
   let previous: (string | null)[] = [];
   try {
     previous = keys.map(key => localStorage.getItem(key));
@@ -1150,7 +1221,9 @@ $('#confirm-clear-progress').addEventListener('click', () => {
     const error = $('#clear-progress-error'); error.textContent = '无法清空进度，请检查浏览器存储设置。'; error.hidden = false; return;
   }
   progress = readLevelProgress(); codex = codexForProgress(readCodex(), progress.cleared);
+  allocation = emptyAllocation();
   current = LEVELS[0]; game = new Game(72, 48, gameOptionsFor(current, monsterForm));
+  bindModifiers();
   clearInput(); freshNote = ''; effects.length = 0; hitFlash = 0;
   heardRetract = false; lineMark = 0; hadBoss = false; hadJump = false; audioPercent = 0;
   loadLevelArt(current); applyAccent(current); syncScene(); paintSealRow(); renderLevels();

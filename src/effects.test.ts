@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enemyCelebration, lakeTheme } from './effects';
+import { enemyCelebration, lakeTheme, pickupBurst } from './effects';
 import { ENEMY_STYLES, type EnemyKind } from './enemies';
 
 function recorder() {
@@ -35,5 +35,27 @@ describe('replaceable enemy defeat celebration', () => {
     expect(b.operations.filter(op => op.name === 'lineTo')).toHaveLength(0);
     expect(a.operations.find(op => op.name === 'arc')?.args).toEqual(b.operations.find(op => op.name === 'arc')?.args);
     effect.update(0.3); expect(effect.finished).toBe(true);
+  });
+});
+
+describe('pickup burst', () => {
+  it('punches a short ink ring at the contact point and then finishes', () => {
+    const burst = pickupBurst(4, 5, '#ffd783', false);
+    const drawn = recorder(); burst.render(drawn.ctx);
+    expect(drawn.operations).toContainEqual({ name: 'translate', args: [4, 5] });
+    expect(drawn.operations).toContainEqual({ name: 'strokeStyle', args: ['#ffd783'] });
+    expect(drawn.operations.filter(op => op.name === 'arc').length).toBeGreaterThan(0);
+    expect(drawn.operations.filter(op => op.name === 'ellipse').length).toBeGreaterThan(0);
+    expect(drawn.operations.filter(op => op.name === 'ellipse').length).toBeLessThanOrEqual(8);
+    expect(burst.finished).toBe(false);
+    burst.update(0.42); expect(burst.finished).toBe(true);
+    const ended = recorder(); burst.render(ended.ctx); expect(ended.operations).toHaveLength(0);
+  });
+  it('keeps reduced motion to a still ring without motes', () => {
+    const quiet = pickupBurst(1, 2, '#f0d7a2', true);
+    const drawn = recorder(); quiet.render(drawn.ctx);
+    expect(drawn.operations.filter(op => op.name === 'ellipse')).toHaveLength(0);
+    expect(drawn.operations.filter(op => op.name === 'arc').length).toBeGreaterThan(0);
+    quiet.update(0.2); expect(quiet.finished).toBe(true);
   });
 });
